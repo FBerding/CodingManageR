@@ -1,0 +1,43 @@
+Package: CodingManageR
+Title: Multi-User Qualitative Coding Portal and Training Manager
+Version: 1.0.0
+Authors@R:
+    person(
+        given = "Florian",
+        family = "Berding",
+        email = "florianberding@gmail.com",
+        role = c("aut", "cre")
+    )
+Description: A multi-user R Shiny web application and training portal for
+    qualitative text coding across ordinal scales. Supports local SQLite
+    databases for single-user desktop sessions as well as pooled
+    MySQL/MariaDB connections for Open Source Shiny Server deployments.
+    Provides 16 inter-rater reliability and agreement metrics, stratified
+    gold-standard training pools, consolidated CSV master exports, strict
+    schema-validated CSV imports, and bilingual (German/English) localization.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    aifeducation,
+    bslib,
+    DBI,
+    ggplot2,
+    jsonlite,
+    pool,
+    RSQLite,
+    shiny,
+    stats,
+    tools,
+    utils
+Suggests:
+    knitr,
+    RMariaDB,
+    rmarkdown,
+    RMySQL,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
