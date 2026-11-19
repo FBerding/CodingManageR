@@ -8,3 +8,6 @@
 ^node_modules$
 ^preview-server\.mjs$
 ^tests/run_coverage\.R$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
