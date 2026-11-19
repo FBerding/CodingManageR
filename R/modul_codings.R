@@ -1,19 +1,74 @@
 # ==============================================================================
-# KODIERUNGS-MODUL FÜR R SHINY (FLEXIBLE FALLAUSWAHL: ZUFALL VS. TEXTQUELLE)
+# CODING MODULE FOR R SHINY (FLEXIBLE CASE SELECTION: RANDOM VS. TEXT SOURCE)
 # ==============================================================================
 # Dependencies (shiny, DBI) are imported via NAMESPACE
 
 # ==============================================================================
-# MODUL-UI
+# MODULE UI
 # ==============================================================================
+
+#' Coding Module UI
+#'
+#' Creates the Shiny UI container for the interactive case coding workspace.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#'
+#' @return A `shiny.tag` (`uiOutput`) rendering the coding workspace.
+#'
+#' @examples
+#' if (interactive()) {
+#'   ui <- shiny::fluidPage(kodierungenUI("mod_codings"))
+#' }
+#'
+#' @export
 kodierungenUI <- function(id) {
   ns <- NS(id)
   uiOutput(ns("kodier_bereich"))
 }
 
 # ==============================================================================
-# MODUL-SERVER
+# MODULE SERVER
 # ==============================================================================
+
+#' Coding Module Server
+#'
+#' Implements the server-side workflow for production case coding, including
+#' scale and text source selection, permission filtering, random or
+#' source-scoped unrated case retrieval, rating persistence, and reference
+#' example inspection.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param db_con Active `DBIConnection` or `pool::Pool` database handle.
+#' @param user_id_reactive Optional reactive expression returning the active
+#'   user's integer ID.
+#' @param username_reactive Reactive expression returning the active username.
+#' @param kategorie_spalten Reactive expression returning a character vector of
+#'   configured scale identifiers or column names.
+#' @param kategorien_liste Reactive expression returning a named character
+#'   vector of available coding scales (`scale_id` values with display names).
+#' @param trigger_parent A `reactiveVal` incremented whenever new codings are
+#'   saved so dependent modules refresh automatically.
+#' @param scales_trigger Optional `reactiveVal` triggered when scale definitions
+#'   change in the admin panel.
+#' @param current_lang Reactive expression or character scalar providing the
+#'   active UI language code (`"de"` or `"en"`).
+#'
+#' @return The return value of `shiny::moduleServer()`.
+#'
+#' @examples
+#' \dontrun{
+#' kodierungenServer(
+#'   id = "mod_codings",
+#'   db_con = db_con,
+#'   user_id_reactive = reactive(1L),
+#'   username_reactive = reactive("admin"),
+#'   kategorie_spalten = reactive(character(0)),
+#'   kategorien_liste = reactive(c("Scale 1" = "1")),
+#'   trigger_parent = reactiveVal(0L)
+#' )
+#' }
+#'
+#' @export
 kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reactive, kategorie_spalten, kategorien_liste, trigger_parent, scales_trigger = NULL, current_lang = reactiveVal("de")) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -304,12 +359,12 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
                      )
                    } else if (hat_quellen) {
                      div(class = "alert alert-warning",
-                         h5(paste0("⚠️ ", tr("coding.no_coding_sources_err", lang))),
+                         h5(paste0("\u26a0\ufe0f ", tr("coding.no_coding_sources_err", lang))),
                          p(tr("coding.no_permission_desc", lang))
                      )
                    } else {
                      div(class = "alert alert-warning",
-                         h5(paste0("⚠️ ", tr("coding.no_coding_sources_err", lang))),
+                         h5(paste0("\u26a0\ufe0f ", tr("coding.no_coding_sources_err", lang))),
                          p(tr("coding.no_permission_desc", lang))
                      )
                    },
@@ -377,7 +432,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
 
           if (is.null(fall) || nrow(fall) == 0) {
             wellPanel(
-              h4(paste0("🎉 ", tr("coding.all_done_title", lang))),
+              h4(paste0("\U0001f389 ", tr("coding.all_done_title", lang))),
               p(tr("coding.no_more_cases", lang)),
               br(),
               actionButton(ns("back_to_select_btn"), tr("coding.btn_back_config", lang), class = "btn-primary")
@@ -408,7 +463,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
                      wellPanel(
                        div(class = "d-flex justify-content-between align-items-center mb-3",
                            h5(class = "mb-0 fw-bold", tr("coding.ratings_header", lang)),
-                           actionButton(ns("btn_beispiele"), paste0("💡 ", tr("coding.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
+                           actionButton(ns("btn_beispiele"), paste0("\U0001f4a1 ", tr("coding.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
                        ),
                        hr(),
                        sliderInput(ns("bewertung_slider"), tr("coding.slider_label", lang, kat_lbl, max_bewertung_wert()),
@@ -500,7 +555,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
                        disabled_reason,
                        icon = icon("ban"), class = "btn-secondary w-100 btn-lg", disabled = "disabled")
         },
-        actionButton(ns("btn_beispiele_config"), paste0("💡 ", tr("coding.btn_show_examples", lang)), class = "btn-outline-info w-100 mt-2")
+        actionButton(ns("btn_beispiele_config"), paste0("\U0001f4a1 ", tr("coding.btn_show_examples", lang)), class = "btn-outline-info w-100 mt-2")
       )
     })
 
@@ -622,7 +677,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         ""
       }
       showModal(modalDialog(
-        title = tags$div(tags$strong(paste0("💡 ", tr("examples.modal_title", lang))),
+        title = tags$div(tags$strong(paste0("\U0001f4a1 ", tr("examples.modal_title", lang))),
                          tags$br(),
                          tags$small(class = "text-muted", tr("examples.example_label", lang))),
         size = "l",
@@ -710,7 +765,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         tagList(
           div(class = "d-flex justify-content-between align-items-center mb-2",
               div(
-                tags$span(class = "badge bg-success p-2 me-2", paste0(tr("common.level_n", lang, st), " · ", n_verfuegbar)),
+                tags$span(class = "badge bg-success p-2 me-2", paste0(tr("common.level_n", lang, st), " \u00b7 ", n_verfuegbar)),
                 tags$span(class = paste(typ_class, "p-2"), typ_label)
               ),
               tags$span(class = "text-muted small", tr("common.case_number", lang, as.integer(bsp$text_id[1])))

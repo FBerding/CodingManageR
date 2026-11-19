@@ -1,16 +1,72 @@
 # Dependencies (shiny, DBI) are imported via NAMESPACE
 
 # ==============================================================================
-# MODUL-UI
+# MODULE UI
 # ==============================================================================
+
+#' Training Module UI
+#'
+#' Creates the Shiny UI container for the interactive coding training module.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#'
+#' @return A `shiny.tag` (`uiOutput`) rendering the training workspace.
+#'
+#' @examples
+#' if (interactive()) {
+#'   ui <- shiny::fluidPage(schulungUI("mod_training"))
+#' }
+#'
+#' @export
 schulungUI <- function(id) {
   ns <- NS(id)
   uiOutput(ns("schulungs_bereich"))
 }
 
 # ==============================================================================
-# MODUL-SERVER
+# MODULE SERVER
 # ==============================================================================
+
+#' Training Module Server
+#'
+#' Implements the server-side workflow for gold-standard coding training
+#' sessions, including stratified case pool generation, sequential rating
+#' collection, reliability metric computation via
+#' `berechne_aifeducation_metriken()`, session persistence, CSV export, and
+#' reference example inspection.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param db_con Active `DBIConnection` or `pool::Pool` database handle.
+#' @param user_id_reactive Optional reactive expression returning the active
+#'   user's integer ID.
+#' @param username_reactive Reactive expression returning the active username.
+#' @param kategorie_spalten Reactive expression returning a character vector of
+#'   configured scale identifiers or column names.
+#' @param kategorien_liste Reactive expression returning a named character
+#'   vector of available coding scales (`scale_id` values with display names).
+#' @param trigger_parent A `reactiveVal` incremented when a training session
+#'   completes so dependent modules refresh automatically.
+#' @param scales_trigger Optional `reactiveVal` triggered when scale definitions
+#'   change in the admin panel.
+#' @param current_lang Reactive expression or character scalar providing the
+#'   active UI language code (`"de"` or `"en"`).
+#'
+#' @return The return value of `shiny::moduleServer()`.
+#'
+#' @examples
+#' \dontrun{
+#' schulungServer(
+#'   id = "mod_training",
+#'   db_con = db_con,
+#'   user_id_reactive = reactive(1L),
+#'   username_reactive = reactive("admin"),
+#'   kategorie_spalten = reactive(character(0)),
+#'   kategorien_liste = reactive(c("Scale 1" = "1")),
+#'   trigger_parent = reactiveVal(0L)
+#' )
+#' }
+#'
+#' @export
 schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactive, kategorie_spalten, kategorien_liste, trigger_parent, scales_trigger = NULL, current_lang = reactiveVal("de")) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -19,7 +75,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       if (is.reactive(current_lang) || is.function(current_lang)) current_lang() else as.character(current_lang)
     }
 
-    # Reaktive Hilfsfunktionen für Skalen und Kategorien (rein reaktiv)
+    # Reactive helpers for scales and categories (purely reactive)
     get_kategorie_spalten <- reactive({
       if (!is.null(scales_trigger) && is.function(scales_trigger)) scales_trigger()
       kategorie_spalten()
@@ -30,7 +86,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       kategorien_liste()
     })
 
-    # Dynamische Aktualisierung der Kategorieauswahl bei Änderungen an scale_definitions
+    # Dynamically update category selection when scale_definitions changes
     observe({
       choices <- get_kategorien_liste()
       current_sel <- isolate(input$gewaehlte_kategorie)
@@ -64,7 +120,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       get_db_random_function(db_con)
     }
 
-    # Skalen-Metadaten bei Kategorie-Änderung synchronisieren
+    # Synchronize scale metadata when the selected category changes
     observeEvent(input$gewaehlte_kategorie, {
       req(input$gewaehlte_kategorie)
       meta_res <- tryCatch({
@@ -99,7 +155,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
                    uiOutput(ns("dynamischer_einheiten_input")),
                    br(),
                    actionButton(ns("start_schulung_btn"), tr("training.btn_start", lang), class = "btn-success w-100"),
-                   actionButton(ns("btn_beispiele_config"), paste0("💡 ", tr("training.btn_show_examples", lang)), class = "btn-outline-info w-100 mt-2")
+                   actionButton(ns("btn_beispiele_config"), paste0("\U0001f4a1 ", tr("training.btn_show_examples", lang)), class = "btn-outline-info w-100 mt-2")
                  )
           )
         )
@@ -151,7 +207,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
                      wellPanel(
                        div(class = "d-flex justify-content-between align-items-center mb-3",
                            h5(class = "mb-0 fw-bold", tr("training.your_rating", lang)),
-                           actionButton(ns("btn_beispiele"), paste0("💡 ", tr("training.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
+                           actionButton(ns("btn_beispiele"), paste0("\U0001f4a1 ", tr("training.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
                        ),
                        hr(),
                        sliderInput(ns("bewertung_slider"), tr("training.slider_label", lang, max_bewertung_wert()),
@@ -186,14 +242,14 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
 
         fluidPage(
           div(class = "alert alert-success text-center",
-              h2(paste0("🎉 ", tr("training.completed_title", lang))),
+              h2(paste0("\U0001f389 ", tr("training.completed_title", lang))),
               p(tr("training.completed_subtitle", lang, kat_lbl, as.integer(ziel_einheiten())))
           ),
           uiOutput(ns("external_metrics_panel")),
           br(),
           wellPanel(
             div(class = "d-flex justify-content-between align-items-center mb-2",
-                h4(class = "mb-0", paste0("📊 ", tr("training.comparison_table_title", lang)))
+                h4(class = "mb-0", paste0("\U0001f4ca ", tr("training.comparison_table_title", lang)))
             ),
             br(),
             tableOutput(ns("session_summary_table")), br(),
@@ -264,7 +320,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
 
       wellPanel(
         style = "background-color: #f8f9fa; border-left: 5px solid #2c3e50;",
-        h4(paste0("📈 ", tr("training.summary_all_metrics_title", lang))), hr(),
+        h4(paste0("\U0001f4c8 ", tr("training.summary_all_metrics_title", lang))), hr(),
         fluidRow(
           column(width = 4,
                  h6(tags$strong(tr("metrics.group_classification", lang))),
@@ -466,7 +522,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       df
     })
 
-    # Download-Handler für die Ergebnistabelle der Schulung (CSV mit Semikolon & Text)
+    # Download handler for the training results table (semicolon-delimited CSV with text)
     output$download_session_csv <- downloadHandler(
       filename = function() {
         lang <- get_lang()
@@ -517,7 +573,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
     )
 
     # --------------------------------------------------------------------------
-    # BEISPIEL-MODAL LOGIK (typ = 'kodierung' oder 'gold_standard' über alle Nutzer)
+    # EXAMPLE MODAL LOGIC (typ = 'kodierung' or 'gold_standard' across all users)
     # --------------------------------------------------------------------------
     beispiel_offset <- reactiveVal(0)
 
@@ -532,7 +588,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         ""
       }
       showModal(modalDialog(
-        title = tags$div(tags$strong(paste0("💡 ", tr("examples.modal_title", lang))),
+        title = tags$div(tags$strong(paste0("\U0001f4a1 ", tr("examples.modal_title", lang))),
                          tags$br(),
                          tags$small(class = "text-muted", tr("examples.example_label", lang))),
         size = "l",
@@ -617,7 +673,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         tagList(
           div(class = "d-flex justify-content-between align-items-center mb-2",
               div(
-                tags$span(class = "badge bg-success p-2 me-2", paste0(tr("common.level_n", lang, st), " · ", n_verfuegbar)),
+                tags$span(class = "badge bg-success p-2 me-2", paste0(tr("common.level_n", lang, st), " \u00b7 ", n_verfuegbar)),
                 tags$span(class = paste(typ_class, "p-2"), typ_label)
               ),
               tags$span(class = "text-muted small", tr("common.case_number", lang, as.integer(bsp$text_id[1])))

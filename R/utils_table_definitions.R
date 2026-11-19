@@ -1,39 +1,64 @@
 # ==============================================================================
-# TABELLEN-DEFINITIONEN & SCHEMA-VERWALTUNG (utils_table_definitions.R)
+# TABLE DEFINITIONS AND SCHEMA MANAGEMENT (utils_table_definitions.R)
 # ==============================================================================
-# Dieses Skript kapselt alle DDL-Anweisungen (CREATE TABLE) für das Kodierer-Portal.
-# Unterstützt sowohl MySQL / MariaDB als auch SQLite.
+# Encapsulates all DDL statements (CREATE TABLE) for CodingManageR.
+# Supports both MySQL/MariaDB and SQLite backends.
 #
-# Enthaltene Tabellen:
-#  1. user_tokens                   - Benutzer, Tokens, Rollen & Aktiv-Status (is_active)
-#  2. sources                       - Wissenschaftliche Quellen & Lizenzen mit ID
-#  3. texts                         - Falltexte mit Fremdschlüssel auf sources(source_id)
-#  4. user_ratings                  - Echte Bewertungen & Goldstandards mit source_id
-#  5. coding_training               - Reliabilitäts-Logs (Kappa, Alpha, Gwet AC1 etc.)
-#  6. scale_definitions             - Kodierskalen und Grenzwerte
-#  7. user_source_permissions       - Autorisierungsmatrix (Nutzer -> Text-Quellen der Falltexte)
-#  8. user_coding_source_permissions- Autorisierungsmatrix (Nutzer -> wissenschaftliche Kodierungsquellen)
+# Included tables:
+#  1. user_tokens                    - Users, access tokens, roles, and active flag (is_active)
+#  2. sources                        - Scientific sources and licenses with IDs
+#  3. texts                          - Case texts with foreign key to sources(source_id)
+#  4. user_ratings                   - Field ratings, training ratings, and gold standards
+#  5. coding_training                - Training session logs and 16 reliability metrics
+#  6. scale_definitions              - Coding scale catalog and ordinal definitions
+#  7. user_source_permissions        - Authorization matrix (user -> case text sources)
+#  8. user_coding_source_permissions - Authorization matrix (user -> scientific coding sources)
+#  9. user_scale_permissions         - Authorization matrix (user -> coding scales)
 # ==============================================================================
 
 # DBI is imported via NAMESPACE
 
-#' Prüft, ob ein Verbindungsobjekt zu MySQL / MariaDB gehört
+#' Check Whether a Connection Uses MySQL or MariaDB
+#'
+#' Tests whether a direct `DBIConnection` inherits from `MariaDBConnection` or
+#' `MySQLConnection`.
+#'
+#' @param con A `DBIConnection` object or `NULL`.
+#'
+#' @return A logical scalar: `TRUE` for MySQL/MariaDB connections, `FALSE`
+#'   otherwise.
+#' @examples
+#' is_mysql(NULL)
+#' @export
 is_mysql <- function(con) {
   if (is.null(con)) return(FALSE)
   inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
 }
 
-#' Erstellt alle benötigten Tabellen in der angegebenen Datenbank
+#' Create All CodingManageR Database Tables
 #'
-#' @param con DBIConnection Objekt
-#' @param verbose Boolean: Statusmeldungen ausgeben (Standard: TRUE)
-#' @return TRUE bei Erfolg
+#' Initializes the complete 9-table relational schema (users, permissions,
+#' sources, texts, scales, ratings, and training logs) in the target SQLite or
+#' MySQL/MariaDB database using `CREATE TABLE IF NOT EXISTS`.
+#'
+#' @param con A `DBIConnection` or `pool::dbPool` object.
+#' @param verbose Logical; if `TRUE` (default), prints status messages during
+#'   schema creation.
+#'
+#' @return Logical `TRUE` upon successful table initialization.
+#' @examples
+#' \dontrun{
+#' con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+#' create_all_tables(con, verbose = FALSE)
+#' DBI::dbDisconnect(con)
+#' }
+#' @export
 create_all_tables <- function(con, verbose = TRUE) {
-  if (is.null(con)) stop("Ungültige Datenbankverbindung übergeben.")
+  if (is.null(con)) stop("Invalid database connection supplied (NULL).")
 
   mysql_mode <- is_mysql(con)
 
-  # Datentyp-Aliase je nach Backend
+  # Backend-specific SQL data type aliases
   pk_auto  <- if (mysql_mode) "INT AUTO_INCREMENT PRIMARY KEY" else "INTEGER PRIMARY KEY AUTOINCREMENT"
   t_stamp  <- if (mysql_mode) "DATETIME DEFAULT CURRENT_TIMESTAMP" else "TEXT DEFAULT CURRENT_TIMESTAMP"
   t_date   <- if (mysql_mode) "DATE DEFAULT (CURRENT_DATE)" else "TEXT DEFAULT CURRENT_DATE"
@@ -41,11 +66,11 @@ create_all_tables <- function(con, verbose = TRUE) {
   tbl_opts <- if (mysql_mode) " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" else ""
 
   if (verbose) {
-    message("Erstelle Tabellen für Backend: ", if (mysql_mode) "MySQL/MariaDB" else "SQLite", "...")
+    message("Creating tables for backend: ", if (mysql_mode) "MySQL/MariaDB" else "SQLite", "...")
   }
 
   # ----------------------------------------------------------------------------
-  # 1. TABELLE: user_tokens (Authentifizierung & Kontenstatus)
+  # 1. TABLE: user_tokens (authentication and account status)
   # ----------------------------------------------------------------------------
   sql_user_tokens <- paste0("
     CREATE TABLE IF NOT EXISTS user_tokens (
@@ -60,7 +85,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_user_tokens)
 
   # ----------------------------------------------------------------------------
-  # 2. TABELLE: sources (Wissenschaftliche Quellen & Lizenzen)
+  # 2. TABLE: sources (scientific sources and licenses)
   # ----------------------------------------------------------------------------
   sql_sources <- paste0("
     CREATE TABLE IF NOT EXISTS sources (
@@ -74,7 +99,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_sources)
 
   # ----------------------------------------------------------------------------
-  # 3. TABELLE: texts (Falltexte mit Fremdschlüssel auf sources)
+  # 3. TABLE: texts (case texts with foreign key to sources)
   # ----------------------------------------------------------------------------
   sql_texts <- paste0("
     CREATE TABLE IF NOT EXISTS texts (
@@ -87,7 +112,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_texts)
 
   # ----------------------------------------------------------------------------
-  # 4. TABELLE: user_ratings (Erfasste Kodierungen & Goldstandards)
+  # 4. TABLE: user_ratings (recorded codings and gold standards)
   # ----------------------------------------------------------------------------
   sql_user_ratings <- paste0("
     CREATE TABLE IF NOT EXISTS user_ratings (
@@ -106,7 +131,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_user_ratings)
 
   # ----------------------------------------------------------------------------
-  # 5. TABELLE: coding_training (Schulungs-Logs mit Reliabilitätskennzahlen)
+  # 5. TABLE: coding_training (training logs with reliability metrics)
   # ----------------------------------------------------------------------------
   sql_coding_training <- paste0("
     CREATE TABLE IF NOT EXISTS coding_training (
@@ -137,7 +162,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_coding_training)
 
   # ----------------------------------------------------------------------------
-  # 6. TABELLE: scale_definitions (Skalenkatalog)
+  # 6. TABLE: scale_definitions (coding scale catalog)
   # ----------------------------------------------------------------------------
   sql_scale_definitions <- paste0("
     CREATE TABLE IF NOT EXISTS scale_definitions (
@@ -157,7 +182,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_scale_definitions)
 
   # ----------------------------------------------------------------------------
-  # 7. TABELLE: user_source_permissions (Text-Quellen-Autorisierung pro Nutzer)
+  # 7. TABLE: user_source_permissions (per-user text source authorization)
   # ----------------------------------------------------------------------------
   sql_user_source_permissions <- paste0("
     CREATE TABLE IF NOT EXISTS user_source_permissions (
@@ -171,7 +196,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_user_source_permissions)
 
   # ----------------------------------------------------------------------------
-  # 8. TABELLE: user_coding_source_permissions (Kodierungs-Quellen pro Nutzer)
+  # 8. TABLE: user_coding_source_permissions (per-user coding source access)
   # ----------------------------------------------------------------------------
   sql_user_coding_source_permissions <- paste0("
     CREATE TABLE IF NOT EXISTS user_coding_source_permissions (
@@ -185,7 +210,7 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_user_coding_source_permissions)
 
   # ----------------------------------------------------------------------------
-  # 9. TABELLE: user_scale_permissions (Skalen-Autorisierung pro Nutzer)
+  # 9. TABLE: user_scale_permissions (per-user scale authorization)
   # ----------------------------------------------------------------------------
   sql_user_scale_permissions <- paste0("
     CREATE TABLE IF NOT EXISTS user_scale_permissions (
@@ -199,20 +224,39 @@ create_all_tables <- function(con, verbose = TRUE) {
   dbExecute(con, sql_user_scale_permissions)
 
   if (verbose) {
-    message("Tabellen erfolgreich initialisiert.")
+    message("Tables initialized successfully.")
   }
 
   return(TRUE)
 }
 
-#' Befüllt die Tabellen mit initialen Standarddaten (Benutzer, Quellen, Texte, Goldstandards etc.)
-#' und gibt einen differenzierten Statusbericht über erstellte und befüllte Tabellen aus.
-#' @param con DBIConnection Objekt
-#' @param empty Boolean: Wenn TRUE, wird nur das minimale Admin-Konto erstellt
+#' Seed Initial Accounts or Demonstration Data into the Database
+#'
+#' Populates a CodingManageR database either with minimal default accounts
+#' (`empty = TRUE`) or with a complete demonstration dataset (`empty = FALSE`)
+#' including users, coding scales, scientific sources, case texts, permissions,
+#' gold-standard ratings, and training history. Prints a structured tabular
+#' summary report via `message()`.
+#'
+#' @param con A `DBIConnection` or `pool::dbPool` object.
+#' @param empty Logical; if `TRUE` (default), seeds only the default `admin` and
+#'   inactive `historic_user` accounts. If `FALSE`, seeds the full demonstration
+#'   dataset.
+#'
+#' @return Invisibly returns a named list summarizing row counts, schema
+#'   creation status, and checksums for all 9 tables.
+#' @examples
+#' \dontrun{
+#' con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+#' create_all_tables(con, verbose = FALSE)
+#' seed_initial_data(con, empty = TRUE)
+#' DBI::dbDisconnect(con)
+#' }
+#' @export
 seed_initial_data <- function(con, empty = TRUE) {
-  if (is.null(con)) stop("Ungültige Datenbankverbindung übergeben.")
+  if (is.null(con)) stop("Invalid database connection supplied (NULL).")
 
-  # Alle 9 relationalen Tabellen der Anwendung in der definierten Abhängigkeitsreihenfolge
+  # All 9 relational tables in dependency order
   all_tables <- c(
     "user_tokens",
     "scale_definitions",
@@ -225,7 +269,7 @@ seed_initial_data <- function(con, empty = TRUE) {
     "coding_training"
   )
 
-  # 0. Vorab-Prüfung: Welche Tabellen existieren bereits, welche müssen erstellt werden?
+  # 0. Pre-check: determine which tables already exist and create any missing ones
   existing_tables_before <- dbListTables(con)
   missing_tables <- setdiff(all_tables, existing_tables_before)
   created_tables <- character(0)
@@ -234,7 +278,7 @@ seed_initial_data <- function(con, empty = TRUE) {
     created_tables <- missing_tables
   }
 
-  # Tracking-Liste zur strukturierten Erfassung aller Tabellenaktivitäten
+  # Tracking list for structured reporting across all tables
   report <- list()
   for (tbl in all_tables) {
     report[[tbl]] <- list(
@@ -248,19 +292,19 @@ seed_initial_data <- function(con, empty = TRUE) {
     )
   }
 
-  # Helper für konsistente Prüfsummenbildung (Datensatzzahl + Primärschlüssel-Summe)
+  # Helper for lightweight table checksum reporting (row count + column count)
   calc_checksum <- function(tbl_name) {
     tryCatch({
       df <- dbGetQuery(con, sprintf("SELECT * FROM %s LIMIT 500", tbl_name))
-      if (nrow(df) == 0) return("LEER (0 Zeilen)")
+      if (nrow(df) == 0) return("EMPTY (0 rows)")
       row_c <- nrow(df)
       col_c <- ncol(df)
       sprintf("OK: %d x %d [CHK-%d]", row_c, col_c, (row_c * 31 + col_c * 17) %% 997)
-    }, error = function(e) "OK (validiert)")
+    }, error = function(e) "OK (validated)")
   }
 
   # ----------------------------------------------------------------------------
-  # 1. user_tokens (Authentifizierung & Konten - 7 Benutzerkonten)
+  # 1. user_tokens (authentication and accounts - 8 demo accounts)
   # ----------------------------------------------------------------------------
   tbl <- "user_tokens"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_tokens")[1, 1])
@@ -294,17 +338,17 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Konten eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d accounts inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty && n_a > 1) {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (%d Konten vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (%d accounts present)", n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Initiale Konten (empty = TRUE: 1 Admin, 1 inaktiver 'historic_user', Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Initial accounts (empty = TRUE: 1 admin, 1 inactive 'historic_user', total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Konten vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d accounts present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 2. scale_definitions (Skalenkatalog - 3 Kodierskalen K1, K2, K3)
+  # 2. scale_definitions (coding scale catalog - 3 scales K1, K2, K3)
   # ----------------------------------------------------------------------------
   tbl <- "scale_definitions"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM scale_definitions")[1, 1])
@@ -320,10 +364,10 @@ seed_initial_data <- function(con, empty = TRUE) {
           max = 4,
           desc = "Grad des empathischen Eingehens auf die emotionale Verfassung des Patienten.",
           def_0 = "Keine emotionale Resonanz erkennbar.",
-          def_1 = "Minimale Bestätigung ohne vertiefende Anteilnahme.",
+          def_1 = "Minimale Best\u00e4tigung ohne vertiefende Anteilnahme.",
           def_2 = "Erkennung von Emotionen, jedoch funktionale oder distanzierte Reaktion.",
           def_3 = "Explizite Validierung von Sorgen und emotionale Entlastung.",
-          def_4 = "Hervorragende Empathie, tiefes Eingehen auf emotionale Zwischentöne und proaktive Entlastung.",
+          def_4 = "Hervorragende Empathie, tiefes Eingehen auf emotionale Zwischent\u00f6ne und proaktive Entlastung.",
           def_5 = NA_character_
         ),
         list(
@@ -331,11 +375,11 @@ seed_initial_data <- function(con, empty = TRUE) {
           name = "K2_Struktur",
           short = "Struktur",
           max = 3,
-          desc = "Klarheit des Aufbaus, rote Faden und Strukturierung des Arzt-Patienten-Gesprächs.",
+          desc = "Klarheit des Aufbaus, rote Faden und Strukturierung des Arzt-Patienten-Gespr\u00e4chs.",
           def_0 = "Unstrukturiert, sprunghaft ohne erkennbaren roten Faden.",
-          def_1 = "Ansätze von Struktur erkennbar, jedoch häufige Unterbrechungen des Gesprächsflusses.",
-          def_2 = "Geordneter Ablauf der Anamnesephasen mit klarer Orientierung für den Patienten.",
-          def_3 = "Vorbildliche Gesprächsführung mit expliziter Phasentransparenz und Zusammenfassungen.",
+          def_1 = "Ans\u00e4tze von Struktur erkennbar, jedoch h\u00e4ufige Unterbrechungen des Gespr\u00e4chsflusses.",
+          def_2 = "Geordneter Ablauf der Anamnesephasen mit klarer Orientierung f\u00fcr den Patienten.",
+          def_3 = "Vorbildliche Gespr\u00e4chsf\u00fchrung mit expliziter Phasentransparenz und Zusammenfassungen.",
           def_4 = NA_character_,
           def_5 = NA_character_
         ),
@@ -344,13 +388,13 @@ seed_initial_data <- function(con, empty = TRUE) {
           name = "K3_Fachkompetenz",
           short = "Fachkompetenz",
           max = 5,
-          desc = "Präzision der medizinischen Einordnung, zielgerichtete Exploration und diagnostische Stringenz.",
+          desc = "Pr\u00e4zision der medizinischen Einordnung, zielgerichtete Exploration und diagnostische Stringenz.",
           def_0 = "Keine nachvollziehbare medizinische Exploration erkennbar.",
-          def_1 = "Unvollständige oder lückenhafte anamnestische Erhebung wesentlicher Leitsymptome.",
+          def_1 = "Unvollst\u00e4ndige oder l\u00fcckenhafte anamnestische Erhebung wesentlicher Leitsymptome.",
           def_2 = "Solide Basiserhebung typischer Leitsymptome ohne differenzierte Tiefenexploration.",
-          def_3 = "Strukturierte Differenzialdiagnostik und präzise Erfassung relevanter Begleitsymptome.",
+          def_3 = "Strukturierte Differenzialdiagnostik und pr\u00e4zise Erfassung relevanter Begleitsymptome.",
           def_4 = "Umfassende und differenzierte Exploration inklusive relevanter Red Flags und Risikofaktoren.",
-          def_5 = "Exzellente differentialdiagnostische Abwägung mit feinsinniger Priorisierung und Stringenz."
+          def_5 = "Exzellente differentialdiagnostische Abw\u00e4gung mit feinsinniger Priorisierung und Stringenz."
         )
       )
 
@@ -367,15 +411,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Skalen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d scales inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Skalen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d scales present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 3. sources (Quellen & Referenzkorpora - Alle 4 wissenschaftlichen Quellen)
+  # 3. sources (scientific sources and reference corpora - 4 sources)
   # ----------------------------------------------------------------------------
   tbl <- "sources"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM sources")[1, 1])
@@ -387,21 +431,21 @@ seed_initial_data <- function(con, empty = TRUE) {
         list(
           id = 1,
           kurz = "Mueller2024",
-          ref = "Müller, T., Becker, S. & Hoffmann, K. (2024). Validierung klinischer Sprachdaten und strukturierte Anamneseführung. Springer Medizin Verlag. https://doi.org/10.1007/s00103-024-03810-1",
+          ref = "M\u00fcller, T., Becker, S. & Hoffmann, K. (2024). Validierung klinischer Sprachdaten und strukturierte Anamnesef\u00fchrung. Springer Medizin Verlag. https://doi.org/10.1007/s00103-024-03810-1",
           lizenz = "CC-BY 4.0",
           erfasst = "2026-10-15 09:30:00"
         ),
         list(
           id = 2,
           kurz = "ICD-10-GM-2025",
-          ref = "BfArM - Bundesinstitut für Arzneimittel und Medizinprodukte (2025). Internationale statistische Klassifikation der Krankheiten und verwandter Gesundheitsprobleme, 10. Revision, German Modification.",
+          ref = "BfArM - Bundesinstitut f\u00fcr Arzneimittel und Medizinprodukte (2025). Internationale statistische Klassifikation der Krankheiten und verwandter Gesundheitsprobleme, 10. Revision, German Modification.",
           lizenz = "ODC-By",
           erfasst = "2026-10-16 11:20:00"
         ),
         list(
           id = 3,
           kurz = "KlinikKorpus_Intern",
-          ref = "Universitätsklinikum Verbund (2025). Anonymisierte Anamnesetexte aus der inneren Medizin zur Schulung von Kodierfachkräften.",
+          ref = "Universit\u00e4tsklinikum Verbund (2025). Anonymisierte Anamnesetexte aus der inneren Medizin zur Schulung von Kodierfachkr\u00e4ften.",
           lizenz = "Instituts-Intern",
           erfasst = "2026-10-18 14:15:00"
         ),
@@ -427,15 +471,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Quellen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d sources inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Quellen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d sources present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 4. user_source_permissions (Quellen-Autorisierung pro Nutzer)
+  # 4. user_source_permissions (per-user text source authorization)
   # ----------------------------------------------------------------------------
   tbl <- "user_source_permissions"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_source_permissions")[1, 1])
@@ -449,7 +493,7 @@ seed_initial_data <- function(con, empty = TRUE) {
       uid_markus <- u_ids$user_id[u_ids$username == "markus_meier"]
       if (length(uid_markus) == 0 || is.na(uid_markus)) uid_markus <- 4
 
-      # user1 -> Quellen 1 und 2; markus_meier -> Quellen 1 und 3
+      # user1 -> sources 1 and 2; markus_meier -> sources 1 and 3
       dbExecute(con, "
         INSERT INTO user_source_permissions (user_id, source_id) VALUES
         (?, 1),
@@ -464,15 +508,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Berechtigungen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Berechtigungen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d permissions present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 5. user_coding_source_permissions (Kodierungs-Quellenzugriff)
+  # 5. user_coding_source_permissions (per-user coding source access)
   # ----------------------------------------------------------------------------
   tbl <- "user_coding_source_permissions"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_coding_source_permissions")[1, 1])
@@ -486,7 +530,7 @@ seed_initial_data <- function(con, empty = TRUE) {
       uid_markus <- u_ids$user_id[u_ids$username == "markus_meier"]
       if (length(uid_markus) == 0 || is.na(uid_markus)) uid_markus <- 4
 
-      # user1 -> Quellen 1 und 2; markus_meier -> Quellen 1 und 3
+      # user1 -> sources 1 and 2; markus_meier -> sources 1 and 3
       dbExecute(con, "
         INSERT INTO user_coding_source_permissions (user_id, source_id) VALUES
         (?, 1),
@@ -501,15 +545,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Kodier-Berechtigungen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d coding permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Berechtigungen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d permissions present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 6. user_scale_permissions (Skalen-Autorisierung pro Nutzer)
+  # 6. user_scale_permissions (per-user scale authorization)
   # ----------------------------------------------------------------------------
   tbl <- "user_scale_permissions"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_scale_permissions")[1, 1])
@@ -523,8 +567,8 @@ seed_initial_data <- function(con, empty = TRUE) {
       uid_eva <- u_ids$user_id[u_ids$username == "eva_lindner"]
       if (length(uid_eva) == 0 || is.na(uid_eva)) uid_eva <- 3
 
-      # user1 darf Skala 1 (Empathie) und Skala 2 (Struktur) kodieren
-      # eva_lindner darf Skala 1 (Empathie) kodieren
+      # user1 is permitted to code scale 1 (Empathy) and scale 2 (Structure)
+      # eva_lindner is permitted to code scale 1 (Empathy)
       dbExecute(con, "
         INSERT INTO user_scale_permissions (user_id, scale_id) VALUES
         (?, 1),
@@ -538,15 +582,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Skalen-Berechtigungen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d scale permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Berechtigungen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d permissions present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 7. texts (Falltexte & Stufenbeispiele - 26 strukturierte Fälle)
+  # 7. texts (case texts and level anchor examples - 34 structured cases)
   # ----------------------------------------------------------------------------
   tbl <- "texts"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM texts")[1, 1])
@@ -556,66 +600,66 @@ seed_initial_data <- function(con, empty = TRUE) {
     if (n_b == 0) {
       fallback_texts <- data.frame(
         text_id = c(
-          # Grundlegende Basisfälle (101 - 104)
+          # Baseline cases (101 - 104)
           101, 102, 103, 104,
-          # K1_Empathie: Stufen 0 bis 4 (jeweils 2 Fälle = IDs 201 bis 210)
+          # K1_Empathie: levels 0 to 4 (2 cases each = IDs 201 to 210)
           201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
-          # K2_Struktur: Stufen 0 bis 3 (jeweils 2 Fälle = IDs 211 bis 218)
+          # K2_Struktur: levels 0 to 3 (2 cases each = IDs 211 to 218)
           211, 212, 213, 214, 215, 216, 217, 218,
-          # K3_Fachkompetenz: Stufen 0 bis 5 (jeweils 2 Fälle = IDs 219 bis 230)
+          # K3_Fachkompetenz: levels 0 to 5 (2 cases each = IDs 219 to 230)
           219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230
         ),
         text = c(
-          # 101-104: Basistexte
-          "Pat. 54 J., berichtet über seit 3 Monaten progrediente morgendliche Gelenksteife (>60 Min) beider MCP- und PIP-Gelenke. Im Gespräch zeigt sich deutliche Verunsicherung bezüglich der Arbeitsfähigkeit. Arzt geht behutsam auf Sorgen ein, erklärt die Verdachtsdiagnose Rheumatoide Arthritis und vereinbart zeitnahes Labor inklusive CCP-Ak.",
-          "Pat. 29 J., klagt über akute Cephalgie seit gestern Abend. Begleitend Photophobie und Nausea, kein Fieber, kein Meningismus. Typische Migräneanamnese in der Familie. Strukturierte Erfassung von Schmerzcharakter und Triggern sowie Vereinbarung eines Akutmedikationsplans.",
-          "Pat. 68 J., Z.n. Myokardinfarkt vor 4 Jahren, stellt sich zur Routinekontrolle vor. Berichtet über gelegentlichen Schwindel bei schnellem Aufstehen. RR 110/70 mmHg, Puls 64/min rhythmisch. Arzt bespricht Dosisanpassung des Antihypertensivums und beruhigt den Patienten.",
-          "Pat. 42 J., rezidivierende epigastrische Schmerzen, verstärkt nach Mahlzeiten. Keine B-Symptomatik. Arzt erläutert Befundkonstellation verständlich, initiiert PPI-Therapieversuch und plant Abdomensonographie.",
+          # 101-104: Baseline texts
+          "Pat. 54 J., berichtet \u00fcber seit 3 Monaten progrediente morgendliche Gelenksteife (>60 Min) beider MCP- und PIP-Gelenke. Im Gespr\u00e4ch zeigt sich deutliche Verunsicherung bez\u00fcglich der Arbeitsf\u00e4higkeit. Arzt geht behutsam auf Sorgen ein, erkl\u00e4rt die Verdachtsdiagnose Rheumatoide Arthritis und vereinbart zeitnahes Labor inklusive CCP-Ak.",
+          "Pat. 29 J., klagt \u00fcber akute Cephalgie seit gestern Abend. Begleitend Photophobie und Nausea, kein Fieber, kein Meningismus. Typische Migr\u00e4neanamnese in der Familie. Strukturierte Erfassung von Schmerzcharakter und Triggern sowie Vereinbarung eines Akutmedikationsplans.",
+          "Pat. 68 J., Z.n. Myokardinfarkt vor 4 Jahren, stellt sich zur Routinekontrolle vor. Berichtet \u00fcber gelegentlichen Schwindel bei schnellem Aufstehen. RR 110/70 mmHg, Puls 64/min rhythmisch. Arzt bespricht Dosisanpassung des Antihypertensivums und beruhigt den Patienten.",
+          "Pat. 42 J., rezidivierende epigastrische Schmerzen, verst\u00e4rkt nach Mahlzeiten. Keine B-Symptomatik. Arzt erl\u00e4utert Befundkonstellation verst\u00e4ndlich, initiiert PPI-Therapieversuch und plant Abdomensonographie.",
 
-          # 201-210: K1_Empathie (Stufen 0 bis 4)
-          "Stufe 0 Fall A: Arzt tippt ununterbrochen in den Monitor und unterbricht den weinenden Patienten brüsk: 'Bitte nur präzise auf meine Fragen antworten, wir haben wenig Zeit.'",
-          "Stufe 0 Fall B: Patient äußert Panik vor der anstehenden Koloskopie. Arzt kommentiert kurz: 'Das ist Routine, stellen Sie sich nicht so an' und wechselt direkt zum Aufklärungsbogen.",
-          "Stufe 1 Fall A: Patient erwähnt besorgt den kürzlichen Schlaganfall des Bruders. Arzt nickt kurz stumm, geht jedoch nicht weiter darauf ein und misst wortlos den Blutdruck.",
-          "Stufe 1 Fall B: Patientin zeigt sich niedergeschlagen wegen chronischer Rückenschmerzen. Arzt: 'Ja, Schmerzen sind unangenehm' und tippt sofort die Verordnung für Physiotherapie ein.",
-          "Stufe 2 Fall A: Patient sorgt sich um die Nebenwirkungen des neuen Medikaments. Arzt registriert die Sorge: 'Ich verstehe das, aber die Statistik zeigt geringe Risiken' und händigt sachlich die Packungsbeilage aus.",
-          "Stufe 2 Fall B: Patientin schildert Belastung durch Pflege der Mutter. Arzt: 'Das ist eine schwierige Situation', verweist aber unverzüglich und sachlich auf den Sozialdienst.",
-          "Stufe 3 Fall A: Patient schildert starke Angst vor der Narkose. Arzt legt Stift beiseite, wendet sich ganz dem Patienten zu: 'Ich kann gut nachvollziehen, dass Ihnen das Angst macht. Lassen Sie uns Schritt für Schritt durchsprechen, wie die Anästhesie Sie überwacht.'",
-          "Stufe 3 Fall B: Patientin sorgt sich um den Erhalt des Arbeitsplatzes bei Bandscheibenvorfall. Arzt validiert: 'Es ist völlig verständlich, dass diese Unsicherheit sehr belastend ist. Wir erarbeiten gemeinsam einen Stufenplan zur Wiedereingliederung.'",
-          "Stufe 4 Fall A: Patientin stockt, Augen füllen sich mit Tränen beim Thema familiäre Belastung. Arzt nimmt behutsam das nonverbale Signal auf: 'Ich sehe, wie schwer Ihnen das fällt. Nehmen Sie sich alle Zeit. Wir sind hier in einem geschützten Raum.'",
-          "Stufe 4 Fall B: Hochgradig verunsicherter Patient nach Malignom-Verdacht. Arzt erfasst feinste Nuancen der Verzweiflung, bietet emotionalen Halt, fasst Gefühle empathisch in Worte und stellt verbindliche Erreichbarkeit sicher.",
+          # 201-210: K1_Empathie (levels 0 to 4)
+          "Stufe 0 Fall A: Arzt tippt ununterbrochen in den Monitor und unterbricht den weinenden Patienten br\u00fcsk: 'Bitte nur pr\u00e4zise auf meine Fragen antworten, wir haben wenig Zeit.'",
+          "Stufe 0 Fall B: Patient \u00e4u\u00dfert Panik vor der anstehenden Koloskopie. Arzt kommentiert kurz: 'Das ist Routine, stellen Sie sich nicht so an' und wechselt direkt zum Aufkl\u00e4rungsbogen.",
+          "Stufe 1 Fall A: Patient erw\u00e4hnt besorgt den k\u00fcrzlichen Schlaganfall des Bruders. Arzt nickt kurz stumm, geht jedoch nicht weiter darauf ein und misst wortlos den Blutdruck.",
+          "Stufe 1 Fall B: Patientin zeigt sich niedergeschlagen wegen chronischer R\u00fcckenschmerzen. Arzt: 'Ja, Schmerzen sind unangenehm' und tippt sofort die Verordnung f\u00fcr Physiotherapie ein.",
+          "Stufe 2 Fall A: Patient sorgt sich um die Nebenwirkungen des neuen Medikaments. Arzt registriert die Sorge: 'Ich verstehe das, aber die Statistik zeigt geringe Risiken' und h\u00e4ndigt sachlich die Packungsbeilage aus.",
+          "Stufe 2 Fall B: Patientin schildert Belastung durch Pflege der Mutter. Arzt: 'Das ist eine schwierige Situation', verweist aber unverz\u00fcglich und sachlich auf den Sozialdienst.",
+          "Stufe 3 Fall A: Patient schildert starke Angst vor der Narkose. Arzt legt Stift beiseite, wendet sich ganz dem Patienten zu: 'Ich kann gut nachvollziehen, dass Ihnen das Angst macht. Lassen Sie uns Schritt f\u00fcr Schritt durchsprechen, wie die An\u00e4sthesie Sie \u00fcberwacht.'",
+          "Stufe 3 Fall B: Patientin sorgt sich um den Erhalt des Arbeitsplatzes bei Bandscheibenvorfall. Arzt validiert: 'Es ist v\u00f6llig verst\u00e4ndlich, dass diese Unsicherheit sehr belastend ist. Wir erarbeiten gemeinsam einen Stufenplan zur Wiedereingliederung.'",
+          "Stufe 4 Fall A: Patientin stockt, Augen f\u00fcllen sich mit Tr\u00e4nen beim Thema famili\u00e4re Belastung. Arzt nimmt behutsam das nonverbale Signal auf: 'Ich sehe, wie schwer Ihnen das f\u00e4llt. Nehmen Sie sich alle Zeit. Wir sind hier in einem gesch\u00fctzten Raum.'",
+          "Stufe 4 Fall B: Hochgradig verunsicherter Patient nach Malignom-Verdacht. Arzt erfasst feinste Nuancen der Verzweiflung, bietet emotionalen Halt, fasst Gef\u00fchle empathisch in Worte und stellt verbindliche Erreichbarkeit sicher.",
 
-          # 211-218: K2_Struktur (Stufen 0 bis 3)
-          "Stufe 0 Fall A: Gespräch verläuft chaotisch; Arzt springt von Familienanamnese zur Medikation, fragt nach Allergien, kehrt zur Kindheit zurück und vergisst die aktuellen Leitsymptome.",
-          "Stufe 0 Fall B: Keinerlei Gesprächsphasen erkennbar; Patient erzählt ungeführt 15 Minuten lang Anekdoten, Arzt unterbricht planlos und verliert völlig den Überblick.",
+          # 211-218: K2_Struktur (levels 0 to 3)
+          "Stufe 0 Fall A: Gespr\u00e4ch verl\u00e4uft chaotisch; Arzt springt von Familienanamnese zur Medikation, fragt nach Allergien, kehrt zur Kindheit zur\u00fcck und vergisst die aktuellen Leitsymptome.",
+          "Stufe 0 Fall B: Keinerlei Gespr\u00e4chsphasen erkennbar; Patient erz\u00e4hlt ungef\u00fchrt 15 Minuten lang Anekdoten, Arzt unterbricht planlos und verliert v\u00f6llig den \u00dcberblick.",
           "Stufe 1 Fall A: Grundlegende Anamneseschritte sind vorhanden, aber der Arzt springt unvermittelt zwischen offener Exploration und apparativer Diagnostik hin und her.",
-          "Stufe 1 Fall B: Roter Faden ansatzweise vorhanden, wird jedoch mehrfach durch sprunghafte Zwischenfragen zu Vorbefunden ohne Vorankündigung unterbrochen.",
-          "Stufe 2 Fall A: Klar gegliedertes Gespräch: Nach offener Schilderung folgt gezielte Systemanamnese, anschließend Erläuterung des weiteren diagnostischen Vorgehens.",
+          "Stufe 1 Fall B: Roter Faden ansatzweise vorhanden, wird jedoch mehrfach durch sprunghafte Zwischenfragen zu Vorbefunden ohne Vorank\u00fcndigung unterbrochen.",
+          "Stufe 2 Fall A: Klar gegliedertes Gespr\u00e4ch: Nach offener Schilderung folgt gezielte Systemanamnese, anschlie\u00dfend Erl\u00e4uterung des weiteren diagnostischen Vorgehens.",
           "Stufe 2 Fall B: Geordneter Ablauf der Anamnese: Einleitung, Schmerzerfassung, vegetative Anamnese und strukturierter Abschluss mit transparentem Zeitplan.",
-          "Stufe 3 Fall A: Exzellent moderiertes Gespräch mit Agenda-Setting zu Beginn: 'Heute besprechen wir zunächst Ihre Symptome, dann klären wir offene Fragen und vereinbaren die Diagnostik.' Transparente Überleitungen zwischen allen Phasen.",
-          "Stufe 3 Fall B: Mustergültige Strukturierung mit regelmäßigen Zwischenzusammenfassungen, Phasentransparenz und partizipativer Festlegung der nächsten Schritte ('Teach-Back').",
+          "Stufe 3 Fall A: Exzellent moderiertes Gespr\u00e4ch mit Agenda-Setting zu Beginn: 'Heute besprechen wir zun\u00e4chst Ihre Symptome, dann kl\u00e4ren wir offene Fragen und vereinbaren die Diagnostik.' Transparente \u00dcberleitungen zwischen allen Phasen.",
+          "Stufe 3 Fall B: Musterg\u00fcltige Strukturierung mit regelm\u00e4\u00dfigen Zwischenzusammenfassungen, Phasentransparenz und partizipativer Festlegung der n\u00e4chsten Schritte ('Teach-Back').",
 
-          # 219-230: K3_Fachkompetenz (Stufen 0 bis 5)
-          "Stufe 0 Fall A: Arzt fragt bei akutem Vernichtungsschmerz im Thorax lediglich nach Ernährungsgewohnheiten und schließt lebensbedrohliche Ursachen nicht aus.",
-          "Stufe 0 Fall B: Völlig inadäquate Begriffsverwendung, relevante Differenzialdiagnosen werden ignoriert, keine fachliche Einordnung der Beschwerden.",
-          "Stufe 1 Fall A: Bei Verdacht auf Appendizitis wird nur unvollständig palpiert; McBurney- und Lanz-Punkte werden verwechselt, Laboranforderung bleibt rudimentär.",
-          "Stufe 1 Fall B: Lückenhafte Exploration eines neu aufgetretenen Diabetes mellitus; Blutzuckerwerte werden erfragt, HbA1c, Ketoazidose-Zeichen und Folgeschäden jedoch ausgelassen.",
-          "Stufe 2 Fall A: Korrekte Erhebung der Standard-Leitsymptome bei unkomplizierter Zystitis, adäquate Urinstix-Indikation, jedoch keine Vertiefung zu atypischen Erregern.",
-          "Stufe 2 Fall B: Solide Erfassung der Symptomatik einer arteriellen Hypertonie inklusive Standardlabor, ohne jedoch sekundäre Ursachen differenzierter zu prüfen.",
-          "Stufe 3 Fall A: Strukturierte differenzialdiagnostische Abklärung einer Belastungsdyspnoe: Systematische Abgrenzung kardialer (z.B. Herzinsuffizienz) vs. pulmonaler Ursachen (z.B. COPD).",
-          "Stufe 3 Fall B: Präzise Erfassung von Begleitsymptomen bei Synkope: Orthostase, prodromale Aura, Miktionssynkope und kardiale Arrhythmien werden systematisch abgegrenzt.",
-          "Stufe 4 Fall A: Umfassende Exploration bei V.a. Polymyalgia rheumatica: Gezieltes Screening nach Red Flags wie Riesenzellarteriitis (Sehstörungen, Kauschmerz, Schläfenschmerz).",
-          "Stufe 4 Fall B: Hochgradig differenzierte Abklärung einer unklaren B-Symptomatik: Systematische Einordnung infektiöser, maligner und autoimmuner Ätiologien mit priorisierter Stufendiagnostik.",
-          "Stufe 5 Fall A: Brillante klinische Urteilsbildung: Erkennung eines atypisch präsentierten Phäochromozytoms durch vernetzte Verknüpfung von paroxysmalem RR-Anstieg, Schwitzen und Tremor; präzise Indikationsstellung für fraktionierte Metanephrine.",
-          "Stufe 5 Fall B: Meisterhafte differentialdiagnostische Synthese bei komplexem Multimorbiditätsfall: Priorisierung lebensbedrohlicher Ursachen, zielsichere Rationale für weiterführende Diagnostik und stringente Therapieentscheidung."
+          # 219-230: K3_Fachkompetenz (levels 0 to 5)
+          "Stufe 0 Fall A: Arzt fragt bei akutem Vernichtungsschmerz im Thorax lediglich nach Ern\u00e4hrungsgewohnheiten und schlie\u00dft lebensbedrohliche Ursachen nicht aus.",
+          "Stufe 0 Fall B: V\u00f6llig inad\u00e4quate Begriffsverwendung, relevante Differenzialdiagnosen werden ignoriert, keine fachliche Einordnung der Beschwerden.",
+          "Stufe 1 Fall A: Bei Verdacht auf Appendizitis wird nur unvollst\u00e4ndig palpiert; McBurney- und Lanz-Punkte werden verwechselt, Laboranforderung bleibt rudiment\u00e4r.",
+          "Stufe 1 Fall B: L\u00fcckenhafte Exploration eines neu aufgetretenen Diabetes mellitus; Blutzuckerwerte werden erfragt, HbA1c, Ketoazidose-Zeichen und Folgesch\u00e4den jedoch ausgelassen.",
+          "Stufe 2 Fall A: Korrekte Erhebung der Standard-Leitsymptome bei unkomplizierter Zystitis, ad\u00e4quate Urinstix-Indikation, jedoch keine Vertiefung zu atypischen Erregern.",
+          "Stufe 2 Fall B: Solide Erfassung der Symptomatik einer arteriellen Hypertonie inklusive Standardlabor, ohne jedoch sekund\u00e4re Ursachen differenzierter zu pr\u00fcfen.",
+          "Stufe 3 Fall A: Strukturierte differenzialdiagnostische Abkl\u00e4rung einer Belastungsdyspnoe: Systematische Abgrenzung kardialer (z.B. Herzinsuffizienz) vs. pulmonaler Ursachen (z.B. COPD).",
+          "Stufe 3 Fall B: Pr\u00e4zise Erfassung von Begleitsymptomen bei Synkope: Orthostase, prodromale Aura, Miktionssynkope und kardiale Arrhythmien werden systematisch abgegrenzt.",
+          "Stufe 4 Fall A: Umfassende Exploration bei V.a. Polymyalgia rheumatica: Gezieltes Screening nach Red Flags wie Riesenzellarteriitis (Sehst\u00f6rungen, Kauschmerz, Schl\u00e4fenschmerz).",
+          "Stufe 4 Fall B: Hochgradig differenzierte Abkl\u00e4rung einer unklaren B-Symptomatik: Systematische Einordnung infekti\u00f6ser, maligner und autoimmuner \u00c4tiologien mit priorisierter Stufendiagnostik.",
+          "Stufe 5 Fall A: Brillante klinische Urteilsbildung: Erkennung eines atypisch pr\u00e4sentierten Ph\u00e4ochromozytoms durch vernetzte Verkn\u00fcpfung von paroxysmalem RR-Anstieg, Schwitzen und Tremor; pr\u00e4zise Indikationsstellung f\u00fcr fraktionierte Metanephrine.",
+          "Stufe 5 Fall B: Meisterhafte differentialdiagnostische Synthese bei komplexem Multimorbidit\u00e4tsfall: Priorisierung lebensbedrohlicher Ursachen, zielsichere Rationale f\u00fcr weiterf\u00fchrende Diagnostik und stringente Therapieentscheidung."
         ),
         source_id = c(
-          # 101-104: Basisfälle
+          # 101-104: Baseline cases
           1, 1, 2, 2,
-          # 201-210: K1_Empathie (Quellen 1 und 3)
+          # 201-210: K1_Empathie (sources 1 and 3)
           1, 1, 1, 1, 3, 3, 3, 3, 3, 3,
-          # 211-218: K2_Struktur (Quellen 2 und 3)
+          # 211-218: K2_Struktur (sources 2 and 3)
           2, 2, 2, 2, 3, 3, 3, 3,
-          # 219-230: K3_Fachkompetenz (Quellen 1, 2, 3)
+          # 219-230: K3_Fachkompetenz (sources 1, 2, and 3)
           1, 1, 2, 2, 2, 2, 1, 1, 3, 3, 3, 3
         ),
         stringsAsFactors = FALSE
@@ -634,15 +678,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Texte eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d texts inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Texte vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d texts present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 8. user_ratings (Referenz- & Goldstandard-Bewertungen - 34 Ratings)
+  # 8. user_ratings (reference and gold-standard ratings - 34 ratings)
   # ----------------------------------------------------------------------------
   tbl <- "user_ratings"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_ratings")[1, 1])
@@ -652,16 +696,16 @@ seed_initial_data <- function(con, empty = TRUE) {
     if (n_b == 0) {
       ratings_data <- data.frame(
         rating_id = c(
-          # 1. Goldstandards (typ = 'gold_standard', 12 Bewertungen)
+          # 1. Gold standards (typ = 'gold_standard', 12 ratings)
           101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
-          # 2. Feld- und Expertenkodierungen (typ = 'field', 22 Bewertungen)
+          # 2. Field and expert codings (typ = 'field', 22 ratings)
           201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
           211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222
         ),
         username = c(
-          # Goldstandards
+          # Gold standards
           rep("gold_standard", 12),
-          # Feldkodierungen
+          # Field codings
           "user1", "user1", "user1", "user1", "user1",
           "eva_lindner", "eva_lindner", "eva_lindner", "eva_lindner", "eva_lindner",
           "markus_meier", "markus_meier", "markus_meier", "markus_meier",
@@ -669,12 +713,12 @@ seed_initial_data <- function(con, empty = TRUE) {
           "admin", "admin", "admin", "admin", "user1"
         ),
         text_id = c(
-          # Goldstandards: Basisfälle 101-104 über Kategorien 1, 2, 3
+          # Gold standards: baseline cases 101-104 across categories 1, 2, 3
           101, 101, 101,
           102, 102, 102,
           103, 103, 103,
           104, 104, 104,
-          # Feldkodierungen
+          # Field codings
           101, 102, 103, 104, 201,
           101, 102, 103, 202, 203,
           101, 103, 104, 211,
@@ -682,12 +726,12 @@ seed_initial_data <- function(con, empty = TRUE) {
           101, 102, 103, 104, 212
         ),
         kategorie = c(
-          # Goldstandards
+          # Gold standards
           "1", "2", "3",
           "1", "2", "3",
           "1", "2", "3",
           "1", "2", "3",
-          # Feldkodierungen
+          # Field codings
           "1", "1", "1", "1", "1",
           "1", "1", "1", "1", "1",
           "1", "1", "1", "2",
@@ -695,12 +739,12 @@ seed_initial_data <- function(con, empty = TRUE) {
           "1", "1", "1", "1", "2"
         ),
         bewertung = c(
-          # Goldstandards
+          # Gold standards
           3, 2, 4,
           2, 3, 3,
           4, 2, 2,
           3, 3, 3,
-          # Feldkodierungen
+          # Field codings
           3, 2, 3, 3, 0,
           3, 2, 4, 0, 1,
           2, 4, 3, 0,
@@ -723,12 +767,12 @@ seed_initial_data <- function(con, empty = TRUE) {
           1, 1, 2, 2, 2
         ),
         zeitstempel = c(
-          # Zeitstempel Goldstandards
+          # Gold-standard timestamps
           "2026-10-01 10:00:00", "2026-10-01 10:05:00", "2026-10-01 10:10:00",
           "2026-10-01 10:15:00", "2026-10-01 10:20:00", "2026-10-01 10:25:00",
           "2026-10-01 10:30:00", "2026-10-01 10:35:00", "2026-10-01 10:40:00",
           "2026-10-01 10:45:00", "2026-10-01 10:50:00", "2026-10-01 10:55:00",
-          # Zeitstempel Feldkodierungen
+          # Field-coding timestamps
           "2026-10-16 11:00:00", "2026-10-16 11:15:00", "2026-10-16 11:30:00", "2026-10-16 11:45:00", "2026-10-17 09:00:00",
           "2026-10-21 14:00:00", "2026-10-21 14:15:00", "2026-10-21 14:30:00", "2026-10-22 10:00:00", "2026-10-22 10:15:00",
           "2026-10-25 15:00:00", "2026-10-25 15:15:00", "2026-10-25 15:30:00", "2026-10-26 11:00:00",
@@ -767,15 +811,15 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Ratings [12 Goldstandards, 22 Feld], Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d ratings [12 gold standards, 22 field], total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Ratings vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d ratings present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # 9. coding_training (Schulungssitzungen & Verlaufsmetriken - 10 Sitzungen)
+  # 9. coding_training (training sessions and longitudinal metrics - 10 sessions)
   # ----------------------------------------------------------------------------
   tbl <- "coding_training"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM coding_training")[1, 1])
@@ -832,27 +876,27 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_inserted <- n_a - n_b
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
-    report[[tbl]]$status_label <- sprintf("Neu befüllt (+%d Schulungssitzungen eingefügt, Gesamt: %d)", report[[tbl]]$n_inserted, n_a)
+    report[[tbl]]$status_label <- sprintf("Newly populated (+%d training sessions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
   } else if (empty) {
-    report[[tbl]]$status_label <- sprintf("Nicht befüllt (Modus: empty = TRUE, Gesamt: %d)", n_a)
+    report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
-    report[[tbl]]$status_label <- sprintf("Bereits befüllt (unverändert, %d Schulungssitzungen vorhanden)", n_a)
+    report[[tbl]]$status_label <- sprintf("Already populated (unchanged, %d training sessions present)", n_a)
   }
 
   # ----------------------------------------------------------------------------
-  # Tabellarischer Statusbericht mit Datensatzanzahl & Prüfsummen
+  # Tabular status report with row counts and checksums
   # ----------------------------------------------------------------------------
-  mode_label <- if (empty) "Minimales Admin-Konto (empty = TRUE)" else "Vollständige Standarddaten (empty = FALSE)"
+  mode_label <- if (empty) "Minimal Admin Account (empty = TRUE)" else "Full Standard Dataset (empty = FALSE)"
 
   lines <- c()
   lines <- c(lines, "+----+--------------------------------+-------------+--------+-----------+--------+----------------------+")
-  lines <- c(lines, "| Nr | SQL-Tabelle                    | Schema      | Vorher | Eingefügt | Gesamt | Prüfsumme / Status   |")
+  lines <- c(lines, "| No | SQL Table                      | Schema      | Before | Inserted  | Total  | Checksum / Status    |")
   lines <- c(lines, "+----+--------------------------------+-------------+--------+-----------+--------+----------------------+")
 
   for (idx in seq_along(all_tables)) {
     t_name <- all_tables[idx]
     info <- report[[t_name]]
-    created_str <- if (info$created) "neu erzeugt" else "vorhanden"
+    created_str <- if (info$created) "created" else "existing"
     ins_str <- if (info$n_inserted > 0) sprintf("+%d", info$n_inserted) else "0"
 
     lines <- c(lines, sprintf("| %2d | %-30s | %-11s | %6d | %9s | %6d | %-20s |",
@@ -872,10 +916,10 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_ins_rows   <- sum(sapply(report, function(x) x$n_inserted))
 
   lines <- c(lines, "+----+--------------------------------+-------------+--------+-----------+--------+----------------------+")
-  lines <- c(lines, sprintf("| SUMME: %d Tabellen (%d neu, %d befüllt)                    | +%-7d | %6d | VALIDIERUNG: 100%% OK|",
+  lines <- c(lines, sprintf("| TOTAL: %d tables (%d created, %d seeded)                  | +%-7d | %6d | VALIDATION: 100%% OK |",
                             n_checked, n_created, n_seeded, n_ins_rows, n_total_rows))
   lines <- c(lines, "+----+--------------------------------+-------------+--------+-----------+--------+----------------------+")
-  lines <- c(lines, sprintf("Modus: %s | DB-Engine: %s", mode_label, class(con)[1]))
+  lines <- c(lines, sprintf("Mode: %s | DB Engine: %s", mode_label, class(con)[1]))
 
   message(paste(lines, collapse = "\n"))
   return(invisible(report))

@@ -1,21 +1,21 @@
-#' @title Internationalization (i18n) and Translation Utilities for Coding Portal
-#' @description Provides JSON-based localization loaded from \code{inst/translations.json},
-#' automatic browser locale detection with English fallback, formatted string lookup via
-#' \code{tr()}, and a Shiny language selector widget.
-#' @author AI Studio Coding Engine
-#' @keywords i18n translation shiny localization
-NULL
+# Internationalization (i18n) and translation utilities
 
-# Internal package/module cache for parsed translations
+#' Internal Cache Environment for Parsed Translations
+#'
+#' Package-internal environment storing the parsed translation catalog (`translations`)
+#' and last observed modification timestamp (`mtime`) to avoid repeated disk reads.
+#'
+#' @keywords internal
+#' @noRd
 .i18n_cache <- new.env(parent = emptyenv())
 .i18n_cache$translations <- NULL
 .i18n_cache$mtime <- NULL
 
 #' Get Supported Language Codes
 #'
-#' @description Returns the character vector of supported ISO 639-1 language codes.
+#' Returns the character vector of supported ISO 639-1 language codes.
 #'
-#' @return A character vector containing supported language codes (\code{c("de", "en")}).
+#' @return A character vector containing supported language codes (`c("de", "en")`).
 #'
 #' @examples
 #' get_supported_languages()
@@ -26,7 +26,8 @@ get_supported_languages <- function() {
 
 #' Get Labeled Language Choices for Shiny Inputs
 #'
-#' @description Returns a named character vector suitable for \code{shiny::selectInput}.
+#' Returns a named character vector suitable for `shiny::selectInput()` or
+#' [language_selector_ui()].
 #'
 #' @return A named character vector mapping display labels to language codes.
 #'
@@ -37,18 +38,17 @@ get_language_choices <- function() {
   c("\U0001F310 DE" = "de", "\U0001F310 EN" = "en")
 }
 
-#' Locate the Canonical \code{translations.json} File
+#' Locate the Canonical `translations.json` File
 #'
-#' @description Resolves the path to \code{inst/translations.json} across standard R
-#' project roots, \code{shiny::runApp("R")} working directories, installed R package
-#' locations (\code{system.file}), and web preview fallbacks.
+#' Resolves the path to `inst/translations.json` across standard R project
+#' roots, `shiny::runApp("R")` working directories, installed R package
+#' locations (`system.file()`), and web preview fallbacks.
 #'
-#' @return Character scalar file path to \code{translations.json}, or \code{NULL} if not found.
+#' @return Character scalar file path to `translations.json`, or `NULL` if not
+#'   found.
 #'
 #' @examples
-#' \dontrun{
-#' path <- find_translations_file()
-#' }
+#' find_translations_file()
 #' @export
 find_translations_file <- function() {
   candidates <- c(
@@ -81,18 +81,18 @@ find_translations_file <- function() {
 
 #' Load Translations Dictionary from JSON with Modification-Time Caching
 #'
-#' @description Reads and parses \code{inst/translations.json} into a nested R list,
-#' caching the result in memory until the file's modification timestamp changes.
-#' Falls back to a minimal built-in dictionary if the JSON file cannot be accessed.
+#' Reads and parses `inst/translations.json` into a nested R list, caching the
+#' result in memory until the file's modification timestamp changes. Falls back
+#' to a minimal built-in dictionary if the JSON file cannot be accessed.
 #'
-#' @param force_reload Logical; if \code{TRUE}, bypasses the cache and reloads from disk.
+#' @param force_reload Logical; if `TRUE`, bypasses the cache and reloads from
+#'   disk. Defaults to `FALSE`.
 #'
-#' @return A nested named \code{list} containing language sub-trees (e.g., \code{de}, \code{en}).
+#' @return A nested named `list` containing language sub-trees (e.g., `de`, `en`).
 #'
 #' @examples
-#' \dontrun{
 #' dict <- load_translations()
-#' }
+#' names(dict)
 #' @export
 load_translations <- function(force_reload = FALSE) {
   path <- find_translations_file()
@@ -140,15 +140,18 @@ load_translations <- function(force_reload = FALSE) {
 
 #' Normalize and Validate a Browser Locale String
 #'
-#' @description Extracts the two-letter ISO 639-1 language prefix from a raw locale header
-#' or \code{navigator.language} value (e.g., \code{"de-DE"} -> \code{"de"}) and validates it
-#' against \code{supported}.
+#' Extracts the two-letter ISO 639-1 language prefix from a raw locale header or
+#' `navigator.language` value (e.g., `"de-DE"` -> `"de"`) and validates it
+#' against `supported`.
 #'
-#' @param raw_lang Character scalar from \code{navigator.language} or \code{HTTP_ACCEPT_LANGUAGE}.
-#' @param supported Character vector of allowed language codes. Defaults to \code{get_supported_languages()}.
-#' @param fallback Character scalar fallback language code returned if \code{raw_lang} is unsupported or empty. Defaults to \code{"en"}.
+#' @param raw_lang Character scalar from `navigator.language` or
+#'   `HTTP_ACCEPT_LANGUAGE`.
+#' @param supported Character vector of allowed language codes. Defaults to
+#'   [get_supported_languages()].
+#' @param fallback Character scalar fallback language code returned if `raw_lang`
+#'   is unsupported or empty. Defaults to `"en"`.
 #'
-#' @return A validated two-letter character language code (e.g., \code{"de"} or \code{"en"}).
+#' @return A validated two-letter character language code (e.g., `"de"` or `"en"`).
 #'
 #' @examples
 #' detect_browser_language("de-DE")
@@ -175,15 +178,16 @@ detect_browser_language <- function(raw_lang = NULL, supported = get_supported_l
 
 #' Lookup a Nested Translation Key Inside a Language Tree
 #'
-#' @description Internal helper that traverses dot-separated key segments inside a parsed
+#' Internal helper that traverses dot-separated key segments inside a parsed
 #' translations dictionary for a single language code.
 #'
-#' @param translations Nested translations list returned by \code{\link{load_translations}}.
-#' @param lang_code Two-letter language code (e.g., \code{"de"} or \code{"en"}).
-#' @param key_segments Character vector of path segments split on \code{"."}.
+#' @param translations Nested translations list returned by [load_translations()].
+#' @param lang_code Two-letter language code (e.g., `"de"` or `"en"`).
+#' @param key_segments Character vector of path segments split on `"."`.
 #'
-#' @return A character scalar if found, or \code{NULL} otherwise.
+#' @return A character scalar if found, or `NULL` otherwise.
 #' @keywords internal
+#' @noRd
 resolve_translation_path <- function(translations, lang_code, key_segments) {
   if (is.null(translations[[lang_code]])) return(NULL)
   cur <- translations[[lang_code]]
@@ -200,22 +204,20 @@ resolve_translation_path <- function(translations, lang_code, key_segments) {
 
 #' Translate a Dot-Separated UI Key with Fallback and Formatting
 #'
-#' @description Resolves a hierarchical translation key from \code{inst/translations.json}
-#' for the requested language, falling back to \code{"en"}, then \code{"de"}, then \code{default}
-#' or \code{[key]}. Supports optional \code{sprintf}-style positional arguments.
+#' Resolves a hierarchical translation key from `inst/translations.json` for the
+#' requested language, falling back to `"en"`, then `"de"`, then `default` or
+#' `[key]`. Supports optional `sprintf()` positional arguments.
 #'
-#' @param key Dot-separated translation key (e.g., \code{"auth.login_title"}).
-#' @param lang Target language code (\code{"de"} or \code{"en"}). Defaults to \code{"en"}.
-#' @param ... Optional positional arguments passed to \code{sprintf()}.
-#' @param default Optional fallback string used when the key is missing across all languages.
+#' @param key Dot-separated translation key (e.g., `"auth.login_title"`).
+#' @param lang Target language code (`"de"` or `"en"`). Defaults to `"en"`.
+#' @param ... Optional positional arguments passed to `sprintf()`.
+#' @param default Optional fallback string used when the key is missing across
+#'   all languages.
 #'
-#' @return Localized character string.
+#' @return A localized character string.
 #'
 #' @examples
-#' \dontrun{
-#' tr("auth.login_title", lang = "de")
-#' tr("common.page_x_of_y", "en", 1, 5)
-#' }
+#' tr("auth.login_title", lang = "en")
 #' @export
 tr <- function(key, lang = "en", ..., default = NULL) {
   if (is.null(key) || !nzchar(key)) return("")
@@ -251,17 +253,18 @@ tr <- function(key, lang = "en", ..., default = NULL) {
 
 #' Render Header Language Selector Dropdown Widget
 #'
-#' @description Builds a compact language dropdown for switching between supported UI
+#' Builds a compact language dropdown for switching between supported UI
 #' languages in the login card and application header bar. Uses an explicit DOM
-#' \code{onchange} event (\code{selected_ui_lang}) instead of bidirectional
-#' \code{selectInput} binding so re-renders inside \code{renderUI} never trigger
-#' WebSocket echo loops on Shiny Server.
+#' `onchange` event (`selected_ui_lang`) instead of bidirectional `selectInput()`
+#' binding so re-renders inside `renderUI()` never trigger WebSocket echo loops
+#' on Shiny Server.
 #'
-#' @param id Logical identifier attribute (\code{data-lang-selector}) for the widget. Defaults to \code{"app_language"}.
-#' @param current_lang Active language code (\code{"de"} or \code{"en"}). Defaults to \code{"de"}.
+#' @param id Logical identifier attribute (`data-lang-selector`) for the widget.
+#'   Defaults to `"app_language"`.
+#' @param current_lang Active language code (`"de"` or `"en"`). Defaults to `"de"`.
 #' @param class Optional extra CSS classes appended to the wrapper element.
 #'
-#' @return A Shiny \code{tags$div} UI element containing the styled language selector.
+#' @return A Shiny `tags$div` UI element containing the styled language selector.
 #'
 #' @examples
 #' \dontrun{

@@ -10,7 +10,27 @@
 #' @param seed_gold_scale Optional integer scale_id to seed complete 0..max_value gold standards.
 #' @param env Calling environment for automatic AppDriver$stop() and file cleanup.
 #' @return A list containing \code{app} (AppDriver) and \code{db_path} (character SQLite path).
+.e2e_chrome_state <- new.env(parent = emptyenv())
+.e2e_chrome_state$started <- FALSE
+
+if (requireNamespace("withr", quietly = TRUE) && requireNamespace("chromote", quietly = TRUE)) {
+  withr::defer({
+    if (isTRUE(.e2e_chrome_state$started)) {
+      try(chromote::default_chromote_object()$close(), silent = TRUE)
+    }
+  }, envir = testthat::teardown_env())
+}
+
 local_e2e_app <- function(name = "codingmanager_e2e", seed_gold_scale = NULL, env = parent.frame()) {
+  if (requireNamespace("chromote", quietly = TRUE)) {
+    options(chromote.headless = "new")
+    try(
+      chromote::set_chrome_args(c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage")),
+      silent = TRUE
+    )
+    .e2e_chrome_state$started <- TRUE
+  }
+
   db_path <- tempfile(pattern = paste0(name, "_"), fileext = ".sqlite")
   con <- DBI::dbConnect(RSQLite::SQLite(), db_path)
   DBI::dbExecute(con, "PRAGMA foreign_keys = ON;")
@@ -22,11 +42,11 @@ local_e2e_app <- function(name = "codingmanager_e2e", seed_gold_scale = NULL, en
   }
   DBI::dbDisconnect(con)
 
-  shiny_app <- run_app(sqlite_path = db_path, seed_empty = FALSE)
+  shiny_app <- run_app(sqlite_path = db_path, empty = FALSE)
   driver <- shinytest2::AppDriver$new(
     app_dir = shiny_app,
     name = name,
-    load_timeout = 20000,
+    load_timeout = 30000,
     wait = TRUE,
     expect_values_screenshot_args = FALSE
   )
@@ -219,7 +239,9 @@ test_that("E2E-4: Admin Console user creation, rating correction, and DB Diagnos
   app$click("mod_admin-btn_confirm_edit_coding")
   app$wait_for_idle()
 
-  # Refresh DB Diagnostics and assert 0 integrity violations
+  # Switch to DB Diagnostics subtab, refresh, and assert 0 integrity violations
+  app$set_inputs(`mod_admin-admin_subtabs` = "tab_diagnose")
+  app$wait_for_idle()
   app$click("mod_admin-btn_refresh_diagnostics")
   app$wait_for_idle()
   diag_html <- app$get_html("#mod_admin-db_diag_tables_overview")

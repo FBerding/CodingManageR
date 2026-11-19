@@ -36,6 +36,7 @@ Imports:
 Suggests:
     chromote,
     covr,
+    htmltools,
     knitr,
     RMariaDB,
     rmarkdown,

@@ -1,8 +1,31 @@
 # Dependencies (shiny, DBI, ggplot2) are imported via NAMESPACE
 
 # ==============================================================================
-# DASHBOARD-MODUL UI
+# DASHBOARD MODULE UI
 # ==============================================================================
+
+#' Dashboard Module UI
+#'
+#' Creates the Shiny UI for the coder dashboard, displaying personal coding
+#' progress, training reliability trends, open-case breakdowns, and an
+#' interactive scale directory.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param kategorie_spalten Optional character vector of scale column names
+#'   retained for backward compatibility.
+#' @param lang Character string specifying the initial UI language code
+#'   (`"en"` or `"de"`).
+#' @param selected_tab Character string selecting the initially active tab
+#'   (`"tab_progress"` or `"tab_scales_overview"`).
+#'
+#' @return A `shiny.tag` (`fluidPage`) representing the dashboard interface.
+#'
+#' @examples
+#' if (interactive()) {
+#'   ui <- dashboardUI("mod_dashboard", lang = "en")
+#' }
+#'
+#' @export
 dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab = "tab_progress") {
   ns <- NS(id)
   active_tab <- if (!is.null(selected_tab) && selected_tab %in% c("tab_progress", "tab_scales_overview")) selected_tab else "tab_progress"
@@ -13,7 +36,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
       selected = active_tab,
       type = "tabs",
 
-      # REITER 1: LERN- & ARBEITSFORTSCHRITT
+      # TAB 1: LEARNING & WORK PROGRESS
       tabPanel(
         title = tagList(icon("chart-line"), " ", tr("dashboard.tab_progress", lang)),
         value = "tab_progress",
@@ -22,7 +45,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
         p(tr("dashboard.subtitle", lang)),
         br(),
 
-        # Getrennte Kennzahl-Karten nach Modus/Typ
+        # Separate KPI cards by rating mode/type
         fluidRow(
           uiOutput(ns("stat_card_total_kodierung")),
           uiOutput(ns("stat_card_total_schulung")),
@@ -30,12 +53,12 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
         ),
         br(), hr(),
 
-        # Performance in den bisherigen Kodierschulungen (coding_training)
+        # Performance across previous coding training sessions (coding_training)
         fluidRow(
           column(width = 12,
                  wellPanel(
                    div(class = "d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2",
-                       h4(class = "mb-0", paste0("📈 ", tr("dashboard.chart_card_title", lang))),
+                       h4(class = "mb-0", paste0("\U0001f4c8 ", tr("dashboard.chart_card_title", lang))),
                        div(class = "d-flex gap-2 flex-wrap",
                            div(style = "min-width: 220px;",
                                selectInput(ns("dashboard_selected_kategorie"), tr("dashboard.category_filter_label", lang), choices = NULL)
@@ -62,7 +85,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
         ),
         br(), hr(),
 
-        # Aufschlüsselung nach Kategorie, Typ und offenen Fällen
+        # Breakdown by category, type, and remaining open cases
         fluidRow(
           column(width = 10,
                  wellPanel(
@@ -75,7 +98,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
         )
       ),
 
-      # REITER 2: SKALENÜBERSICHT & ANFORDERUNGEN
+      # TAB 2: SCALE OVERVIEW & REQUIREMENTS
       tabPanel(
         title = tagList(icon("ruler-combined"), " ", tr("dashboard.tab_scales", lang)),
         value = "tab_scales_overview",
@@ -95,7 +118,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
           ),
           hr(),
 
-          # Schnellsuche mit ID- und Namensfilter sowie Zurücksetzen-Button
+          # Quick search with ID and name filter plus reset button
           fluidRow(
             column(width = 7,
                    div(class = "input-group mb-3",
@@ -106,7 +129,7 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
             )
           ),
 
-          # Karten-Raster (Card Grid)
+          # Card grid
           uiOutput(ns("dashboard_scales_cards"))
         )
       )
@@ -115,8 +138,44 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
 }
 
 # ==============================================================================
-# DASHBOARD-MODUL SERVER
+# DASHBOARD MODULE SERVER
 # ==============================================================================
+
+#' Dashboard Module Server
+#'
+#' Implements the server-side logic for the coder dashboard, including personal
+#' KPI counters, multi-metric training reliability visualizations, session
+#' history tables, open-case counts, and searchable scale definition cards.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param db_con Active `DBIConnection` or `pool::Pool` database handle.
+#' @param user_id_reactive Optional reactive expression returning the active
+#'   user's integer ID.
+#' @param username_reactive Reactive expression returning the active username.
+#' @param trigger_reactive Reactive trigger that invalidates dashboard outputs
+#'   when ratings or training sessions are updated.
+#' @param kategorie_spalten Reactive expression returning configured scale
+#'   identifiers or column names.
+#' @param scales_trigger Optional `reactiveVal` triggered when scale definitions
+#'   change in the admin panel.
+#' @param current_lang Reactive expression or character scalar providing the
+#'   active UI language code (`"de"` or `"en"`).
+#'
+#' @return The return value of `shiny::moduleServer()`.
+#'
+#' @examples
+#' \dontrun{
+#' dashboardServer(
+#'   id = "mod_dashboard",
+#'   db_con = db_con,
+#'   user_id_reactive = reactive(1L),
+#'   username_reactive = reactive("admin"),
+#'   trigger_reactive = reactiveVal(0L),
+#'   kategorie_spalten = reactive(character(0))
+#' )
+#' }
+#'
+#' @export
 dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reactive, trigger_reactive, kategorie_spalten, scales_trigger = NULL, current_lang = reactiveVal("de")) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -125,13 +184,13 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       if (is.reactive(current_lang) || is.function(current_lang)) current_lang() else as.character(current_lang)
     }
 
-    # Reaktive Hilfsfunktion für Skalenspalten (rein reaktiv)
+    # Reactive helper for scale columns (purely reactive)
     get_kategorie_spalten <- reactive({
       if (!is.null(scales_trigger) && is.function(scales_trigger)) scales_trigger()
       kategorie_spalten()
     })
 
-    # Live-Synchronisation statischer UI-Inputs bei Sprachwechsel
+    # Live synchronization of static UI inputs on language change
     observe({
       lang <- get_lang()
       cur_metric <- isolate(input$dashboard_plot_metric)
@@ -155,7 +214,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       )
     })
 
-    # KARTEN-WIDGET 1: Echte Kodierungen insgesamt
+    # KPI CARD 1: Total production codings
     output$stat_card_total_kodierung <- renderUI({
       trigger_reactive()
       lang <- get_lang()
@@ -164,7 +223,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       render_kpi_card_ui(tr("dashboard.card_codings", lang), res$total, subtitle = tr("dashboard.kpi_codings_sub", lang), bg_class = "bg-dark", width = 4)
     })
 
-    # KARTEN-WIDGET 2: Schulungs-Kodierungen insgesamt
+    # KPI CARD 2: Total training codings
     output$stat_card_total_schulung <- renderUI({
       trigger_reactive()
       lang <- get_lang()
@@ -173,7 +232,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       render_kpi_card_ui(tr("dashboard.card_trainings", lang), res$total, subtitle = tr("dashboard.kpi_trainings_sub", lang), bg_class = "bg-success", width = 4)
     })
 
-    # KARTEN-WIDGET 3: Abgeschlossene Schulungssitzungen
+    # KPI CARD 3: Completed training sessions
     output$stat_card_sessions <- renderUI({
       trigger_reactive()
       lang <- get_lang()
@@ -182,7 +241,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       render_kpi_card_ui(tr("dashboard.card_sessions", lang), res$anzahl, subtitle = tr("dashboard.kpi_sessions_sub", lang), bg_class = "bg-info", width = 4)
     })
 
-    # Dynamische Aktualisierung der Kategorieauswahl bei Änderungen an scale_definitions oder Sprache
+    # Dynamically update category selection when scale_definitions or language changes
     observe({
       lang <- get_lang()
       k_spalten <- get_kategorie_spalten()
@@ -199,7 +258,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       }
     })
 
-    # Aggregierte Kennzahlen für die gewählte Kategorie aus 'coding_training' (alle 16 Metriken)
+    # Aggregated metrics for the selected category from 'coding_training' (all 16 metrics)
     output$training_kpi_summary <- renderUI({
       trigger_reactive()
       lang <- get_lang()
@@ -259,7 +318,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       disp_val <- format_metric_display(raw_val, is_percentage = meta_sel$is_pct)
       active_card_title <- tr("admin.reliability.kpi_mean_prefix", lang, meta_sel$short_label)
 
-      # 5 KPI-Karten Layout: 4 Kern-KPIs + 1 aktive Metrik
+      # 5-KPI card layout: 4 core KPIs + 1 active metric
       div(class = "row g-2 mb-3",
         div(class = "col",
             div(class = "card h-100 bg-light border p-2 text-center shadow-xs",
@@ -299,7 +358,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       )
     })
 
-    # Interaktiver Reliabilitäts-Zeitverlauf (ggplot2) für alle 16 Metriken oder Core-Vergleich
+    # Interactive reliability time series (ggplot2) for all 16 metrics or core comparison
     output$training_reliability_plot <- renderPlot({
       trigger_reactive()
       lang <- get_lang()
@@ -331,7 +390,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       df$sitzung_nr <- seq_len(nrow(df))
       n_sitzungen <- nrow(df)
 
-      # Visualisierung je nach Auswahl
+      # Visualization according to selected metric mode
       if (selected_metric %in% c("all_core", "all")) {
         lbl_kappa <- tr("metrics.cohens_kappa.label", lang)
         lbl_alpha <- tr("metrics.alpha_nominal.label", lang)
@@ -442,7 +501,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       return(p)
     })
 
-    # Detaillierte Verlaufstabelle der Schulungssitzungen mit zweistufigem Gruppen-Header
+    # Detailed training session history table with two-level grouped header
     output$training_performance_table <- renderUI({
       trigger_reactive()
       lang <- get_lang()
@@ -478,7 +537,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         quality_meta <- classify_reliability_magnitude(kappa_val, lang = lang)
         quality_badge <- tags$span(class = paste("badge", quality_meta$css_class), quality_meta$label)
 
-        datum_str <- if (!is.na(r$datum)) as.character(r$datum) else "—"
+        datum_str <- if (!is.na(r$datum)) as.character(r$datum) else "\u2014"
 
         tags$tr(
           tags$td(class = "text-center fw-bold text-secondary", paste0("#", r$training_id)),
@@ -522,7 +581,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       )
     })
 
-    # Tabelle berechnet die noch offenen Fälle je Kategorie
+    # Table computing remaining open cases per category
     output$kategorie_breakdown_table <- renderTable({
       trigger_reactive()
       lang <- get_lang()
@@ -584,7 +643,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
     }, width = "100%", stripes = TRUE, spacing = "m", align = "lcccc")
 
     # --------------------------------------------------------------------------
-    # REITER 2: SKALENÜBERSICHT & ANFORDERUNGEN (KARTENANSICHT & DETAILS)
+    # TAB 2: SCALE OVERVIEW & REQUIREMENTS (CARD VIEW & DETAILS)
     # --------------------------------------------------------------------------
     dashboard_scales_data <- reactive({
       if (!is.null(scales_trigger) && is.function(scales_trigger)) {
@@ -713,7 +772,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       fluidRow(cards)
     })
 
-    # MODAL: Stufentexte & Detailanweisungen zur gewählten Skala anzeigen
+    # MODAL: Display rating level descriptions and detailed instructions for the selected scale
     observeEvent(input$show_scale_details, {
       lang <- get_lang()
       s_id <- as.integer(input$show_scale_details)

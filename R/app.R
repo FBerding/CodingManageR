@@ -1,20 +1,27 @@
-#' @title CodingManageR Shiny Application Entrypoint
-#' @description Provides CRAN-compliant exported functions \code{coding_manager_ui()},
-#' \code{coding_manager_server()}, and \code{run_app()} to launch the multi-user
+#' CodingManageR Shiny Application Entrypoint
+#'
+#' Provides CRAN-compliant exported functions [coding_manager_ui()],
+#' [coding_manager_server()], and [run_app()] to launch the multi-user
 #' qualitative coding and training portal without top-level side effects.
-#' @keywords shiny app entrypoint
+#'
+#' @name CodingManageR-app
+#' @keywords internal
 NULL
 
 #' Build the Root Shiny UI for CodingManageR
 #'
-#' @description Constructs the top-level Bootstrap 5 / \code{bslib} page shell for
-#' CodingManageR, including browser language auto-detection and the reactive
-#' \code{page_content} outlet that switches between the sign-in screen and the
-#' authenticated multi-tab workspace.
+#' Constructs the top-level Bootstrap 5 / `bslib` page shell for CodingManageR,
+#' including browser language auto-detection and the reactive `page_content`
+#' outlet that switches between the sign-in screen and the authenticated
+#' multi-tab workspace.
 #'
-#' @param lang Default initial language code (\code{"de"} or \code{"en"}). Defaults to \code{"de"}.
+#' @param lang Default initial language code (`"de"` or `"en"`). Defaults to `"de"`.
 #'
-#' @return A Shiny UI tag list suitable for \code{shiny::shinyApp()}.
+#' @return A Shiny UI tag list suitable for `shiny::shinyApp()`.
+#' @examples
+#' \dontrun{
+#' ui <- coding_manager_ui(lang = "en")
+#' }
 #' @export
 coding_manager_ui <- function(lang = "de") {
   init_lang <- detect_browser_language(lang, fallback = "de")
@@ -45,24 +52,28 @@ coding_manager_ui <- function(lang = "de") {
 
 #' Shiny Server Function for CodingManageR
 #'
-#' @description Manages database connectivity, user authentication (including inactive
-#' account lockout), bilingual UI localization (\code{de}/\code{en}), reactive scale
-#' catalog synchronization, and routing to the Dashboard, Coding Training, Live Coding,
-#' and Admin Console Shiny modules.
+#' Manages database connectivity, user authentication (including inactive
+#' account lockout), bilingual UI localization (`de`/`en`), reactive scale
+#' catalog synchronization, and routing to the Dashboard, Coding Training, Live
+#' Coding, and Admin Console Shiny modules.
 #'
-#' @param input Standard Shiny server \code{input} object.
-#' @param output Standard Shiny server \code{output} object.
-#' @param session Standard Shiny \code{session} object.
-#' @param db_con Optional pre-existing DBI connection or \code{pool::dbPool} object.
-#'   When supplied (e.g., during \code{shiny::testServer()} tests), the caller retains
+#' @param input Standard Shiny server `input` object.
+#' @param output Standard Shiny server `output` object.
+#' @param session Standard Shiny `session` object.
+#' @param db_con Optional pre-existing DBI connection or `pool::dbPool` object.
+#'   When supplied (e.g., during `shiny::testServer()` tests), the caller retains
 #'   ownership and the connection is not automatically closed on session end.
 #' @param sqlite_path Optional path to a local SQLite database file used when
-#'   \code{db_con} is \code{NULL}.
-#' @param config Optional named database configuration list passed to \code{\link{get_db_pool}}.
-#' @param seed_empty Logical passed to \code{\link{seed_initial_data}} on first startup.
-#'   Defaults to \code{TRUE} (minimal admin account) unless overridden via options or argument.
+#'   `db_con` is `NULL`.
+#' @param config Optional named database configuration list passed to [get_db_pool()].
+#' @param seed_empty Logical passed to [seed_initial_data()] on first startup.
+#'   Defaults to `TRUE` (minimal admin account) unless overridden via options or argument.
 #'
-#' @return Invisibly returns \code{NULL}.
+#' @return Invisibly returns `NULL`.
+#' @examples
+#' \dontrun{
+#' shiny::shinyApp(ui = coding_manager_ui(), server = coding_manager_server)
+#' }
 #' @export
 coding_manager_server <- function(input, output, session,
                                   db_con = NULL,
@@ -418,20 +429,25 @@ coding_manager_server <- function(input, output, session,
 
 #' Launch the CodingManageR Shiny Application
 #'
-#' @description Constructs and returns a \code{shiny.appobj} configured for either
-#' local single-user SQLite storage or pooled MySQL/MariaDB server deployments.
+#' Constructs and returns a `shiny.appobj` configured for either local
+#' single-user SQLite storage or pooled MySQL/MariaDB server deployments.
 #'
 #' @param sqlite_path Optional file path to a local SQLite database.
 #' @param config Optional named list of database configuration parameters passed
-#'   to \code{\link{get_db_pool}}.
-#' @param empty Logical passed to \code{\link{seed_initial_data}} when initializing
-#'   a fresh database. Defaults to \code{TRUE} (creates only the default \code{admin}
-#'   and \code{historic_user} accounts).
-#' @param options Optional list of options forwarded to \code{shiny::shinyApp()}.
-#' @param ... Additional arguments forwarded to \code{shiny::shinyApp()}.
+#'   to [get_db_pool()].
+#' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
+#'   database. Defaults to `TRUE` (creates only the default `admin` and
+#'   `historic_user` accounts).
+#' @param options Optional list of options forwarded to `shiny::shinyApp()`.
+#' @param ... Additional arguments forwarded to `shiny::shinyApp()`.
 #'
-#' @return A \code{shiny.appobj} object that launches the Shiny portal when printed
-#'   or returned from \code{app.R}.
+#' @return A `shiny.appobj` object that launches the Shiny portal when printed
+#'   or returned from `app.R`.
+#' @examples
+#' \dontrun{
+#' app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
+#' app
+#' }
 #' @export
 run_app <- function(sqlite_path = NULL,
                     config = NULL,

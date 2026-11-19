@@ -92,7 +92,7 @@ test_that("get_db_pool and get_db_connection initialize SQLite via config, env v
     {
       expect_error(
         get_db_pool(config = NULL, fallback_to_sqlite = FALSE),
-        regexp = "Fallback auf SQLite ist deaktiviert"
+        regexp = "SQLite fallback is disabled"
       )
     }
   )
@@ -130,7 +130,7 @@ test_that("get_db_pool falls back to direct SQLite connection when pool creation
 
   expect_warning(
     con <- suppressMessages(get_db_pool(config = list(sqlite_path = p), fallback_to_sqlite = TRUE, force_pool = TRUE)),
-    regexp = "SQLite-Pool fehlgeschlagen"
+    regexp = "SQLite pool initialization failed"
   )
   withr::defer(suppressMessages(close_db_connection(con)))
   expect_false(is_pool_connection(con))
@@ -147,11 +147,11 @@ test_that("close_db_pool and close_db_connection handle NULL, active, and alread
   withr::defer(unlink(c(p, paste0(p, "-wal"), paste0(p, "-shm")), force = TRUE))
 
   con_pool <- suppressMessages(get_db_pool(config = list(sqlite_path = p), force_pool = TRUE))
-  expect_message(close_db_pool(con_pool), regexp = "Connection-Pool erfolgreich geschlossen")
-  expect_warning(close_db_pool(con_pool), regexp = "Fehler beim Schlie")
+  expect_message(close_db_pool(con_pool), regexp = "Connection pool closed successfully")
+  expect_warning(close_db_pool(con_pool), regexp = "Failed to close database connection")
 
   con_direct <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-  expect_message(close_db_connection(con_direct), regexp = "Datenbankverbindung erfolgreich getrennt")
+  expect_message(close_db_connection(con_direct), regexp = "Database connection disconnected successfully")
   expect_false(DBI::dbIsValid(con_direct))
 })
 
@@ -160,7 +160,7 @@ test_that("with_db_transaction enforces atomic commit and rollback on both direc
   # 1) Rejects NULL connections with an error
   # 2) Commits both function-based and expression-based blocks on direct DBI and pool::dbPool
   # 3) Rolls back partial writes when an error occurs mid-transaction so database state remains clean
-  expect_error(with_db_transaction(NULL, function(c) 1L), regexp = "Ungültige Datenbankverbindung")
+  expect_error(with_db_transaction(NULL, function(c) 1L), regexp = "Invalid database connection")
 
   for (use_pool in c(FALSE, TRUE)) {
     db <- local_test_db(seeded = TRUE, empty = FALSE, use_pool = use_pool)
@@ -217,14 +217,14 @@ test_that("with_db_transaction enforces atomic commit and rollback on both direc
 test_that("create_all_tables creates all 9 canonical tables idempotently and rejects NULL", {
   # Verifies create_all_tables() stops on NULL, creates all 9 required tables with expected columns
   # in both verbose = TRUE and verbose = FALSE modes, and executes cleanly when called twice.
-  expect_error(create_all_tables(NULL), regexp = "Ungültige Datenbankverbindung")
+  expect_error(create_all_tables(NULL), regexp = "Invalid database connection")
 
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(con))
 
   expect_message(
     ok <- create_all_tables(con, verbose = TRUE),
-    regexp = "Tabellen erfolgreich initialisiert"
+    regexp = "Tables initialized successfully"
   )
   expect_true(ok)
 
@@ -247,7 +247,7 @@ test_that("seed_initial_data populates full demo dataset, minimal empty mode, au
   # 3) empty = FALSE seeds exact canonical counts across all 9 tables and returns a structured 9-table report
   # 4) Calling seed_initial_data(empty = FALSE) a second time inserts 0 duplicates (idempotency)
   # 5) empty = TRUE seeds only 'admin' and inactive 'historic_user' while leaving content tables at 0 rows
-  expect_error(seed_initial_data(NULL), regexp = "Ungültige Datenbankverbindung")
+  expect_error(seed_initial_data(NULL), regexp = "Invalid database connection")
 
   # Full demo seed on blank DB (auto-creates all 9 tables)
   con_full <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
@@ -286,10 +286,10 @@ test_that("seed_initial_data populates full demo dataset, minimal empty mode, au
   expect_equal(rep_empty$texts$n_total, 0L)
   expect_equal(rep_empty$user_ratings$n_total, 0L)
   expect_equal(rep_empty$coding_training$n_total, 0L)
-  expect_match(rep_empty$sources$checksum, "LEER")
+  expect_match(rep_empty$sources$checksum, "EMPTY")
 
   # Re-running empty = TRUE on already-populated DB hits the "already populated" branch
   rep_empty_2 <- suppressMessages(seed_initial_data(con_empty, empty = TRUE))
   expect_equal(rep_empty_2$user_tokens$n_inserted, 0L)
-  expect_match(rep_empty_2$user_tokens$status_label, "Bereits befüllt")
+  expect_match(rep_empty_2$user_tokens$status_label, "Already populated")
 })

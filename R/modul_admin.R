@@ -1,48 +1,71 @@
 # ==============================================================================
-# ADMIN-MODUL FÜR R SHINY (6 HORIZONTALE REITER INKL. 25-ITEM PAGINIERUNG)
+# ADMIN MODULE FOR R SHINY (HORIZONTAL TABS WITH 25-ITEM PAGINATION)
 # ==============================================================================
-# Dateiname: modul_admin.R
-# Beinhaltet:
-#  Reiter 1: 👤 Benutzerverwaltung (CRUD für SQLite-Tabelle 'user_tokens')
-#            - Paginierung: Maximal 25 Benutzer pro Seite
-#            - Blätterfunktion mit Vor/Zurück, Erste/Letzte, Seitenzahl & Direktsprung
-#            - Integrierte Schnellsuche nach Benutzername, Rolle und Aktivitäts-Status
-#            - Status-Steuerung: is_active (1 = aktiv, 0 = inaktiv)
-#            - Direkter 1-Klick Toggle-Button in der Tabelle & Umschaltung im Modal
-#            - Schutz des aktiven Admins vor Selbstdeaktivierung & Selbstlöschung
-#            - Benutzer anlegen mit Validierung & Token-Generator
-#            - Berechtigungsmatrix: Quellen-Zugriff pro Kodierer
-#  Reiter 2: 📑 Falltexte & Quellenzuweisung (Tabelle 'texts' & 'sources')
-#            - Paginierung: Maximal 25 Falltexte pro Seite
-#            - Blätterfunktion mit Vor/Zurück, Erste/Letzte, Seitenzahl & Direktsprung
-#            - Integrierte Volltext- und Quellensuche
-#            - Übersicht aller Falltexte mit Zuweisungs-Modal für Quellen
-#  Reiter 3: 📚 Quellenverwaltung (Tabelle 'sources')
-#            - Vollständiges Quellen-Verzeichnis mit Suche nach ID, Kurzreferenz, Zitat, Lizenz
-#            - Modale für Hinzufügen, Bearbeiten und Löschen wissenschaftlicher Quellen
-#  Reiter 4: 🎚️ Skalenverwaltung (scale_definitions)
-#            - Übersicht, Schnellsuche, Neuanlage & schreibgeschützte Bearbeitung (max_value gesperrt)
-#  Reiter 5: 📈 Reliabilität & Kodierfortschritt aller Nutzer
-#            - Detaillierte Überwachung aller Kodierer: Echte Feldkodierungen & Schulungsreliabilitäten
-#            - Skalen-Filter, Metrik-Umschaltung, ggplot2-Vergleichsdiagramm & Drilldown-Modal
-#  Reiter 6: 💾 Daten & Import/Export
-#            - Master-Datenexport (Konsolidierte Bewertungen & Quellen)
-#            - Stammdaten-Upload mit strikter Schema-Validierung & 2-Stufen-Überschreibschutz
-#            - Rohdaten- und Log-Downloads
+# File: modul_admin.R
+# Includes:
+#  Tab 1: User Management (CRUD for 'user_tokens')
+#         - Pagination: up to 25 users per page with first/prev/next/last & jump
+#         - Integrated quick search by username, role, and active status
+#         - Status control: is_active (1 = active, 0 = inactive)
+#         - 1-click toggle button in table & modal toggle
+#         - Self-deactivation and self-deletion protection for active admin
+#         - User creation with validation & token generator
+#         - Permission matrices for sources and coding scales per coder
+#  Tab 2: Case Texts & Source Assignment ('texts' & 'sources')
+#         - Pagination: up to 25 texts per page with full navigation
+#         - Integrated full-text and source search
+#         - Overview of all case texts with source assignment modal
+#  Tab 3: Source Management ('sources')
+#         - Complete source directory searchable by ID, short ref, citation, license
+#         - Modals for adding, editing, and deleting scholarly sources
+#  Tab 4: Scale Management ('scale_definitions')
+#         - Overview, quick search, creation & protected editing (max_value locked)
+#  Tab 5: Reliability & Coding Progress of All Users
+#         - Monitoring of all coders: production codings & training reliabilities
+#         - Scale filter, metric switcher, ggplot2 comparison chart & drilldown modal
+#  Tab 6: Targeted Coding Search & Value Correction ('user_ratings')
+#  Tab 7: Data & Import/Export
+#         - Consolidated master data export with scale/source/user filters
+#         - Master data CSV upload with strict schema validation & overwrite guard
+#         - Raw table and template CSV downloads
+#  Tab 8: Database Diagnostics & Integrity Audit (all 9 tables)
 # ==============================================================================
 
 # Dependencies (shiny, DBI, ggplot2) are imported via NAMESPACE
 
 # ==============================================================================
-# ADMIN-MODUL UI
+# ADMIN MODULE UI
 # ==============================================================================
+
+#' Admin Module UI
+#'
+#' Creates the Shiny UI for the administration panel covering user management,
+#' case texts, source definitions, scale definitions, reliability monitoring,
+#' coding search/correction, data import/export, and database diagnostics.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param lang Character string specifying the initial UI language code
+#'   (`"en"` or `"de"`).
+#' @param selected_subtab Character string selecting the initially active admin
+#'   subtab (one of `"tab_users"`, `"tab_texts"`, `"tab_sources"`,
+#'   `"tab_scales"`, `"tab_reliability"`, `"tab_coding_search"`, `"tab_data"`,
+#'   or `"tab_diagnose"`).
+#'
+#' @return A `shiny.tag` (`fluidPage`) representing the admin interface.
+#'
+#' @examples
+#' if (interactive()) {
+#'   ui <- adminUI("mod_admin", lang = "en")
+#' }
+#'
+#' @export
 adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
   ns <- NS(id)
   valid_subtabs <- c("tab_users", "tab_texts", "tab_sources", "tab_scales", "tab_reliability", "tab_coding_search", "tab_data", "tab_diagnose")
   active_subtab <- if (!is.null(selected_subtab) && selected_subtab %in% valid_subtabs) selected_subtab else "tab_users"
 
   fluidPage(
-    h2(paste0("🛠️ ", tr("admin.title", lang))),
+    h2(paste0("\U0001f6e0\ufe0f ", tr("admin.title", lang))),
     p(tr("admin.subtitle", lang)),
     br(),
 
@@ -52,7 +75,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       type = "tabs",
 
       # ------------------------------------------------------------------------
-      # REITER 1: BENUTZERVERWALTUNG (user_tokens) - MIT 25-NUTZER PAGINIERUNG
+      # TAB 1: USER MANAGEMENT (user_tokens) - WITH 25-USER PAGINATION
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("users"), tr("admin.tab_users", lang)),
@@ -62,7 +85,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
           style = "border-left: 5px solid #2c3e50; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
           div(class = "d-flex justify-content-between align-items-center mb-3",
               div(
-                h4(style = "margin: 0; color: #2c3e50;", paste0("👤 ", tr("admin.users.title", lang))),
+                h4(style = "margin: 0; color: #2c3e50;", paste0("\U0001f464 ", tr("admin.users.title", lang))),
                 p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.users.subtitle", lang))
               ),
               actionButton(ns("btn_open_add_user"), tr("admin.users.btn_add", lang),
@@ -91,7 +114,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 2: FALLTEXTE & QUELLENZUWEISUNG (texts & sources) - MIT 25-ITEM PAGINIERUNG
+      # TAB 2: CASE TEXTS & SOURCE ASSIGNMENT (texts & sources) - WITH 25-ITEM PAGINATION
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("file-lines"), tr("admin.tab_texts", lang)),
@@ -101,7 +124,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
           style = "border-left: 5px solid #3498db; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
           div(class = "d-flex justify-content-between align-items-center mb-3",
               div(
-                h4(style = "margin: 0; color: #2c3e50;", paste0("📑 ", tr("admin.texts.title", lang))),
+                h4(style = "margin: 0; color: #2c3e50;", paste0("\U0001f4d1 ", tr("admin.texts.title", lang))),
                 p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.texts.subtitle", lang))
               )
           ),
@@ -128,7 +151,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 3: QUELLENVERWALTUNG (sources)
+      # TAB 3: SOURCE MANAGEMENT (sources)
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("book"), tr("admin.tab_sources", lang)),
@@ -165,7 +188,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 4: SKALENVERWALTUNG
+      # TAB 4: SCALE MANAGEMENT
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("sliders-h"), tr("admin.tab_scales", lang)),
@@ -203,7 +226,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 5: RELIABILITÄT & KODIERFORTSCHRITT ALLER NUTZER
+      # TAB 5: RELIABILITY & CODING PROGRESS OF ALL USERS
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("chart-line"), tr("admin.tab_reliability", lang)),
@@ -257,7 +280,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 6: GEZIELTE KODIERUNGSSUCHE & WERTKORREKTUR (user_ratings)
+      # TAB 6: TARGETED CODING SEARCH & VALUE CORRECTION (user_ratings)
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("search"), uiOutput(ns("tab_coding_search_title"), inline = TRUE)),
@@ -332,7 +355,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 7: DATEN & IMPORT/EXPORT
+      # TAB 7: DATA & IMPORT/EXPORT
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("database"), tr("admin.tab_data", lang)),
@@ -342,7 +365,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
           style = "border-left: 5px solid #18bc9c; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
           div(class = "d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2",
               div(
-                h4(style = "margin: 0; color: #16a085;", paste0("📊 ", tr("admin.export_master_title", lang))),
+                h4(style = "margin: 0; color: #16a085;", paste0("\U0001f4ca ", tr("admin.export_master_title", lang))),
                 p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.export_master_desc", lang))
               )
           ),
@@ -415,7 +438,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
 
         wellPanel(
           style = "border-left: 5px solid #28a745; background-color: #ffffff;",
-          h4(paste0("📥 ", tr("admin.upload_title", lang))),
+          h4(paste0("\U0001f4e5 ", tr("admin.upload_title", lang))),
           p(tr("admin.upload_desc", lang)),
           br(),
           fluidRow(
@@ -497,7 +520,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       ),
 
       # ------------------------------------------------------------------------
-      # REITER 8: DATENBANK-DIAGNOSE & INTEGRITÄTS-AUDIT (9 TABELLEN)
+      # TAB 8: DATABASE DIAGNOSTICS & INTEGRITY AUDIT (9 TABLES)
       # ------------------------------------------------------------------------
       tabPanel(
         title = tagList(icon("stethoscope"), tr("admin.tab_diagnostics", lang)),
@@ -507,7 +530,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
           style = "border-left: 5px solid #0d9488; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
           div(class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
               div(
-                h4(style = "margin: 0; color: #0f766e;", paste0("🩺 ", tr("admin.diagnostics_title", lang))),
+                h4(style = "margin: 0; color: #0f766e;", paste0("\U0001fa7a ", tr("admin.diagnostics_title", lang))),
                 p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.diagnostics_desc", lang))
               ),
               actionButton(ns("btn_refresh_diagnostics"), tr("admin.diag_btn_refresh_now", lang),
@@ -531,8 +554,41 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
 }
 
 # ==============================================================================
-# ADMIN-MODUL SERVER
+# ADMIN MODULE SERVER
 # ==============================================================================
+
+#' Admin Module Server
+#'
+#' Implements the server-side administration workflows for managing users and
+#' permissions, case texts, bibliographic sources, coding scales, team
+#' reliability dashboards, targeted coding search and value edits, CSV data
+#' import/export, and relational database integrity diagnostics.
+#'
+#' @param id Character string specifying the Shiny module namespace identifier.
+#' @param db_con Active `DBIConnection` or `pool::Pool` database handle.
+#' @param current_user Optional reactive expression or character scalar
+#'   identifying the currently signed-in administrator's username.
+#' @param current_user_id Optional reactive expression or integer scalar
+#'   identifying the currently signed-in administrator's `user_id`.
+#' @param scales_trigger Optional `reactiveVal` incremented whenever scale
+#'   definitions are added or modified so other modules refresh dynamically.
+#' @param current_lang Reactive expression or character scalar providing the
+#'   active UI language code (`"de"` or `"en"`).
+#'
+#' @return The return value of `shiny::moduleServer()`.
+#'
+#' @examples
+#' \dontrun{
+#' adminServer(
+#'   id = "mod_admin",
+#'   db_con = db_con,
+#'   current_user = reactive("admin"),
+#'   current_user_id = reactive(1L),
+#'   scales_trigger = reactiveVal(0L)
+#' )
+#' }
+#'
+#' @export
 adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL, scales_trigger = NULL, current_lang = reactiveVal("de")) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -586,7 +642,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       get_source_license_choices(lang)
     }
 
-    # Tabellen user_source_permissions und user_coding_source_permissions initialisieren
+    # Initialize user_source_permissions and user_coding_source_permissions tables
     tryCatch({
       t_stamp <- if (is_mysql_connection(db_con)) "DATETIME DEFAULT CURRENT_TIMESTAMP" else "TEXT DEFAULT CURRENT_TIMESTAMP"
       dbExecute(db_con, paste0("
@@ -616,12 +672,12 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     }, error = function(e) NULL)
 
     # ==========================================================================
-    # 1. BENUTZERVERWALTUNG (REITER 1 - MIT 25-NUTZER PAGINIERUNG & SUCHE)
+    # 1. USER MANAGEMENT (TAB 1 - WITH 25-USER PAGINATION & SEARCH)
     # ==========================================================================
     current_page_users <- reactiveVal(1)
     page_size_users    <- 25
 
-    # Reaktive Filterung der Benutzer nach ID, Benutzername, Rolle oder Status
+    # Reactive filtering of users by ID, username, role, or active status
     filtered_users_data <- reactive({
       user_table_trigger()
 
@@ -651,18 +707,18 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       users_df
     })
 
-    # Bei Änderung der Sucheingabe Paginierung auf Seite 1 zurücksetzen
+    # Reset pagination to page 1 when the search query changes
     observeEvent(input$user_search_query, {
       current_page_users(1)
     })
 
-    # Gesamtzahl der verfügbaren Seiten berechnen
+    # Compute total number of available pages
     total_pages_users <- reactive({
       df <- filtered_users_data()
       max(1, ceiling(nrow(df) / page_size_users))
     })
 
-    # Zähler-Badge (Gesamt vs. Gefiltert)
+    # Counter badge (total vs. filtered)
     output$users_counter_badge <- renderUI({
       lang <- get_lang()
       df <- filtered_users_data()
@@ -677,7 +733,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       }
     })
 
-    # Blätter- und Paginierungsleiste für Benutzerverwaltung
+    # Paging and pagination bar for user management
     output$users_pagination_controls <- renderUI({
       lang <- get_lang()
       df <- filtered_users_data()
@@ -699,8 +755,8 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
         ),
         div(
           class = "d-flex align-items-center gap-2",
-          actionButton(ns("btn_users_first"), paste0("« ", tr("common.first", lang)), class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
-          actionButton(ns("btn_users_prev"), paste0("‹ ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
+          actionButton(ns("btn_users_first"), paste0("\u00ab ", tr("common.first", lang)), class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
+          actionButton(ns("btn_users_prev"), paste0("\u2039 ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
           div(
             class = "d-flex align-items-center gap-1",
             span(class = "small text-muted", tr("common.page_label", lang)),
@@ -716,13 +772,13 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
             ),
             span(class = "small text-muted", paste0("/ ", tot_pages))
           ),
-          actionButton(ns("btn_users_next"), paste0(tr("common.next", lang), " ›"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
-          actionButton(ns("btn_users_last"), paste0(tr("common.last", lang), " »"), class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
+          actionButton(ns("btn_users_next"), paste0(tr("common.next", lang), " \u203a"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
+          actionButton(ns("btn_users_last"), paste0(tr("common.last", lang), " \u00bb"), class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
         )
       )
     })
 
-    # Blätter-Events für Benutzer-Seitennavigation
+    # Paging event handlers for user page navigation
     observeEvent(input$btn_users_first, {
       current_page_users(1)
     })
@@ -788,9 +844,9 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
         safe_id <- paste0("user_", u_id)
 
         role_badge <- if (u_perm == "admin") {
-          tags$span(class = "badge bg-dark", style = "font-size: 0.85em; padding: 5px 9px;", paste0("👑 ", tr("common.role_admin", lang)))
+          tags$span(class = "badge bg-dark", style = "font-size: 0.85em; padding: 5px 9px;", paste0("\U0001f451 ", tr("common.role_admin", lang)))
         } else {
-          tags$span(class = "badge bg-info text-dark", style = "font-size: 0.85em; padding: 5px 9px;", paste0("👤 ", tr("common.role_coder", lang)))
+          tags$span(class = "badge bg-info text-dark", style = "font-size: 0.85em; padding: 5px 9px;", paste0("\U0001f464 ", tr("common.role_coder", lang)))
         }
 
         status_widget <- if (is_self) {
@@ -931,7 +987,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # 1-Klick Status Umschaltung über user_id
+    # 1-click active status toggle by user_id
     observeEvent(input$trigger_toggle_user_status, {
       lang <- get_lang()
       u_target <- input$trigger_toggle_user_status
@@ -968,7 +1024,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Quellenrechte verwalten über user_id
+    # Manage source permissions by user_id
     observeEvent(input$trigger_manage_user_sources, {
       lang <- get_lang()
       u_target <- input$trigger_manage_user_sources
@@ -1068,7 +1124,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       ))
     })
 
-    # Schnell-Auswahl für Text-Quellen
+    # Quick selection for text sources
     observeEvent(input$btn_select_all_text_sources, {
       all_ids <- dbGetQuery(db_con, "SELECT source_id FROM sources ORDER BY source_id ASC")$source_id
       updateCheckboxGroupInput(session, "selected_user_text_sources", selected = as.character(all_ids))
@@ -1078,7 +1134,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       updateCheckboxGroupInput(session, "selected_user_text_sources", selected = character(0))
     })
 
-    # Schnell-Auswahl für Kodierungs-Quellen
+    # Quick selection for coding sources
     observeEvent(input$btn_select_all_coding_sources, {
       all_ids <- dbGetQuery(db_con, "SELECT source_id FROM sources ORDER BY source_id ASC")$source_id
       updateCheckboxGroupInput(session, "selected_user_coding_sources", selected = as.character(all_ids))
@@ -1088,7 +1144,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       updateCheckboxGroupInput(session, "selected_user_coding_sources", selected = character(0))
     })
 
-    # Speichern beider Berechtigungsarten
+    # Save both source permission types
     observeEvent(input$btn_save_user_sources, {
       lang <- get_lang()
       u_info <- target_user_for_sources()
@@ -1125,7 +1181,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # MODAL: SKALEN-BERECHTIGUNGEN (NUR FÜR MODUL KODIERUNGEN)
+    # MODAL: SCALE PERMISSIONS (CODING MODULE ONLY)
     # ==========================================================================
     target_user_for_scales <- reactiveVal(NULL)
 
@@ -1199,7 +1255,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       ))
     })
 
-    # Schnell-Auswahl für Skalen
+    # Quick selection for scales
     observeEvent(input$btn_select_all_scales, {
       all_ids <- dbGetQuery(db_con, "SELECT scale_id FROM scale_definitions ORDER BY scale_id ASC")$scale_id
       updateCheckboxGroupInput(session, "selected_user_scales", selected = as.character(all_ids))
@@ -1209,7 +1265,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       updateCheckboxGroupInput(session, "selected_user_scales", selected = character(0))
     })
 
-    # Speichern der Skalenberechtigungen
+    # Save scale permissions
     observeEvent(input$btn_save_user_scales, {
       lang <- get_lang()
       u_info <- target_user_for_scales()
@@ -1237,7 +1293,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Neuen Benutzer anlegen
+    # Modal: Create new user
     observeEvent(input$btn_open_add_user, {
       lang <- get_lang()
       zufall <- generiere_zufalls_token(10)
@@ -1329,7 +1385,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Benutzer bearbeiten über user_id
+    # Modal: Edit user by user_id
     observeEvent(input$trigger_edit_user, {
       lang <- get_lang()
       u_target <- input$trigger_edit_user
@@ -1441,7 +1497,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Benutzer löschen über user_id
+    # Modal: Delete user by user_id
     observeEvent(input$trigger_delete_user, {
       lang <- get_lang()
       u_target <- input$trigger_delete_user
@@ -1524,12 +1580,12 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # 2. FALLTEXTE & QUELLENZUWEISUNG (REITER 2 - MIT 25-ITEM PAGINIERUNG)
+    # 2. CASE TEXTS & SOURCE ASSIGNMENT (TAB 2 - WITH 25-ITEM PAGINATION)
     # ==========================================================================
     current_page_texts <- reactiveVal(1)
     page_size_texts    <- 25
 
-    # Reaktive Filterung der Falltexte nach ID, Inhalt oder Quellenreferenz
+    # Reactive filtering of case texts by ID, content, or source reference
     filtered_texts_data <- reactive({
       texts_table_trigger()
 
@@ -1561,18 +1617,18 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       texts_df
     })
 
-    # Bei Änderung der Sucheingabe Paginierung auf Seite 1 zurücksetzen
+    # Reset pagination to page 1 when the search query changes
     observeEvent(input$texts_search_query, {
       current_page_texts(1)
     })
 
-    # Gesamtzahl der verfügbaren Seiten berechnen
+    # Compute total number of available pages
     total_pages_texts <- reactive({
       df <- filtered_texts_data()
       max(1, ceiling(nrow(df) / page_size_texts))
     })
 
-    # Zähler-Badge (Gesamt vs. Gefiltert)
+    # Counter badge (total vs. filtered)
     output$texts_counter_badge <- renderUI({
       lang <- get_lang()
       df <- filtered_texts_data()
@@ -1587,7 +1643,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       }
     })
 
-    # Blätter- und Paginierungsleiste
+    # Paging and pagination bar
     output$texts_pagination_controls <- renderUI({
       lang <- get_lang()
       df <- filtered_texts_data()
@@ -1609,8 +1665,8 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
         ),
         div(
           class = "d-flex align-items-center gap-2",
-          actionButton(ns("btn_texts_first"), paste0("« ", tr("common.first", lang)), class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
-          actionButton(ns("btn_texts_prev"), paste0("‹ ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
+          actionButton(ns("btn_texts_first"), paste0("\u00ab ", tr("common.first", lang)), class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
+          actionButton(ns("btn_texts_prev"), paste0("\u2039 ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
           div(
             class = "d-flex align-items-center gap-1",
             span(class = "small text-muted", tr("common.page_label", lang)),
@@ -1626,13 +1682,13 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
             ),
             span(class = "small text-muted", paste0("/ ", tot_pages))
           ),
-          actionButton(ns("btn_texts_next"), paste0(tr("common.next", lang), " ›"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
-          actionButton(ns("btn_texts_last"), paste0(tr("common.last", lang), " »"), class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
+          actionButton(ns("btn_texts_next"), paste0(tr("common.next", lang), " \u203a"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
+          actionButton(ns("btn_texts_last"), paste0(tr("common.last", lang), " \u00bb"), class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
         )
       )
     })
 
-    # Blätter-Events für Seitennavigation
+    # Paging event handlers for page navigation
     observeEvent(input$btn_texts_first, {
       current_page_texts(1)
     })
@@ -1662,7 +1718,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       }
     })
 
-    # Falltext-Tabelle rendern (maximal 25 Zeilen)
+    # Render case text table (maximum 25 rows per page)
     output$texts_management_table_container <- renderUI({
       lang <- get_lang()
       texts_df <- filtered_texts_data()
@@ -1785,7 +1841,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # 3. QUELLENVERWALTUNG (REITER 3)
+    # 3. SOURCE MANAGEMENT (TAB 3)
     # ==========================================================================
     output$sources_counter_text <- renderUI({
       lang <- get_lang()
@@ -1915,7 +1971,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Modal: Neue Quelle hinzufügen
+    # Modal: Add new source
     observeEvent(input$btn_open_add_source, {
       lang <- get_lang()
       showModal(modalDialog(
@@ -2011,7 +2067,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Quelle bearbeiten
+    # Modal: Edit source
     observeEvent(input$trigger_edit_source, {
       lang <- get_lang()
       s_id <- as.integer(input$trigger_edit_source)
@@ -2114,7 +2170,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Quelle löschen
+    # Modal: Delete source
     observeEvent(input$trigger_delete_source, {
       lang <- get_lang()
       s_id <- as.integer(input$trigger_delete_source)
@@ -2191,7 +2247,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # 4. SKALENVERWALTUNG (REITER 4)
+    # 4. SCALE MANAGEMENT (TAB 4)
     # ==========================================================================
     scales_data <- reactive({
       scales_table_trigger()
@@ -2212,12 +2268,12 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     scales_page <- reactiveVal(1)
     scales_page_size <- 25
 
-    # Bei Suchanfrage automatisch auf Seite 1 zurücksetzen
+    # Automatically reset to page 1 on search query change
     observeEvent(input$scale_search_query, {
       scales_page(1)
     }, ignoreInit = TRUE)
 
-    # Vor-/Zurück-Blättern Event Handler
+    # Previous/next pagination event handlers
     observeEvent(input$btn_scales_prev_page, {
       cur <- scales_page()
       if (cur > 1) scales_page(cur - 1)
@@ -2305,7 +2361,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           tags$span(
             class = "badge bg-light text-dark border me-1 mb-1",
             title = paste0(tr("common.level_label", lang, lvl), if (lvl_text != "") paste0(": ", lvl_text) else ""),
-            paste0(lvl, if (lvl_text != "") paste0(": ", substr(lvl_text, 1, 25), if (nchar(lvl_text) > 25) "…" else "") else "")
+            paste0(lvl, if (lvl_text != "") paste0(": ", substr(lvl_text, 1, 25), if (nchar(lvl_text) > 25) "\u2026" else "") else "")
           )
         })
 
@@ -2396,7 +2452,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Modal: Neue Skalendefinition anlegen
+    # Modal: Create new scale definition
     observeEvent(input$btn_open_add_scale, {
       lang <- get_lang()
       showModal(modalDialog(
@@ -2541,7 +2597,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       })
     })
 
-    # Modal: Skalendefinition bearbeiten (max_value ist strikt unveränderlich gesperrt)
+    # Modal: Edit scale definition (max_value is strictly immutable/locked)
     observeEvent(input$trigger_edit_scale, {
       lang <- get_lang()
       s_id <- as.integer(input$trigger_edit_scale)
@@ -2710,7 +2766,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # 5. DATEN & IMPORT/EXPORT (REITER 5)
+    # 5. DATA & IMPORT/EXPORT
     # ==========================================================================
     clean_columns <- function(df) {
       clean_table_columns(df)
@@ -2774,7 +2830,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
 
       showModal(modalDialog(
-        title = div(icon("file-import", class = "text-primary me-2"), paste0("📥 ", tr("admin.upload_modal_title", lang, tabellen_name))),
+        title = div(icon("file-import", class = "text-primary me-2"), paste0("\U0001f4e5 ", tr("admin.upload_modal_title", lang, tabellen_name))),
         size = "m",
         easyClose = FALSE,
         footer = tagList(
@@ -2854,7 +2910,8 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
               rows_updated <<- 0
             } else {
               for (cid in conflicts) {
-                dbExecute(tx_con, paste0("DELETE FROM ", target$table, " WHERE ", pk, " = ?"), params = list(cid))
+                cid_val <- if (grepl("^[0-9]+$", as.character(cid))) as.integer(cid) else as.character(cid)
+                dbExecute(tx_con, paste0("DELETE FROM ", target$table, " WHERE ", pk, " = ?"), params = list(cid_val))
               }
               dbAppendTable(tx_con, name = target$table, value = df_to_process)
               rows_updated <<- length(conflicts)
@@ -2992,7 +3049,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     }
 
-    # CSV-Vorlagengenerierung: Erzeugt leere CSV mit exakter Spalten-Kopfzeile (0 Zeilen)
+    # CSV template generation: produces an empty CSV with exact column headers (0 rows)
     erzeuge_csv_vorlage <- function(tabellen_name) {
       downloadHandler(
         filename = function() { paste0(tabellen_name, "_vorlage.csv") },
@@ -3023,14 +3080,14 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     }
 
     # --------------------------------------------------------------------------
-    # KONFIGURIERBARER MASTER-DATENEXPORT (FILTER & DYNAMISCHER DOWNLOAD)
+    # CONFIGURABLE MASTER DATA EXPORT (FILTERS & DYNAMIC DOWNLOAD)
     # --------------------------------------------------------------------------
-    # Reaktive Zustände für die Auswahlen (IDs / Usernames)
+    # Reactive state for filter selections (IDs / usernames)
     selected_export_scales  <- reactiveVal(NULL)
     selected_export_sources <- reactiveVal(NULL)
     selected_export_users   <- reactiveVal(NULL)
 
-    # Initialisierung bei Start & Tabellen-Aktualisierungen
+    # Initialization on startup & table refreshes
     observe({
       scales_table_trigger()
       if (is.function(scales_trigger)) scales_trigger()
@@ -3056,7 +3113,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       }
     })
 
-    # Status-Anzeigen auf den 3 Hauptkarten
+    # Status indicators on the 3 main filter cards
     output$export_scales_status_badge <- renderUI({
       lang <- get_lang()
       scales_df <- tryCatch(dbGetQuery(db_con, "SELECT scale_id FROM scale_definitions"), error = function(e) data.frame())
@@ -3139,7 +3196,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # MODAL 1: SKALEN-AUSWAHL MIT PAGINIERUNG (25 PRO SEITE) & SUCHE
+    # MODAL 1: SCALE SELECTION WITH PAGINATION (25 PER PAGE) & SEARCH
     # ==========================================================================
     page_scales_modal <- reactiveVal(1)
     current_modal_scales_page_ids <- reactiveVal(character(0))
@@ -3257,9 +3314,9 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       div(class = "d-flex justify-content-between align-items-center",
         tags$span(class = "text-muted small", tr("common.showing_entries", lang, start_i, end_i, total_n)),
         div(class = "btn-group btn-group-sm",
-          actionButton(ns("btn_modal_scales_prev"), paste0("◀ ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
+          actionButton(ns("btn_modal_scales_prev"), paste0("\u25c0 ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
           tags$span(class = "btn btn-light disabled px-3", tr("common.page_x_of_y", lang, cur_p, total_pages)),
-          actionButton(ns("btn_modal_scales_next"), paste0(tr("common.next", lang), " ▶"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
+          actionButton(ns("btn_modal_scales_next"), paste0(tr("common.next", lang), " \u25b6"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
         )
       )
     })
@@ -3294,7 +3351,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # MODAL 2: QUELLEN-AUSWAHL MIT PAGINIERUNG (25 PRO SEITE) & SUCHE
+    # MODAL 2: SOURCE SELECTION WITH PAGINATION (25 PER PAGE) & SEARCH
     # ==========================================================================
     page_sources_modal <- reactiveVal(1)
     current_modal_sources_page_ids <- reactiveVal(character(0))
@@ -3372,7 +3429,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
 
       choices <- setNames(
         page_ids,
-        paste0("#", page_df$source_id, " ", page_df$Kurzreferenz, ifelse(is.na(page_df$Referenz) | page_df$Referenz == "", "", paste0(" — ", substr(page_df$Referenz, 1, 60), "...")))
+        paste0("#", page_df$source_id, " ", page_df$Kurzreferenz, ifelse(is.na(page_df$Referenz) | page_df$Referenz == "", "", paste0(" \u2014 ", substr(page_df$Referenz, 1, 60), "...")))
       )
 
       all_sel <- selected_export_sources()
@@ -3412,9 +3469,9 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       div(class = "d-flex justify-content-between align-items-center",
         tags$span(class = "text-muted small", tr("common.showing_entries", lang, start_i, end_i, total_n)),
         div(class = "btn-group btn-group-sm",
-          actionButton(ns("btn_modal_sources_prev"), paste0("◀ ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
+          actionButton(ns("btn_modal_sources_prev"), paste0("\u25c0 ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
           tags$span(class = "btn btn-light disabled px-3", tr("common.page_x_of_y", lang, cur_p, total_pages)),
-          actionButton(ns("btn_modal_sources_next"), paste0(tr("common.next", lang), " ▶"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
+          actionButton(ns("btn_modal_sources_next"), paste0(tr("common.next", lang), " \u25b6"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
         )
       )
     })
@@ -3449,7 +3506,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # MODAL 3: BENUTZER-AUSWAHL MIT PAGINIERUNG (25 PRO SEITE) & SUCHE
+    # MODAL 3: USER SELECTION WITH PAGINATION (25 PER PAGE) & SEARCH
     # ==========================================================================
     page_users_modal <- reactiveVal(1)
     current_modal_users_page_ids <- reactiveVal(character(0))
@@ -3566,9 +3623,9 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       div(class = "d-flex justify-content-between align-items-center",
         tags$span(class = "text-muted small", tr("common.showing_entries", lang, start_i, end_i, total_n)),
         div(class = "btn-group btn-group-sm",
-          actionButton(ns("btn_modal_users_prev"), paste0("◀ ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
+          actionButton(ns("btn_modal_users_prev"), paste0("\u25c0 ", tr("common.previous", lang)), class = "btn btn-outline-secondary", disabled = if (cur_p <= 1) "disabled" else NULL),
           tags$span(class = "btn btn-light disabled px-3", tr("common.page_x_of_y", lang, cur_p, total_pages)),
-          actionButton(ns("btn_modal_users_next"), paste0(tr("common.next", lang), " ▶"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
+          actionButton(ns("btn_modal_users_next"), paste0(tr("common.next", lang), " \u25b6"), class = "btn btn-outline-secondary", disabled = if (cur_p >= total_pages) "disabled" else NULL)
         )
       )
     })
@@ -3602,7 +3659,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       updateCheckboxGroupInput(session, "modal_users_page_selection", selected = character(0))
     })
 
-    # Live-Status-Badge mit Zählung der zu exportierenden Daten
+    # Live status badge showing the count of records queued for export
     output$export_filter_summary_badge <- renderUI({
       lang <- get_lang()
       sel_scales  <- selected_export_scales()
@@ -3625,7 +3682,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # DownloadHandler mit voller Unterstützung aller drei Filterdimensionen
+    # Download handler with full support for all three filter dimensions
     output$download_master_dataset_btn <- downloadHandler(
       filename = function() {
         lang <- get_lang()
@@ -3644,7 +3701,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           return(NULL)
         }
 
-        # 1. Falltexte mit Textquelle abfragen
+        # 1. Query case texts with their assigned text source
         has_source_id <- "source_id" %in% dbListFields(db_con, "texts")
 
         base_query <- if (has_source_id) {
@@ -3664,12 +3721,12 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           dbReadTable(db_con, "texts")
         })
 
-        # Nach Quellen filtern, falls welche ausgewählt sind
+        # Filter by sources if any are selected
         if (!is.null(sel_sources) && length(sel_sources) > 0 && "source_id" %in% colnames(master_dataset)) {
           master_dataset <- master_dataset[as.character(master_dataset$source_id) %in% as.character(sel_sources), , drop = FALSE]
         }
 
-        # 2. Relevante Bewertungen mit Filtern abfragen
+        # 2. Query relevant ratings with active filters
         has_uid_col <- "user_id" %in% dbListFields(db_con, "user_ratings")
         ratings_query <- if (has_uid_col) {
           "SELECT r.text_id, r.kategorie, r.bewertung, r.typ, COALESCE(u.username, '') AS username, r.source_id,
@@ -3693,27 +3750,27 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           dbGetQuery(db_con, ratings_query)
         }, error = function(e) data.frame())
 
-        # Ratings nach Benutzern filtern
+        # Filter ratings by selected users
         if (nrow(ratings_data) > 0 && !is.null(sel_users) && length(sel_users) > 0) {
           ratings_data <- ratings_data[ratings_data$username %in% sel_users, , drop = FALSE]
         }
 
-        # Ratings nach Kodierungsquelle filtern (sofern Quellenzuordnung existiert)
+        # Filter ratings by coding source (when a source assignment exists)
         if (nrow(ratings_data) > 0 && !is.null(sel_sources) && length(sel_sources) > 0) {
-          # Bei Ratings ohne source_id nicht verwerfen, ansonsten auf erlaubte Quellen prüfen
+          # Retain ratings without a source_id; otherwise check against permitted sources
           ratings_data <- ratings_data[is.na(ratings_data$source_id) | as.character(ratings_data$source_id) %in% as.character(sel_sources), , drop = FALSE]
         }
 
         if (nrow(ratings_data) > 0) {
-          # Duplikate je (text_id, kategorie) entfernen (gold_standard behält Priorität)
+          # Deduplicate per (text_id, kategorie) while keeping gold_standard priority
           ratings_unique <- ratings_data[!duplicated(ratings_data[, c("text_id", "kategorie")]), ]
 
-          # Skalen-Metadaten abfragen
+          # Query scale metadata
           scale_meta <- tryCatch({
             dbGetQuery(db_con, "SELECT scale_id, short_label, name FROM scale_definitions")
           }, error = function(e) data.frame())
 
-          # Nur die vom Admin ausgewählten Skalen verarbeiten
+          # Process only scales selected by the administrator
           verfuegbare_kats <- unique(ratings_unique$kategorie)
           if (!is.null(sel_scales) && length(sel_scales) > 0) {
             verfuegbare_kats <- intersect(as.character(verfuegbare_kats), as.character(sel_scales))
@@ -3746,7 +3803,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           }
         }
 
-        # source_id Spalte vor Export ggf. entfernen oder belassen
+        # Remove or retain the source_id column prior to export as needed
         if ("source_id" %in% colnames(master_dataset)) {
           master_dataset$source_id <- NULL
         }
@@ -3756,7 +3813,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     )
 
     # ==========================================================================
-    # SERVER-LOGIK REITER 5: RELIABILITÄT & KODIERFORTSCHRITT ALLER NUTZER
+    # SERVER LOGIC TAB 5: RELIABILITY & CODING PROGRESS OF ALL USERS
     # ==========================================================================
     rel_refresh_trigger <- reactiveVal(0)
 
@@ -3766,7 +3823,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       showNotification(tr("admin.reliability.notif_refreshed", lang), type = "message", duration = 3)
     })
 
-    # Dynamische Aktualisierung der Skalenauswahl & Metriken für den Reliabilitäts-Filter
+    # Dynamically update scale and metric choices for the reliability filter
     observe({
       lang <- get_lang()
       scales_table_trigger()
@@ -3795,7 +3852,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       updateSelectInput(session, "rel_metric_select", choices = metric_choices, selected = sel_metric)
     })
 
-    # Reaktiver Datensatz: Nutzer + Echte Kodierungen + Reliabilitätsmetriken
+    # Reactive dataset: users + production codings + reliability metrics
     user_reliability_data <- reactive({
       rel_refresh_trigger()
       ratings_edit_trigger()
@@ -3808,7 +3865,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
 
       if (nrow(users_df) == 0) return(data.frame())
 
-      # 1. Echte Kodierungen pro Nutzer (typ = 'kodierung')
+      # 1. Production codings per user (typ = 'kodierung')
       real_codings_all <- tryCatch({
         dbGetQuery(db_con, "
           SELECT user_id,
@@ -3820,7 +3877,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
         ")
       }, error = function(e) data.frame())
 
-      # 2. Schulungssitzungen insgesamt pro Nutzer
+      # 2. Total training sessions per user
       training_all <- tryCatch({
         dbGetQuery(db_con, "
           SELECT user_id,
@@ -3851,7 +3908,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       if (is.null(kat_sel)) kat_sel <- "all"
 
       if (kat_sel != "all") {
-        # Skalenspezifische Aggregation aus coding_training
+        # Scale-specific aggregation from coding_training
         training_scale <- tryCatch({
           dbGetQuery(db_con, "
             SELECT user_id,
@@ -3879,7 +3936,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
           ", params = list(kat_sel))
         }, error = function(e) data.frame())
 
-        # Skalenspezifische echte Kodierungen
+        # Scale-specific production codings
         real_codings_scale <- tryCatch({
           dbGetQuery(db_con, "
             SELECT user_id,
@@ -3895,7 +3952,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
         real_codings_scale <- data.frame()
       }
 
-      # Daten konsolidieren
+      # Consolidate data
       res <- users_df
 
       if (nrow(real_codings_all) > 0) {
@@ -3986,7 +4043,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       res$n_echte_scale[is.na(res$n_echte_scale)] <- 0
       res$n_texte_scale[is.na(res$n_texte_scale)] <- 0
 
-      # Suchfilter anwenden
+      # Apply search filter
       q <- trimws(tolower(if (is.null(input$rel_search_query)) "" else input$rel_search_query))
       if (nzchar(q)) {
         res <- res[
@@ -3998,7 +4055,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       res
     })
 
-    # KPI-Cards für den Reliabilitäts-Reiter
+    # KPI cards for the reliability tab
     output$admin_reliability_kpis <- renderUI({
       lang <- get_lang()
       df <- user_reliability_data()
@@ -4070,7 +4127,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # ggplot2-Vergleichsdiagramm
+    # ggplot2 comparison chart
     output$admin_reliability_comparison_plot <- renderPlot({
       lang <- get_lang()
       df <- user_reliability_data()
@@ -4169,7 +4226,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       p
     })
 
-    # Haupttabelle aller Nutzer
+    # Main overview table of all users
     output$admin_reliability_table_container <- renderUI({
       lang <- get_lang()
       df <- user_reliability_data()
@@ -4269,7 +4326,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Detail-Modal für einen einzelnen Kodierer
+    # Drilldown detail modal for an individual coder
     observeEvent(input$trigger_rel_user_detail, {
       lang <- get_lang()
       u_target <- as.integer(input$trigger_rel_user_detail)
@@ -4393,7 +4450,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # SERVER-LOGIK: GEZIELTE KODIERUNGSSUCHE & WERTKORREKTUR (user_ratings)
+    # SERVER LOGIC: TARGETED CODING SEARCH & VALUE CORRECTION (user_ratings)
     # ==========================================================================
     ratings_edit_trigger       <- reactiveVal(0)
     current_page_coding_search <- reactiveVal(1L)
@@ -4412,7 +4469,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Skalen- und Typ-Filter dynamisch auf Sprache & Skalenliste aktualisieren
+    # Dynamically update scale and type filters on language or scale-list changes
     observe({
       lang <- get_lang()
       scales_table_trigger()
@@ -4592,7 +4649,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     })
 
     # ==========================================================================
-    # CSV-DOWNLOADS & EXPORT-HELPER
+    # CSV DOWNLOADS & EXPORT HELPERS
     # ==========================================================================
 
     output$download_scales_btn       <- erzeuge_csv_download("scale_definitions")
@@ -4601,7 +4658,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     output$download_ratings_btn      <- erzeuge_csv_download("user_ratings")
     output$download_training_log_btn <- erzeuge_csv_download("coding_training")
 
-    # Outputs für CSV-Vorlagen (nur Spalten-Kopfzeilen)
+    # Outputs for CSV templates (column headers only)
     output$download_template_scales   <- erzeuge_csv_vorlage("scale_definitions")
     output$download_template_texts    <- erzeuge_csv_vorlage("texts")
     output$download_template_sources  <- erzeuge_csv_vorlage("sources")
@@ -4609,7 +4666,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
     output$download_template_training <- erzeuge_csv_vorlage("coding_training")
 
     # ==========================================================================
-    # REITER 7: DATENBANK-DIAGNOSE & INTEGRITÄTS-AUDIT (SERVER-LOGIK)
+    # TAB 8: DATABASE DIAGNOSTICS & INTEGRITY AUDIT (SERVER LOGIC)
     # ==========================================================================
     diagnostics_trigger <- reactiveVal(0)
 
@@ -4619,7 +4676,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       showNotification(tr("admin.diag_notif_refreshed", lang), type = "message", duration = 3)
     })
 
-    # Führt die vollständige Diagnose aller 9 Tabellen und Integritätsbeziehungen aus
+    # Run full diagnostics across all 9 tables and relational integrity checks
     db_diagnostics_report <- reactive({
       lang <- get_lang()
       diagnostics_trigger()
@@ -4798,7 +4855,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Render: 1. KPI-Karten
+    # Render: 1. KPI cards
     output$db_diag_summary_cards <- renderUI({
       lang <- get_lang()
       rep <- db_diagnostics_report()
@@ -4839,7 +4896,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Render: 2. Status aller 9 Tabellen
+    # Render: 2. Status of all 9 tables
     output$db_diag_tables_overview <- renderUI({
       lang <- get_lang()
       rep <- db_diagnostics_report()
@@ -4886,7 +4943,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       )
     })
 
-    # Render: 3. Fremdschlüssel- & Konsistenz-Audit
+    # Render: 3. Foreign-key & consistency audit
     output$db_diag_integrity_audit <- renderUI({
       lang <- get_lang()
       rep <- db_diagnostics_report()

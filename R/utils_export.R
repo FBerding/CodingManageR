@@ -1,25 +1,17 @@
-#' @title Data Export, Schema Validation, and Download Utilities
-#' @description Encapsulates schema inspection, column sanitization, CSV export generation,
-#' and consolidated master-data export queries for the coding portal.
-#' @author AI Studio Coding Engine
-#' @keywords export schema csv data-validation
-NULL
-
+# Data export, schema validation, and CSV download utilities
 # DBI is imported via NAMESPACE
 
 #' Sanitize and Clean Data Frame Column Names
 #'
-#' @description Standardizes imported or uploaded column names by trimming whitespace,
-#' removing byte-order marks (BOM), and stripping non-alphanumeric punctuation.
+#' Standardizes imported or uploaded column names by stripping UTF-8 byte-order
+#' marks (BOM) and trimming leading and trailing whitespace.
 #'
-#' @param df A \code{data.frame} whose column names should be cleaned.
+#' @param df A `data.frame` whose column names should be cleaned.
 #'
-#' @return A \code{data.frame} with trimmed, standardized column names.
+#' @return A `data.frame` with trimmed, standardized column names.
 #'
 #' @examples
-#' \dontrun{
-#' clean_df <- clean_table_columns(raw_uploaded_csv)
-#' }
+#' clean_table_columns(data.frame(source_id = 1L, Kurzreferenz = "RefA"))
 #' @export
 clean_table_columns <- function(df) {
   if (is.null(df) || !is.data.frame(df)) return(df)
@@ -32,44 +24,53 @@ clean_table_columns <- function(df) {
 
 #' Retrieve Table Primary Key Column Name
 #'
-#' @description Returns the designated primary key column name for each of the core
-#' relational tables within the coding platform.
+#' Returns the designated primary key column name for each core relational table
+#' in the CodingManageR database schema.
 #'
 #' @param table_name A character string naming the database table.
 #'
-#' @return A character string with the primary key column name, or \code{NULL} if not recognized.
+#' @return A character string with the primary key column name, or `NULL` if not
+#'   recognized.
 #'
+#' @examples
+#' get_table_pk_definition("sources")
 #' @export
 get_table_pk_definition <- function(table_name) {
   switch(as.character(table_name),
-    "user_tokens"                   = "user_id",
-    "sources"                       = "source_id",
-    "texts"                         = "text_id",
-    "user_ratings"                  = "rating_id",
-    "coding_training"               = "training_id",
-    "scale_definitions"             = "scale_id",
-    "user_source_permissions"       = "source_id",
-    "user_coding_source_permissions"= "source_id",
-    "user_scale_permissions"        = "scale_id",
+    "user_tokens"                    = "user_id",
+    "sources"                        = "source_id",
+    "texts"                          = "text_id",
+    "user_ratings"                   = "rating_id",
+    "coding_training"                = "training_id",
+    "scale_definitions"              = "scale_id",
+    "user_source_permissions"        = "source_id",
+    "user_coding_source_permissions" = "source_id",
+    "user_scale_permissions"         = "scale_id",
     NULL
   )
 }
 
 #' Validate Table Schema for Data Upload
 #'
-#' @description Validates whether an uploaded data frame possesses the mandatory columns
-#' and conforming types required for insertion into a specified database table.
+#' Validates whether an uploaded data frame contains all mandatory columns
+#' required for insertion into the specified database table.
 #'
 #' @param target_table A character string naming the target database table.
-#' @param df A \code{data.frame} containing the uploaded records.
+#' @param df A `data.frame` containing the uploaded records.
+#' @param lang Character language code (`"de"` or `"en"`) used for localized
+#'   validation error messages. Defaults to `"en"`.
 #'
-#' @return A named list with:
-#' \describe{
-#'   \item{is_valid}{Logical indicating if schema validation passed.}
-#'   \item{missing_cols}{Character vector of required columns that are missing.}
-#'   \item{error_msg}{Character message describing the validation failure, or \code{NULL}.}
-#' }
+#' @return A named list with elements:
+#' - `is_valid`: Logical indicating whether schema validation passed.
+#' - `missing_cols`: Character vector of required columns that are missing.
+#' - `error_msg`: Character message describing the validation failure, or `NULL`.
 #'
+#' @examples
+#' df <- data.frame(
+#'   Kurzreferenz = "Ref1",
+#'   Vollstaendiges_Zitat = "Full citation"
+#' )
+#' validate_import_schema("sources", df, lang = "en")
 #' @export
 validate_import_schema <- function(target_table, df, lang = "en") {
   if (is.null(df) || nrow(df) == 0) {
@@ -105,14 +106,19 @@ validate_import_schema <- function(target_table, df, lang = "en") {
 
 #' Generate CSV Content for a Database Table
 #'
-#' @description Queries all rows from the specified table in the active database
-#' and serializes them into a UTF-8 CSV string with semicolon delimiters.
+#' Queries all rows from the specified table in the active database and
+#' serializes them into a UTF-8 CSV string with semicolon delimiters.
 #'
-#' @param con A DBIConnection object.
+#' @param con A `DBIConnection` or `pool::dbPool` object.
 #' @param table_name A character string specifying the table name.
 #'
-#' @return A character string containing the serialized CSV content including headers.
+#' @return A character string containing the serialized CSV content including
+#'   headers.
 #'
+#' @examples
+#' \dontrun{
+#' csv_str <- export_table_to_csv(con, "sources")
+#' }
 #' @export
 export_table_to_csv <- function(con, table_name) {
   if (is.null(con) || is.null(table_name) || table_name == "") {
@@ -139,13 +145,15 @@ export_table_to_csv <- function(con, table_name) {
 
 #' Generate Empty CSV Template for Table Upload
 #'
-#' @description Generates a header-only CSV template (with sample columns) to assist
-#' administrators in preparing structured uploads.
+#' Generates a header-only semicolon-delimited CSV template to assist
+#' administrators in preparing structured master-data uploads.
 #'
 #' @param table_name A character string specifying the target table.
 #'
 #' @return A character string containing the semicolon-delimited header row.
 #'
+#' @examples
+#' export_table_template_csv("sources")
 #' @export
 export_table_template_csv <- function(table_name) {
   cols <- switch(as.character(table_name),
@@ -161,16 +169,20 @@ export_table_template_csv <- function(table_name) {
 
 #' Build and Execute Consolidated Master Data Export Query
 #'
-#' @description Queries and consolidates ratings, full-text contents, scale labels,
-#' and scientific source references according to active administrator filters.
+#' Queries and consolidates ratings, case text contents, scale definitions, and
+#' scientific source references according to optional administrator filters.
 #'
-#' @param con A DBIConnection object.
-#' @param scale_ids An optional integer or character vector of selected scale IDs/names.
-#' @param source_ids An optional integer vector of selected text source IDs.
-#' @param user_ids An optional integer vector of selected user IDs.
+#' @param con A `DBIConnection` or `pool::dbPool` object.
+#' @param scale_ids Optional integer or character vector of scale IDs or names.
+#' @param source_ids Optional integer vector of source IDs.
+#' @param user_ids Optional integer vector of user IDs.
 #'
-#' @return A data.frame containing consolidated research export columns.
+#' @return A `data.frame` containing consolidated research export columns.
 #'
+#' @examples
+#' \dontrun{
+#' master_df <- fetch_consolidated_master_export(con)
+#' }
 #' @export
 fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids = NULL, user_ids = NULL) {
   if (is.null(con)) return(data.frame())

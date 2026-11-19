@@ -1,28 +1,21 @@
-#' @title Reliability Metrics, Stratified Sampling, and Evaluation Utilities
-#' @description Comprehensive statistical functions for calculating inter-rater reliability,
-#' formatting metrics according to academic benchmarks (Landis & Koch), and drawing stratified
-#' training pools across ordinal coding scales.
-#' @author AI Studio Coding Engine
-#' @keywords reliability metrics stratified-sampling statistics
-NULL
-
+# Reliability metrics, stratified sampling, and evaluation utilities
 # DBI is imported via NAMESPACE
 
-#' Classify Cohen's Kappa Magnitude
+#' Classify Inter-Rater Reliability Magnitude
 #'
-#' @description Classifies a Cohen's Kappa coefficient according to the benchmark criteria
-#' by Landis & Koch (1977).
+#' Classifies a numeric reliability coefficient (such as Cohen's kappa or
+#' Krippendorff's alpha) according to the benchmark criteria of Landis and Koch
+#' (1977).
 #'
-#' @param kappa A numeric value representing Cohen's Kappa or agreement coefficient.
-#' @param lang Character language code (\code{"de"} or \code{"en"}). Default is \code{"en"}.
+#' @param kappa Numeric scalar representing Cohen's kappa or another agreement
+#'   coefficient.
+#' @param lang Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 #'
-#' @return A named list containing \code{label} (character description) and \code{css_class}
-#' (Tailwind/Bootstrap style class).
+#' @return A named list containing `label` (localized benchmark label) and
+#'   `css_class` (Bootstrap styling class).
 #'
 #' @examples
-#' \dontrun{
-#' rating <- classify_reliability_magnitude(0.74)
-#' }
+#' classify_reliability_magnitude(0.74, lang = "en")
 #' @export
 classify_reliability_magnitude <- function(kappa, lang = "en") {
   if (is.null(kappa) || is.na(kappa)) {
@@ -46,10 +39,16 @@ classify_reliability_magnitude <- function(kappa, lang = "en") {
 
 #' Retrieve Localized Optgroup Choices for Reliability Metric Selectors
 #'
-#' @param lang Character language code (\code{"de"} or \code{"en"}).
-#' @param include_all_core Logical; whether to include the combined \code{all_core} group.
+#' Builds a grouped list of supported inter-rater reliability metric keys and
+#' localized display labels for use in `shiny::selectInput()`.
 #'
-#' @return A named list suitable for Shiny \code{selectInput(..., choices = ...)}.
+#' @param lang Character language code (`"de"` or `"en"`). Defaults to `"en"`.
+#' @param include_all_core Logical; whether to include the combined `"all_core"`
+#'   overview option. Defaults to `TRUE`.
+#'
+#' @return A named list suitable for `shiny::selectInput(..., choices = ...)`.
+#' @examples
+#' get_reliability_metric_choices(lang = "en")
 #' @export
 get_reliability_metric_choices <- function(lang = "en", include_all_core = TRUE) {
   groups <- list()
@@ -100,10 +99,16 @@ get_reliability_metric_choices <- function(lang = "en", include_all_core = TRUE)
 
 #' Retrieve Localized Metadata for a Single Reliability Metric Key
 #'
-#' @param metric_key Character key identifying the metric.
-#' @param lang Character language code (\code{"de"} or \code{"en"}).
+#' Returns the localized title, short label, description, percentage formatting
+#' flag, and accent color associated with a given reliability metric key.
 #'
-#' @return A list with \code{label}, \code{short_label}, \code{desc}, \code{is_pct}, and \code{color}.
+#' @param metric_key Character scalar identifying the reliability metric.
+#' @param lang Character language code (`"de"` or `"en"`). Defaults to `"en"`.
+#'
+#' @return A named list with elements `label`, `short_label`, `desc`, `is_pct`,
+#'   and `color`.
+#' @examples
+#' get_reliability_metric_meta("alpha_ordinal", lang = "en")
 #' @export
 get_reliability_metric_meta <- function(metric_key, lang = "en") {
   key <- as.character(metric_key)
@@ -153,9 +158,15 @@ get_reliability_metric_meta <- function(metric_key, lang = "en") {
 
 #' Retrieve Localized Source License Options
 #'
-#' @param lang Character language code (\code{"de"} or \code{"en"}).
+#' Returns standard license options (such as Creative Commons, Open Data
+#' Commons, institutional, and custom licenses) for source metadata forms.
 #'
-#' @return A named character vector mapping localized license labels to stored values.
+#' @param lang Character language code (`"de"` or `"en"`). Defaults to `"en"`.
+#'
+#' @return A named character vector mapping localized license labels to stored
+#'   license identifiers.
+#' @examples
+#' get_source_license_choices(lang = "en")
 #' @export
 get_source_license_choices <- function(lang = "en") {
   vals <- c(
@@ -183,19 +194,25 @@ get_source_license_choices <- function(lang = "en") {
 
 #' Format Numeric Metric or Percentage for Display
 #'
-#' @description Formats numerical metrics with standard decimal digits or as formatted percentages.
+#' Formats numerical reliability metrics with fixed decimal places or as
+#' percentages with safe `NA` handling.
 #'
 #' @param val A numeric or character value to format.
-#' @param is_percentage Logical; if TRUE, formats with 1 decimal place and a percent sign.
-#' @param digits Integer indicating number of decimal places for non-percentage values. Default 3.
+#' @param is_percentage Logical; if `TRUE`, formats with 1 decimal place and a
+#'   percent sign. Defaults to `FALSE`.
+#' @param digits Integer indicating the number of decimal places for
+#'   non-percentage values. Defaults to `3`.
 #'
-#' @return A character string representation of the formatted number, or \code{"—"} if NA.
+#' @return A formatted character string, or an em dash when `val` is missing or
+#'   non-numeric.
 #'
+#' @examples
+#' format_metric_display(0.8421, is_percentage = FALSE, digits = 3)
 #' @export
 format_metric_display <- function(val, is_percentage = FALSE, digits = 3) {
-  if (is.null(val) || is.na(val) || val == "" || val == "NA") return("—")
+  if (is.null(val) || is.na(val) || val == "" || val == "NA") return("\u2014")
   num <- suppressWarnings(as.numeric(val))
-  if (is.na(num)) return("—")
+  if (is.na(num)) return("\u2014")
 
   if (isTRUE(is_percentage)) {
     paste0(formatC(num, digits = 1, format = "f"), " %")
@@ -206,18 +223,26 @@ format_metric_display <- function(val, is_percentage = FALSE, digits = 3) {
 
 #' Generate Stratified Training Pool Guaranteeing Full Scale Range
 #'
-#' @description Draws a balanced, stratified sample of training cases from \code{texts}
-#' and \code{user_ratings} (prioritizing gold standards and high-consensus codings),
-#' guaranteeing that all scale levels from 0 to \code{max_value} are adequately represented.
+#' Draws a balanced, stratified sample of training cases from `texts` and
+#' `user_ratings` (prioritizing `gold_standard` benchmarks over field codings),
+#' ensuring that every discrete ordinal level from `0` to `max_scale_value` is
+#' represented whenever available.
 #'
-#' @param con A DBIConnection object.
-#' @param scale_identifier Character or integer identifying the scale.
-#' @param target_count Total number of training items to draw (minimum \code{max_value + 1}).
-#' @param max_scale_value Integer indicating the maximum allowed score on this scale.
+#' @param con A `DBIConnection` or `pool::dbPool` object.
+#' @param scale_identifier Character or integer identifying the coding scale.
+#' @param target_count Total number of training items to draw (at least
+#'   `max_scale_value + 1`).
+#' @param max_scale_value Integer indicating the maximum allowed score on this
+#'   scale.
 #'
-#' @return A \code{data.frame} of selected cases with columns \code{text_id}, \code{text},
-#' \code{source_id}, and \code{true_val} (the benchmark reference score).
+#' @return A `data.frame` of sampled training cases including `text_id`, `text`,
+#'   `source_id`, `case_text`, `bewertung`, and `val_int`.
 #'
+#' @examples
+#' \dontrun{
+#' pool_df <- generate_stratified_training_pool(con, scale_identifier = 1L,
+#'   target_count = 8L, max_scale_value = 3L)
+#' }
 #' @export
 generate_stratified_training_pool <- function(con, scale_identifier, target_count, max_scale_value) {
   if (is.null(con) || is.null(scale_identifier)) return(data.frame())
@@ -274,7 +299,7 @@ generate_stratified_training_pool <- function(con, scale_identifier, target_coun
   }
 
   if (nrow(pool_df) > 0) {
-    pool_df <- pool_df[sample(seq_len(nrow(pool_df))), , drop = FALSE] # Shuffle
+    pool_df <- pool_df[sample(seq_len(nrow(pool_df))), , drop = FALSE] # Shuffle order
   }
 
   pool_df

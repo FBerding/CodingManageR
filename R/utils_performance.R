@@ -1,9 +1,23 @@
-#' Berechnet die vollständige Metrik-Matrix für eine Sitzung via aifeducation
+#' Compute Inter-Rater Reliability Metrics via `aifeducation`
 #'
-#' @param user_vals Numerischer Vektor der Benutzerbewertungen
-#' @param true_vals Numerischer Vektor der korrekten Vorgabewerte
-#' @param max_val Der maximale mögliche Skalenwert (für die Faktordefinition)
-#' @return Eine benannte Liste mit gerundeten Kennzahlen
+#' Computes 16 inter-rater reliability, agreement, and classification metrics
+#' for a coder training session by comparing coder ratings against gold-standard
+#' reference ratings via `aifeducation::get_coder_metrics()`.
+#'
+#' @param user_vals Numeric or integer vector of coder ratings.
+#' @param true_vals Numeric or integer vector of gold-standard reference ratings.
+#' @param max_val Integer scalar giving the maximum ordinal scale value (used to
+#'   define factor levels `0:max_val`).
+#'
+#' @return A named list of rounded character metric values (`accuracy`,
+#'   `balanced_accuracy`, `iota_index`, `avg_iota2`, `cohens_kappa`,
+#'   `kappa_linear`, `kappa_squared`, `fleiss_kappa`, `kendall_w`,
+#'   `alpha_nominal`, `alpha_ordinal`, `gwet_ac1`, `gwet_ac2_quadratic`,
+#'   `macro_precision`, `macro_recall`, and `macro_f1`).
+#' @examples
+#' \dontrun{
+#' berechne_aifeducation_metriken(c(0, 1, 2, 3), c(0, 1, 2, 3), max_val = 3)
+#' }
 #' @export
 berechne_aifeducation_metriken <- function(user_vals, true_vals, max_val) {
   all_levels <- as.character(0:max_val)

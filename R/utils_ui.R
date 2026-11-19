@@ -1,24 +1,27 @@
-#' @title User Interface Components and Modal Builders for Coding Portal
-#' @description Modular Shiny UI constructors including standardized KPI cards,
-#' metric status badges, scale example dialogs, and pagination controls.
-#' @author AI Studio Coding Engine
-#' @keywords shiny ui components widgets
-NULL
-
+# User interface components and modal builders for CodingManageR
 # shiny is imported via NAMESPACE
 
 #' Render Standardized KPI Stat Card
 #'
-#' @description Generates a consistent Bootstrap card widget for dashboard and administrative KPIs.
+#' Generates a consistent Bootstrap card widget for dashboard and administrative
+#' key performance indicators.
 #'
-#' @param title Character string describing the metric (e.g. "Echte Kodierungen insgesamt").
+#' @param title Character string describing the metric (e.g., `"Total Codings"`).
 #' @param value Numeric or character representation of the primary metric value.
-#' @param subtitle Optional character string providing extra context or time window.
-#' @param bg_class Character string defining the Bootstrap background color class (e.g. \code{"bg-dark"}, \code{"bg-success"}, \code{"bg-info"}).
-#' @param width Integer column width according to Bootstrap 12-column grid. Default is 4.
+#' @param subtitle Optional character string providing extra context or time
+#'   window.
+#' @param bg_class Character string defining the Bootstrap background color
+#'   class (e.g., `"bg-dark"`, `"bg-success"`, `"bg-info"`). Defaults to
+#'   `"bg-primary"`.
+#' @param width Integer column width according to Bootstrap's 12-column grid.
+#'   Defaults to `4`.
 #'
-#' @return A Shiny \code{column} UI tag containing the styled stat card.
+#' @return A Shiny `column` UI tag containing the styled stat card.
 #'
+#' @examples
+#' \dontrun{
+#' render_kpi_card_ui("Total Codings", "142", subtitle = "Active scale")
+#' }
 #' @export
 render_kpi_card_ui <- function(title, value, subtitle = NULL, bg_class = "bg-primary", width = 4) {
   column(
@@ -41,23 +44,31 @@ render_kpi_card_ui <- function(title, value, subtitle = NULL, bg_class = "bg-pri
 
 #' Render Metric Status Badge
 #'
-#' @description Generates a color-coded Bootstrap/HTML badge based on reliability thresholds.
+#' Generates a color-coded Bootstrap HTML badge based on inter-rater reliability
+#' thresholds.
 #'
 #' @param val Numeric metric value or character representation.
-#' @param is_percentage Logical; if TRUE, interprets values on a 0-100 scale, else 0.0-1.0.
-#' @param thresh_high Numeric upper threshold for excellent/green styling. Default 0.80 (or 80.0).
-#' @param thresh_mid Numeric middle threshold for moderate/warning styling. Default 0.60 (or 60.0).
+#' @param is_percentage Logical; if `TRUE`, interprets values on a 0-100 scale,
+#'   otherwise on a 0.0-1.0 scale. Defaults to `FALSE`.
+#' @param thresh_high Optional numeric upper threshold for high/green styling.
+#'   Defaults to `0.80` (or `80.0` when `is_percentage = TRUE`).
+#' @param thresh_mid Optional numeric middle threshold for moderate/warning
+#'   styling. Defaults to `0.60` (or `60.0` when `is_percentage = TRUE`).
 #'
-#' @return A Shiny \code{tags$span} UI element with formatted badge markup.
+#' @return A Shiny `tags$span` UI element with formatted badge markup.
 #'
+#' @examples
+#' \dontrun{
+#' render_metric_badge_ui(0.84, is_percentage = FALSE)
+#' }
 #' @export
 render_metric_badge_ui <- function(val, is_percentage = FALSE, thresh_high = NULL, thresh_mid = NULL) {
   if (is.null(val) || is.na(val) || val == "" || val == "NA") {
-    return(tags$span(class = "text-muted", "—"))
+    return(tags$span(class = "text-muted", "\u2014"))
   }
 
   num <- suppressWarnings(as.numeric(val))
-  if (is.na(num)) return(tags$span(class = "text-muted", "—"))
+  if (is.na(num)) return(tags$span(class = "text-muted", "\u2014"))
 
   t_high <- if (!is.null(thresh_high)) thresh_high else if (is_percentage) 80.0 else 0.80
   t_mid  <- if (!is.null(thresh_mid)) thresh_mid else if (is_percentage) 60.0 else 0.60
@@ -80,14 +91,22 @@ render_metric_badge_ui <- function(val, is_percentage = FALSE, thresh_high = NUL
 
 #' Build Modal Dialog for Coding Scale Definitions and Stage Examples
 #'
-#' @description Constructs a Shiny modalDialog displaying full scale descriptions,
-#' stage boundaries, and concrete text examples for all levels 0 through max_value.
+#' Constructs a Shiny `modalDialog()` displaying full scale descriptions, stage
+#' boundaries, and concrete anchor examples for all ordinal levels from `0`
+#' through `max_value`.
 #'
-#' @param scale_df A 1-row data frame from \code{scale_definitions}.
-#' @param active_level Optional integer highlighting a specific score level (e.g. 0..4).
+#' @param scale_df A 1-row `data.frame` from `scale_definitions`.
+#' @param active_level Optional integer highlighting a specific score level
+#'   (e.g., `0..4`).
+#' @param lang Character language code (`"de"` or `"en"`) passed to [tr()].
+#'   Defaults to `"en"`.
 #'
-#' @return A Shiny \code{modalDialog} object ready to be passed to \code{showModal()}.
+#' @return A Shiny `modalDialog` object ready to be passed to `showModal()`.
 #'
+#' @examples
+#' \dontrun{
+#' build_scale_examples_modal(scale_df, active_level = 2, lang = "en")
+#' }
 #' @export
 build_scale_examples_modal <- function(scale_df, active_level = NULL, lang = "en") {
   if (is.null(scale_df) || nrow(scale_df) == 0) {
@@ -141,21 +160,24 @@ build_scale_examples_modal <- function(scale_df, active_level = NULL, lang = "en
 
 #' Build Modal Dialog for Editing a Case Coding Rating Value
 #'
-#' @description Constructs a localized Shiny \code{modalDialog} presenting read-only context
-#' for an existing case coding (rating ID, case text, scale definition, coder, rating type,
-#' and timestamp) alongside radio choices \code{0..max_value} enriched with stage descriptions
-#' (\code{def_n_0..def_n_5}) so an administrator can adjust only the numeric rating score.
+#' Constructs a localized Shiny `modalDialog()` presenting read-only context for
+#' an existing case coding (rating ID, case text, scale definition, coder,
+#' rating type, and timestamp) alongside radio choices `0..max_value` enriched
+#' with stage descriptions (`def_n_0..def_n_5`) so an administrator can adjust
+#' only the numeric rating score.
 #'
-#' @param ns A Shiny namespace function (\code{session$ns}) from the calling module server.
-#' @param rating_row A 1-row \code{data.frame} returned by \code{\link{get_coding_detail_db}}.
-#' @param lang Character language code (\code{"de"} or \code{"en"}) passed to \code{tr()}.
+#' @param ns A Shiny namespace function (`session$ns`) from the calling module
+#'   server.
+#' @param rating_row A 1-row `data.frame` returned by [get_coding_detail_db()].
+#' @param lang Character language code (`"de"` or `"en"`) passed to [tr()].
+#'   Defaults to `"en"`.
 #'
-#' @return A Shiny \code{modalDialog} object ready to be passed to \code{showModal()}.
+#' @return A Shiny `modalDialog` object ready to be passed to `showModal()`.
 #'
 #' @examples
 #' \dontrun{
 #' detail <- get_coding_detail_db(con, 201)
-#' showModal(build_edit_coding_value_modal(session$ns, detail, lang = "de"))
+#' showModal(build_edit_coding_value_modal(session$ns, detail, lang = "en"))
 #' }
 #' @export
 build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
@@ -173,7 +195,7 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
   cur_val   <- as.integer(rating_row$bewertung[1])
   coder     <- as.character(rating_row$username[1])
   r_type    <- as.character(rating_row$typ[1])
-  tstamp    <- if (!is.null(rating_row$zeitstempel) && !is.na(rating_row$zeitstempel[1])) as.character(rating_row$zeitstempel[1]) else "—"
+  tstamp    <- if (!is.null(rating_row$zeitstempel) && !is.na(rating_row$zeitstempel[1])) as.character(rating_row$zeitstempel[1]) else "\u2014"
   case_txt  <- if (!is.null(rating_row$case_text) && !is.na(rating_row$case_text[1])) as.character(rating_row$case_text[1]) else ""
   s_name    <- if (!is.null(rating_row$scale_name) && !is.na(rating_row$scale_name[1])) as.character(rating_row$scale_name[1]) else as.character(rating_row$kategorie[1])
   s_short   <- if (!is.null(rating_row$scale_short_label) && !is.na(rating_row$scale_short_label[1])) as.character(rating_row$scale_short_label[1]) else ""
@@ -195,7 +217,7 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
     lvl_desc <- if (col_n %in% colnames(rating_row) && !is.na(rating_row[[col_n]][1]) && nzchar(trimws(rating_row[[col_n]][1]))) {
       as.character(rating_row[[col_n]][1])
     } else {
-      "—"
+      "\u2014"
     }
     is_cur <- (!is.na(cur_val) && cur_val == lvl)
     tags$div(
@@ -223,7 +245,7 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
         tags$span(class = "small fw-bold text-uppercase text-muted", tr("admin.modal_case_context", lang)),
         tags$div(
           class = "small font-monospace text-muted",
-          paste0("Rating #", r_id, " · ", tr("common.case_number", lang, t_id), " · ", coder, " · ", type_label, " · ", tstamp)
+          paste0("Rating #", r_id, " \u00b7 ", tr("common.case_number", lang, t_id), " \u00b7 ", coder, " \u00b7 ", type_label, " \u00b7 ", tstamp)
         )
       ),
       div(
@@ -264,16 +286,20 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
 
 #' Build Paginated Table UI for Admin Coding Search and Correction
 #'
-#' @description Renders a responsive Bootstrap table displaying filtered coding records
-#' (\code{user_ratings}) with Rating ID, case text preview, scale label, coder, rating type,
-#' current score on scale, timestamp, and an edit action button triggering
-#' \code{trigger_edit_coding_rating}.
+#' Renders a responsive Bootstrap table displaying filtered coding records
+#' (`user_ratings`) with rating ID, case text preview, scale label, coder,
+#' rating type, current score on scale, timestamp, and an edit action button
+#' triggering `trigger_edit_coding_rating`.
 #'
-#' @param ns A Shiny namespace function (\code{session$ns}) from the calling module server.
-#' @param page_df A sliced \code{data.frame} (up to 25 rows) returned by \code{\link{search_case_codings_db}}.
-#' @param lang Character language code (\code{"de"} or \code{"en"}) passed to \code{tr()}.
+#' @param ns A Shiny namespace function (`session$ns`) from the calling module
+#'   server.
+#' @param page_df A sliced `data.frame` (up to 25 rows) returned by
+#'   [search_case_codings_db()].
+#' @param lang Character language code (`"de"` or `"en"`) passed to [tr()].
+#'   Defaults to `"en"`.
 #'
-#' @return A Shiny UI tag containing either an empty-state alert or the responsive HTML table.
+#' @return A Shiny UI tag containing either an empty-state alert or the
+#'   responsive HTML table.
 #'
 #' @examples
 #' \dontrun{
@@ -300,9 +326,9 @@ build_coding_search_table_ui <- function(ns, page_df, lang = "en") {
     s_short <- if (!is.na(r$scale_short_label)) as.character(r$scale_short_label) else ""
     max_v <- if (!is.na(r$scale_max_value)) as.integer(r$scale_max_value) else 5L
     score_val <- as.integer(r$bewertung)
-    coder <- if (!is.na(r$username)) as.character(r$username) else "—"
+    coder <- if (!is.na(r$username)) as.character(r$username) else "\u2014"
     r_type <- as.character(r$typ)
-    tstamp <- if (!is.na(r$zeitstempel)) substr(as.character(r$zeitstempel), 1, 16) else "—"
+    tstamp <- if (!is.na(r$zeitstempel)) substr(as.character(r$zeitstempel), 1, 16) else "\u2014"
 
     type_badge <- switch(
       r_type,
@@ -366,21 +392,25 @@ build_coding_search_table_ui <- function(ns, page_df, lang = "en") {
 
 #' Build Pagination Bar for Admin Coding Search Table
 #'
-#' @description Generates localized pagination controls (first, previous, direct page number
-#' input, next, last) for the 25-row coding search table in \code{modul_admin.R}.
+#' Generates localized pagination controls (first, previous, direct page number
+#' input, next, last) for the 25-row coding search table in [adminServer()].
 #'
-#' @param ns A Shiny namespace function (\code{session$ns}) from the calling module server.
+#' @param ns A Shiny namespace function (`session$ns`) from the calling module
+#'   server.
 #' @param total_rows Integer total count of filtered coding rows.
 #' @param cur_page Integer current 1-based page number.
 #' @param tot_pages Integer total number of pages.
-#' @param page_size Integer number of records per page. Default is 25.
-#' @param lang Character language code (\code{"de"} or \code{"en"}) passed to \code{tr()}.
+#' @param page_size Integer number of records per page. Defaults to `25`.
+#' @param lang Character language code (`"de"` or `"en"`) passed to [tr()].
+#'   Defaults to `"en"`.
 #'
-#' @return A Shiny UI tag containing pagination controls, or \code{NULL} when \code{total_rows == 0}.
+#' @return A Shiny UI tag containing pagination controls, or `NULL` when
+#'   `total_rows <= 0`.
 #'
 #' @examples
 #' \dontrun{
-#' build_coding_search_pagination_ui(session$ns, total_rows = 48, cur_page = 1, tot_pages = 2, lang = "de")
+#' build_coding_search_pagination_ui(session$ns, total_rows = 48, cur_page = 1,
+#'   tot_pages = 2, lang = "en")
 #' }
 #' @export
 build_coding_search_pagination_ui <- function(ns, total_rows, cur_page, tot_pages, page_size = 25, lang = "en") {
@@ -398,8 +428,8 @@ build_coding_search_pagination_ui <- function(ns, total_rows, cur_page, tot_page
     ),
     div(
       class = "d-flex align-items-center gap-2",
-      actionButton(ns("btn_cs_first"), "«", class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
-      actionButton(ns("btn_cs_prev"), paste0("‹ ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
+      actionButton(ns("btn_cs_first"), "\u00ab", class = "btn-sm btn-outline-secondary", disabled = if (cur_page <= 1) "disabled" else NULL),
+      actionButton(ns("btn_cs_prev"), paste0("\u2039 ", tr("common.previous", lang)), class = "btn-sm btn-outline-primary", disabled = if (cur_page <= 1) "disabled" else NULL),
       div(
         class = "d-flex align-items-center gap-1",
         tags$input(
@@ -414,24 +444,27 @@ build_coding_search_pagination_ui <- function(ns, total_rows, cur_page, tot_page
         ),
         span(class = "small text-muted", paste0("/ ", tot_pages))
       ),
-      actionButton(ns("btn_cs_next"), paste0(tr("common.next", lang), " ›"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
-      actionButton(ns("btn_cs_last"), "»", class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
+      actionButton(ns("btn_cs_next"), paste0(tr("common.next", lang), " \u203a"), class = "btn-sm btn-outline-primary", disabled = if (cur_page >= tot_pages) "disabled" else NULL),
+      actionButton(ns("btn_cs_last"), "\u00bb", class = "btn-sm btn-outline-secondary", disabled = if (cur_page >= tot_pages) "disabled" else NULL)
     )
   )
 }
 
 #' Format Integer with Locale-Aware Separators
 #'
-#' @description Formats an integer count using distinct thousands and decimal separators
-#' matching the active UI language (\code{"de"} uses \code{"."}/\code{","};
-#' \code{"en"} uses \code{","}/\code{"."}) so \code{prettyNum()} never emits warnings
-#' about identical \code{big.mark} and \code{decimal.mark} characters.
+#' Formats an integer count using distinct thousands and decimal separators
+#' matching the active UI language (`"de"` uses `"."`/`","`; `"en"` uses
+#' `","`/`"."`) so `prettyNum()` never emits warnings about identical
+#' `big.mark` and `decimal.mark` characters.
 #'
 #' @param x Numeric or integer value to format.
-#' @param lang Character language code (\code{"de"} or \code{"en"}). Default is \code{"en"}.
+#' @param lang Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 #'
 #' @return A character string containing the formatted integer.
 #'
+#' @examples
+#' format_int_locale(12500, lang = "en")
+#' format_int_locale(12500, lang = "de")
 #' @export
 format_int_locale <- function(x, lang = "en") {
   if (is.null(x) || length(x) == 0) return("0")
