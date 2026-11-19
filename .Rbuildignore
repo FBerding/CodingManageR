@@ -1,2 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.github$
+^README\.Rmd$
+^README\.html$
+^package\.json$
+^package-lock\.json$
+^node_modules$
+^preview-server\.mjs$
+^tests/run_coverage\.R$

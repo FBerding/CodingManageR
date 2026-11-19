@@ -1,0 +1,13 @@
+{
+  "name": "codingmanager-test-preview",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CRAN-excluded lightweight preview server for exploring the CodingManageR R/Shiny testthat & shinytest2 test suite",
+  "scripts": {
+    "dev": "node preview-server.mjs",
+    "start": "node preview-server.mjs",
+    "build": "node --check preview-server.mjs",
+    "lint": "node --check preview-server.mjs"
+  }
+}

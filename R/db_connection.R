@@ -82,6 +82,7 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
   use_mysql <- nzchar(host) && nzchar(user)
 
   # 2. Versuch 1: MySQL / MariaDB (Zentrale Server-Datenbank für Mehrbenutzerbetrieb)
+  # nocov start
   if (use_mysql) {
     message("--------------------------------------------------------------------------------")
     message("[DB-Manager] Multi-User-Modus: Verbinde mit MySQL/MariaDB auf '", host, ":", port, "' (DB: '", dbname, "')...")
@@ -172,6 +173,7 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
       return(con)
     }
   }
+  # nocov end
 
   # 3. Versuch 2: SQLite (Ausschließlich für lokalen Einzelplatzbetrieb auf einem PC)
   if (fallback_to_sqlite) {
@@ -193,9 +195,9 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
       )
     }
 
-    if (!requireNamespace("RSQLite", quietly = TRUE)) {
+    if (!requireNamespace("RSQLite", quietly = TRUE)) { # nocov start
       stop("Das Paket 'RSQLite' ist nicht installiert. Bitte 'install.packages(\"RSQLite\")' ausführen.")
-    }
+    } # nocov end
 
     # Bei Pool-Anforderung auch für SQLite pool::dbPool nutzen
     if (force_pool && requireNamespace("pool", quietly = TRUE)) {
@@ -274,9 +276,9 @@ with_db_transaction <- function(con, expr) {
 
   # Fall A: pool::dbPool Verbindung
   if (is_pool_connection(con)) {
-    if (!requireNamespace("pool", quietly = TRUE)) {
+    if (!requireNamespace("pool", quietly = TRUE)) { # nocov start
       stop("[Transaktion] Paket 'pool' erforderlich, aber nicht verfügbar.")
-    }
+    } # nocov end
 
     # Dedizierte Verbindung für die Dauer der Transaktion aus dem Pool leihen
     raw_con <- pool::poolCheckout(con)

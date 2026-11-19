@@ -225,17 +225,20 @@ generate_stratified_training_pool <- function(con, scale_identifier, target_coun
   m_val <- as.integer(max_scale_value)
   t_cnt <- max(as.integer(target_count), m_val + 1L)
 
+  text_fields <- tryCatch(dbListFields(con, "texts"), error = function(e) character(0))
+  case_expr <- if ("befund_text" %in% text_fields) "COALESCE(t.text, t.befund_text) AS case_text" else "t.text AS case_text"
+
   # Fetch all benchmark ratings for the scale
-  ref_sql <- "
+  ref_sql <- paste0("
     SELECT ur.text_id, ur.bewertung, ur.typ, ur.rating_id, t.text, t.source_id,
-           COALESCE(t.text, t.befund_text) AS case_text
+           ", case_expr, "
     FROM user_ratings ur
     JOIN texts t ON ur.text_id = t.text_id
-    WHERE (ur.kategorie = ? OR ur.kategorie = CAST(? AS CHAR))
+    WHERE (ur.kategorie = ? OR CAST(ur.kategorie AS TEXT) = ?)
       AND ur.typ IN ('gold_standard', 'kodierung')
     ORDER BY CASE WHEN ur.typ = 'gold_standard' THEN 0 ELSE 1 END ASC,
              ur.rating_id DESC
-  "
+  ")
 
   raw_refs <- tryCatch({
     dbGetQuery(con, ref_sql, params = list(as.character(scale_identifier), as.character(scale_identifier)))

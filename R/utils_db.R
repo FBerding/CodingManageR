@@ -237,9 +237,16 @@ draw_unrated_case_db <- function(con, scale_identifier, user_id, mode = "alle", 
   rand_fn <- get_db_random_function(con)
   uid <- as.integer(user_id)
 
+  text_fields <- tryCatch(dbListFields(con, "texts"), error = function(e) character(0))
+  befund_expr <- if ("befund_text" %in% text_fields) {
+    "CASE WHEN t.text IS NOT NULL AND t.text != '' THEN t.text ELSE t.befund_text END AS befund_text"
+  } else {
+    "t.text AS befund_text"
+  }
+
   base_sql <- paste0("
     SELECT t.text_id, t.text, t.source_id,
-           CASE WHEN t.text IS NOT NULL AND t.text != '' THEN t.text ELSE t.befund_text END AS befund_text
+           ", befund_expr, "
     FROM texts t
     WHERE t.text_id NOT IN (
       SELECT ur.text_id

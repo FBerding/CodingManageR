@@ -118,7 +118,7 @@ load_translations <- function(force_reload = FALSE) {
     if (requireNamespace("jsonlite", quietly = TRUE)) {
       jsonlite::fromJSON(path, simplifyVector = FALSE)
     } else {
-      NULL
+      NULL # nocov
     }
   }, error = function(e) {
     warning("Failed to read translations.json: ", e$message)

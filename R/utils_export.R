@@ -175,7 +175,11 @@ export_table_template_csv <- function(table_name) {
 fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids = NULL, user_ids = NULL) {
   if (is.null(con)) return(data.frame())
 
-  base_query <- "
+  src_fields <- tryCatch(dbListFields(con, "sources"), error = function(e) character(0))
+  cite_col <- if ("Vollstaendiges_Zitat" %in% src_fields) "Vollstaendiges_Zitat" else "Referenz"
+  cast_type <- if (is_mysql_connection(con)) "CHAR" else "TEXT"
+
+  base_query <- paste0("
     SELECT
       ur.rating_id,
       ur.zeitstempel,
@@ -189,21 +193,21 @@ fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids =
       COALESCE(sd.short_label, ur.kategorie) AS skala_kuerzel,
       COALESCE(sd.max_value, 2) AS skala_max_wert,
       ts.Kurzreferenz AS text_quelle_kuerzel,
-      ts.Vollstaendiges_Zitat AS text_quelle_zitat,
+      ts.", cite_col, " AS text_quelle_zitat,
       cs.Kurzreferenz AS kodier_quelle_kuerzel,
-      cs.Vollstaendiges_Zitat AS kodier_quelle_zitat
+      cs.", cite_col, " AS kodier_quelle_zitat
     FROM user_ratings ur
     LEFT JOIN user_tokens ut ON ur.user_id = ut.user_id
     LEFT JOIN texts t ON ur.text_id = t.text_id
     LEFT JOIN scale_definitions sd ON (
-      CAST(sd.scale_id AS CHAR) = CAST(ur.kategorie AS CHAR) OR
+      CAST(sd.scale_id AS ", cast_type, ") = CAST(ur.kategorie AS ", cast_type, ") OR
       sd.name = ur.kategorie OR
       sd.short_label = ur.kategorie
     )
     LEFT JOIN sources ts ON t.source_id = ts.source_id
     LEFT JOIN sources cs ON ur.source_id = cs.source_id
     WHERE 1=1
-  "
+  ")
 
   params <- list()
 

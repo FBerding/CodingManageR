@@ -367,7 +367,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
           scale_y_continuous(limits = c(y_lower, 1.05), breaks = seq(0, 1, 0.2)) +
           labs(
             title = tr("dashboard.chart_plot_title_all", lang, n_sitzungen),
-            subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$username, paste0("#", kat_sel)),
+            subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$name, paste0("#", kat_sel)),
             x = tr("dashboard.chart_x_session", lang),
             y = tr("dashboard.chart_y_value", lang)
           )
@@ -390,7 +390,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
             scale_y_continuous(limits = c(y_lower, 105), breaks = seq(0, 100, 20), labels = function(x) paste0(x, " %")) +
             labs(
               title = tr("dashboard.chart_plot_title_single", lang, cur_meta$label, n_sitzungen),
-              subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$username, paste0("#", kat_sel)),
+              subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$name, paste0("#", kat_sel)),
               x = tr("dashboard.chart_x_session", lang),
               y = tr("dashboard.chart_y_pct", lang)
             )
@@ -410,7 +410,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
             scale_y_continuous(limits = c(y_lower, 1.05), breaks = seq(0, 1, 0.2)) +
             labs(
               title = tr("dashboard.chart_plot_title_single", lang, cur_meta$label, n_sitzungen),
-              subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$username, paste0("#", kat_sel)),
+              subtitle = tr("dashboard.chart_plot_subtitle", lang, u_info$name, paste0("#", kat_sel)),
               x = tr("dashboard.chart_x_session", lang),
               y = tr("dashboard.chart_y_value", lang)
             )

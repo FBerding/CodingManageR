@@ -4632,15 +4632,19 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       is_mysql <- if (exists("is_mysql_connection", mode = "function")) is_mysql_connection(db_con) else (inherits(db_con, "MariaDBConnection") || inherits(db_con, "MySQLConnection"))
 
       engine_name <- if (is_mysql) {
+        # nocov start
         if (is_pool) tr("admin.diag_engine_mysql_pool", lang) else tr("admin.diag_engine_mysql_dbi", lang)
+        # nocov end
       } else {
         if (is_pool) tr("admin.diag_engine_sqlite_pool", lang) else tr("admin.diag_engine_sqlite_dbi", lang)
       }
 
       fk_active <- tryCatch({
         if (is_mysql) {
+          # nocov start
           res <- dbGetQuery(db_con, "SELECT @@foreign_key_checks AS fk;")
           as.integer(res$fk[1]) == 1
+          # nocov end
         } else {
           res <- dbGetQuery(db_con, "PRAGMA foreign_keys;")
           as.integer(res[1, 1]) == 1

@@ -1,0 +1,88 @@
+# Test coverage workflow for CodingManageR
+# Runs unit, SQLite integration, shiny::testServer(), and headless Chrome shinytest2 E2E tests
+# under covr and uploads the resulting Cobertura XML report to Codecov (without a hard fail gate).
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+name: test-coverage
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: true
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Headless Chrome for shinytest2 E2E tests
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Query and install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::covr
+            any::xml2
+            any::shinytest2
+            any::chromote
+            any::withr
+          needs: coverage
+
+      - name: Compute test coverage with covr
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          options(chromote.args = c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"))
+          cov <- covr::package_coverage(
+            type = "tests",
+            quiet = FALSE,
+            clean = FALSE
+          )
+          total_pct <- covr::percent_coverage(cov)
+          cat(sprintf("\n=== CodingManageR Total Test Coverage: %.2f%% ===\n\n", total_pct))
+
+          df_cov <- covr::tally_coverage(cov)
+          if (nrow(df_cov) > 0) {
+            for (f in sort(unique(df_cov$filename))) {
+              sub <- df_cov[df_cov$filename == f, , drop = FALSE]
+              pct <- 100 * mean(sub$value > 0)
+              cat(sprintf("  %-35s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
+            }
+          }
+
+          covr::to_cobertura(cov, filename = "cobertura.xml")
+        shell: Rscript {0}
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: true
