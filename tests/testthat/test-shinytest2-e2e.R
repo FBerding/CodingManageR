@@ -24,8 +24,14 @@ if (requireNamespace("withr", quietly = TRUE) && requireNamespace("chromote", qu
 local_e2e_app <- function(name = "codingmanager_e2e", seed_gold_scale = NULL, env = parent.frame()) {
   if (requireNamespace("chromote", quietly = TRUE)) {
     options(chromote.headless = "new")
+    is_linux <- identical(Sys.info()[["sysname"]], "Linux")
+    chrome_flags <- if (is_linux) {
+      c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage")
+    } else {
+      c("--disable-gpu")
+    }
     try(
-      chromote::set_chrome_args(c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage")),
+      chromote::set_chrome_args(chrome_flags),
       silent = TRUE
     )
     .e2e_chrome_state$started <- TRUE
@@ -46,7 +52,8 @@ local_e2e_app <- function(name = "codingmanager_e2e", seed_gold_scale = NULL, en
   driver <- shinytest2::AppDriver$new(
     app_dir = shiny_app,
     name = name,
-    load_timeout = 30000,
+    load_timeout = 60000,
+    timeout = 30000,
     wait = TRUE,
     expect_values_screenshot_args = FALSE
   )

@@ -13,7 +13,7 @@ test_that("coding_manager_ui and run_app construct valid Shiny UI and shiny.appo
   tmp_sqlite <- tempfile(fileext = ".sqlite")
   withr::defer(unlink(c(tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm")), force = TRUE))
 
-  app_obj <- run_app(sqlite_path = tmp_sqlite, seed_empty = FALSE)
+  app_obj <- run_app(sqlite_path = tmp_sqlite, empty = FALSE)
   expect_s3_class(app_obj, "shiny.appobj")
 })
 
@@ -29,9 +29,10 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
   db <- local_test_db(seeded = TRUE, empty = FALSE)
   con <- db$con
 
+  withr::local_options(list(CodingManageR.db_con = con))
+
   shiny::testServer(
     coding_manager_server,
-    args = list(db_con = con),
     {
       # 1. Initial unauthenticated screen shows login controls
       session$flushReact()

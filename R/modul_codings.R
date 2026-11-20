@@ -493,6 +493,8 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
     })
 
     output$konfiguration_status_ui <- renderUI({
+      if (!is.null(trigger_parent) && is.function(trigger_parent)) trigger_parent()
+      modus_aktiv()
       lang <- get_lang()
       u_info <- get_user_info()
       permitted_scales <- get_permitted_kategorien_liste()

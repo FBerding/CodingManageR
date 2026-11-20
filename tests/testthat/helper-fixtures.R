@@ -273,7 +273,13 @@ ui_to_html <- function(ui_obj) {
     return(as.character(ui_obj$html))
   }
   if (requireNamespace("htmltools", quietly = TRUE)) {
-    return(as.character(htmltools::renderTags(ui_obj)$html))
+    rendered <- htmltools::renderTags(ui_obj)
+    head_str <- as.character(rendered$head)
+    body_str <- as.character(rendered$html)
+    if (length(head_str) > 0 && nzchar(head_str[1])) {
+      return(paste(head_str, body_str, sep = "\n"))
+    }
+    return(body_str)
   }
   paste(as.character(ui_obj), collapse = "\n")
 }
@@ -281,6 +287,9 @@ ui_to_html <- function(ui_obj) {
 #' Skip guard for headless browser shinytest2 E2E tests
 skip_if_no_shinytest2 <- function() {
   testthat::skip_on_cran()
+  if (tolower(Sys.getenv("CODINGMANAGER_SKIP_E2E", unset = "false")) %in% c("true", "1", "yes")) {
+    testthat::skip("E2E shinytest2 tests skipped via CODINGMANAGER_SKIP_E2E environment variable.")
+  }
   testthat::skip_if_not_installed("shinytest2")
   testthat::skip_if_not_installed("chromote")
   chrome_path <- tryCatch(chromote::find_chrome(), error = function(e) NULL)

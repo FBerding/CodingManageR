@@ -244,7 +244,11 @@ fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids =
   base_query <- paste0(base_query, " ORDER BY ur.rating_id ASC")
 
   tryCatch({
-    dbGetQuery(con, base_query, params = params)
+    if (length(params) > 0) {
+      dbGetQuery(con, base_query, params = params)
+    } else {
+      dbGetQuery(con, base_query)
+    }
   }, error = function(e) {
     message("Error executing master export: ", e$message)
     data.frame()

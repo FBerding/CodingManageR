@@ -7,11 +7,12 @@ test_that("adminUI constructs localized tabset markup for all 8 administrative s
   # Verifies adminUI() renders all 8 subtabs (Users, Texts, Sources, Scales, Reliability,
   # Coding Search, Data Import/Export, DB Diagnostics) with proper namespacing in DE and EN.
   ui_en <- ui_to_html(adminUI("adm_en", lang = "en"))
-  expect_match(ui_en, "adm_en-user_management_table_container")
+  expect_match(ui_en, "adm_en-users_table_container")
   expect_match(ui_en, "adm_en-texts_management_table_container")
   expect_match(ui_en, "adm_en-sources_table_container")
   expect_match(ui_en, "adm_en-scales_table_container")
   expect_match(ui_en, "adm_en-admin_reliability_comparison_plot")
+  expect_match(ui_en, "adm_en-coding_search_scale_filter")
   expect_match(ui_en, "adm_en-coding_search_table_container")
   expect_match(ui_en, "adm_en-download_master_dataset_btn")
   expect_match(ui_en, "adm_en-db_diag_summary_cards")
@@ -50,7 +51,7 @@ test_that("adminServer Subtab 1 (Users): CRUD, validation, self-protection, 25-r
       session$setInputs(user_search_query = "")
       session$flushReact()
       expect_match(ui_to_html(output$users_counter_badge), "30")
-      expect_match(ui_to_html(output$user_management_table_container), "<table")
+      expect_match(ui_to_html(output$users_table_container), "<table")
       expect_match(ui_to_html(output$users_pagination_controls), "btn_users_next")
 
       session$setInputs(btn_users_next = 1L)
@@ -72,11 +73,11 @@ test_that("adminServer Subtab 1 (Users): CRUD, validation, self-protection, 25-r
       # Search query narrows table & handles empty results
       session$setInputs(user_search_query = "eva_lindner")
       session$flushReact()
-      expect_match(ui_to_html(output$user_management_table_container), "eva_lindner")
+      expect_match(ui_to_html(output$users_table_container), "eva_lindner")
 
       session$setInputs(user_search_query = "no_such_user_xyz")
       session$flushReact()
-      expect_match(ui_to_html(output$user_management_table_container), "alert")
+      expect_match(ui_to_html(output$users_table_container), "alert")
       session$setInputs(user_search_query = "")
 
       # 2. Add new user modal, validation guards, token generator, and successful creation
@@ -396,7 +397,7 @@ test_that("adminServer Subtabs 5 & 6 (Reliability Comparison & Coding Search/Cor
       )
       session$flushReact()
       expect_true(nzchar(ui_to_html(output$tab_coding_search_title)))
-      expect_match(ui_to_html(output$coding_search_header_ui), "coding_search_scale_filter")
+      expect_match(ui_to_html(output$coding_search_header_ui), "Coding Lookup")
       expect_match(ui_to_html(output$coding_search_counter_ui), "35")
       expect_match(ui_to_html(output$coding_search_table_container), "<table")
       expect_match(ui_to_html(output$coding_search_pagination_controls), "btn_cs_next")

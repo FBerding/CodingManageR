@@ -2538,16 +2538,19 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
 
     observeEvent(input$btn_save_new_scale, {
       lang <- get_lang()
-      short_val <- trimws(input$new_scale_short_label)
-      name_val  <- trimws(input$new_scale_name)
-      max_val   <- as.integer(input$new_scale_max_value)
-      desc_val  <- trimws(input$new_scale_def_desc)
-      n0        <- trimws(input$new_scale_def_n_0)
-      n1        <- trimws(input$new_scale_def_n_1)
-      n2        <- trimws(input$new_scale_def_n_2)
-      n3        <- trimws(input$new_scale_def_n_3)
-      n4        <- trimws(input$new_scale_def_n_4)
-      n5        <- trimws(input$new_scale_def_n_5)
+      safe_trim <- function(x) {
+        if (is.null(x) || length(x) == 0 || is.na(x[1])) "" else trimws(as.character(x[1]))
+      }
+      short_val <- safe_trim(input$new_scale_short_label)
+      name_val  <- safe_trim(input$new_scale_name)
+      max_val   <- suppressWarnings(as.integer(input$new_scale_max_value))
+      desc_val  <- safe_trim(input$new_scale_def_desc)
+      n0        <- safe_trim(input$new_scale_def_n_0)
+      n1        <- safe_trim(input$new_scale_def_n_1)
+      n2        <- safe_trim(input$new_scale_def_n_2)
+      n3        <- safe_trim(input$new_scale_def_n_3)
+      n4        <- safe_trim(input$new_scale_def_n_4)
+      n5        <- safe_trim(input$new_scale_def_n_5)
 
       if (is.null(short_val) || nchar(short_val) < 1) {
         output$add_scale_feedback <- renderUI({
@@ -2714,15 +2717,18 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       req(row)
       s_id <- as.integer(row$scale_id)
 
-      short_val <- trimws(input$edit_scale_short_label)
-      name_val  <- trimws(input$edit_scale_name)
-      desc_val  <- trimws(input$edit_scale_def_desc)
-      n0        <- trimws(input$edit_scale_def_n_0)
-      n1        <- trimws(input$edit_scale_def_n_1)
-      n2        <- trimws(input$edit_scale_def_n_2)
-      n3        <- trimws(input$edit_scale_def_n_3)
-      n4        <- trimws(input$edit_scale_def_n_4)
-      n5        <- trimws(input$edit_scale_def_n_5)
+      safe_trim <- function(x) {
+        if (is.null(x) || length(x) == 0 || is.na(x[1])) "" else trimws(as.character(x[1]))
+      }
+      short_val <- safe_trim(input$edit_scale_short_label)
+      name_val  <- safe_trim(input$edit_scale_name)
+      desc_val  <- safe_trim(input$edit_scale_def_desc)
+      n0        <- safe_trim(input$edit_scale_def_n_0)
+      n1        <- safe_trim(input$edit_scale_def_n_1)
+      n2        <- safe_trim(input$edit_scale_def_n_2)
+      n3        <- safe_trim(input$edit_scale_def_n_3)
+      n4        <- safe_trim(input$edit_scale_def_n_4)
+      n5        <- safe_trim(input$edit_scale_def_n_5)
 
       if (is.null(short_val) || nchar(short_val) < 1) {
         output$edit_scale_feedback <- renderUI({

@@ -1,6 +1,9 @@
-# Test coverage workflow for CodingManageR
-# Runs unit, SQLite integration, shiny::testServer(), and headless Chrome shinytest2 E2E tests
-# under covr and uploads the resulting Cobertura XML report to Codecov (without a hard fail gate).
+# Test coverage and browser E2E workflow for CodingManageR
+# Runs two parallel jobs on Ubuntu Linux:
+#   1) test-coverage: instruments unit, SQLite/pool integration, and shiny::testServer()
+#      tests under covr (without Chrome overhead) and uploads Cobertura XML to Codecov.
+#   2) shinytest2-e2e: provisions headless Chrome and runs the full browser E2E suite
+#      outside covr to prevent runner OOM kills (Exit Code 137).
 on:
   push:
     branches: [main, master]
@@ -19,22 +22,26 @@ concurrency:
 
 jobs:
   test-coverage:
+    name: test-coverage
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: true
+      CODINGMANAGER_SKIP_E2E: "true"
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      CHROMOTE_HEADLESS: new
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Headless Chrome for shinytest2 E2E tests
-        id: setup-chrome
-        uses: browser-actions/setup-chrome@v1
+      - name: Refresh apt package lists on Linux
+        run: |
+          for i in 1 2 3; do
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update && break || sleep 5
+          done
 
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v2
@@ -51,19 +58,12 @@ jobs:
           extra-packages: |
             any::covr
             any::xml2
-            any::shinytest2
-            any::chromote
             any::withr
           needs: coverage
+          cache-version: 2
 
-      - name: Compute test coverage with covr
-        env:
-          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+      - name: Compute test coverage with covr (unit, integration, and module server tests)
         run: |
-          options(chromote.headless = "new")
-          chromote::set_chrome_args(c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"))
-          on.exit(try(chromote::default_chromote_object()$close(), silent = TRUE), add = TRUE)
-
           cov <- covr::package_coverage(
             type = "tests",
             quiet = FALSE,
@@ -85,9 +85,70 @@ jobs:
         shell: Rscript {0}
 
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./cobertura.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
           verbose: true
+
+  shinytest2-e2e:
+    name: shinytest2-e2e (headless Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: true
+      CODINGMANAGER_SKIP_E2E: "false"
+      CHROMOTE_HEADLESS: new
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Refresh apt package lists on Linux
+        run: |
+          for i in 1 2 3; do
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update && break || sleep 5
+          done
+
+      - name: Setup Headless Chrome for shinytest2 E2E tests
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Query and install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::shinytest2
+            any::chromote
+            any::testthat
+            any::withr
+          needs: check
+          cache-version: 2
+
+      - name: Install package for standalone shinytest2 E2E run
+        run: R CMD INSTALL --no-multiarch --with-keep.source .
+
+      - name: Run shinytest2 E2E tests (headless Chrome)
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          options(chromote.headless = "new")
+          chromote::set_chrome_args(c("--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"))
+          on.exit(try(chromote::default_chromote_object()$close(), silent = TRUE), add = TRUE)
+          library(CodingManageR)
+          testthat::test_dir("tests/testthat", filter = "shinytest2-e2e", stop_on_failure = TRUE)
+        shell: Rscript {0}

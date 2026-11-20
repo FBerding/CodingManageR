@@ -82,7 +82,7 @@ test_that("get_db_pool and get_db_connection initialize SQLite via config, env v
       con_default <- suppressMessages(get_db_pool(config = NULL, fallback_to_sqlite = TRUE, force_pool = FALSE))
       withr::defer(suppressMessages(close_db_connection(con_default)))
       expect_true(DBI::dbIsValid(con_default))
-      expect_true(dir.exists(file.path(tmp_data_dir, "CodingManageR")))
+      expect_true(dir.exists(tools::R_user_dir("CodingManageR", which = "data")))
     }
   )
 

@@ -311,6 +311,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
     }
 
     output$external_metrics_panel <- renderUI({
+      schulung_abgeschlossen()
+      if (!is.null(trigger_parent) && is.function(trigger_parent)) trigger_parent()
       lang <- get_lang()
       req(input$gewaehlte_kategorie)
       res_data <- hole_sitzungs_daten()
@@ -483,6 +485,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
     observeEvent(input$back_to_config_btn, { schulung_gestartet(FALSE); aktueller_fall(NULL); fall_pool(NULL) })
 
     output$session_summary_table <- renderTable({
+      schulung_abgeschlossen()
+      if (!is.null(trigger_parent) && is.function(trigger_parent)) trigger_parent()
       lang <- get_lang()
       req(input$gewaehlte_kategorie)
       u_info <- get_user_info()

@@ -783,13 +783,13 @@ seed_initial_data <- function(con, empty = TRUE) {
       )
 
       u_ids <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
-      get_uid <- function(uname, fallback = 1L) {
-        val <- u_ids$user_id[u_ids$username == uname]
+      lookup_user_id <- function(uids_df, uname, fallback = 1L) {
+        val <- uids_df$user_id[uids_df$username == uname]
         if (length(val) == 0 || is.na(val[1])) as.integer(fallback) else as.integer(val[1])
       }
 
       for (i in seq_len(nrow(ratings_data))) {
-        uid <- get_uid(ratings_data$username[i], fallback = 1L)
+        uid <- lookup_user_id(u_ids, ratings_data$username[i], fallback = 1L)
         dbExecute(con, "
           INSERT INTO user_ratings (rating_id, user_id, text_id, kategorie, bewertung, typ, source_id, zeitstempel)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?);
@@ -827,23 +827,23 @@ seed_initial_data <- function(con, empty = TRUE) {
 
   if (!empty) {
     if (n_b == 0) {
-      u_ids <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
-      get_uid <- function(uname, fallback) {
-        val <- u_ids$user_id[u_ids$username == uname]
-        if (length(val) == 0 || is.na(val[1])) fallback else as.integer(val[1])
+      u_ids_tr <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
+      get_tr_uid <- function(uname, fallback = 1L) {
+        val <- u_ids_tr$user_id[u_ids_tr$username == uname]
+        if (length(val) == 0 || is.na(val[1])) as.integer(fallback) else as.integer(val[1])
       }
 
       trainings_data <- list(
-        list(tid = 1,  uid = get_uid("user1", 2),        kat = "1", dat = "2026-10-20", n = 8,  acc = 75.0, b_acc = 73.0, iota = 0.695, a_iota = 0.710, c_kap = 0.68, k_lin = 0.70, k_sq = 0.72, f_kap = 0.67, ken_w = 0.71, a_nom = 0.67, a_ord = 0.70, gwet1 = 0.72, gwet2 = 0.74, prec = 74.0, rec = 73.5, f1 = 74.2),
-        list(tid = 2,  uid = get_uid("user1", 2),        kat = "1", dat = "2026-10-24", n = 10, acc = 80.0, b_acc = 78.5, iota = 0.745, a_iota = 0.760, c_kap = 0.74, k_lin = 0.76, k_sq = 0.78, f_kap = 0.73, ken_w = 0.77, a_nom = 0.73, a_ord = 0.76, gwet1 = 0.78, gwet2 = 0.80, prec = 79.5, rec = 78.8, f1 = 79.1),
-        list(tid = 3,  uid = get_uid("user1", 2),        kat = "1", dat = "2026-10-28", n = 12, acc = 90.0, b_acc = 88.0, iota = 0.855, a_iota = 0.870, c_kap = 0.85, k_lin = 0.87, k_sq = 0.89, f_kap = 0.84, ken_w = 0.88, a_nom = 0.84, a_ord = 0.87, gwet1 = 0.88, gwet2 = 0.90, prec = 89.8, rec = 89.0, f1 = 89.4),
-        list(tid = 4,  uid = get_uid("admin", 1),        kat = "1", dat = "2026-10-22", n = 10, acc = 85.0, b_acc = 83.5, iota = 0.802, a_iota = 0.815, c_kap = 0.79, k_lin = 0.81, k_sq = 0.83, f_kap = 0.78, ken_w = 0.82, a_nom = 0.78, a_ord = 0.81, gwet1 = 0.82, gwet2 = 0.84, prec = 84.5, rec = 83.8, f1 = 84.0),
-        list(tid = 5,  uid = get_uid("admin", 1),        kat = "1", dat = "2026-10-29", n = 14, acc = 92.5, b_acc = 91.0, iota = 0.890, a_iota = 0.905, c_kap = 0.88, k_lin = 0.90, k_sq = 0.92, f_kap = 0.87, ken_w = 0.91, a_nom = 0.87, a_ord = 0.90, gwet1 = 0.91, gwet2 = 0.93, prec = 92.0, rec = 91.5, f1 = 91.8),
-        list(tid = 6,  uid = get_uid("eva_lindner", 3),  kat = "1", dat = "2026-10-25", n = 12, acc = 91.7, b_acc = 89.2, iota = 0.872, a_iota = 0.888, c_kap = 0.86, k_lin = 0.88, k_sq = 0.90, f_kap = 0.85, ken_w = 0.89, a_nom = 0.85, a_ord = 0.88, gwet1 = 0.89, gwet2 = 0.91, prec = 90.8, rec = 90.0, f1 = 90.4),
-        list(tid = 7,  uid = get_uid("user1", 2),        kat = "2", dat = "2026-10-26", n = 10, acc = 70.0, b_acc = 68.0, iota = 0.635, a_iota = 0.650, c_kap = 0.62, k_lin = 0.64, k_sq = 0.66, f_kap = 0.61, ken_w = 0.65, a_nom = 0.61, a_ord = 0.64, gwet1 = 0.66, gwet2 = 0.68, prec = 70.0, rec = 69.0, f1 = 69.5),
-        list(tid = 8,  uid = get_uid("user1", 2),        kat = "2", dat = "2026-10-31", n = 12, acc = 83.3, b_acc = 81.5, iota = 0.785, a_iota = 0.800, c_kap = 0.77, k_lin = 0.79, k_sq = 0.81, f_kap = 0.76, ken_w = 0.80, a_nom = 0.76, a_ord = 0.79, gwet1 = 0.81, gwet2 = 0.83, prec = 82.5, rec = 81.6, f1 = 82.0),
-        list(tid = 9,  uid = get_uid("admin", 1),        kat = "2", dat = "2026-10-27", n = 10, acc = 80.0, b_acc = 78.0, iota = 0.762, a_iota = 0.778, c_kap = 0.75, k_lin = 0.77, k_sq = 0.79, f_kap = 0.74, ken_w = 0.78, a_nom = 0.74, a_ord = 0.77, gwet1 = 0.79, gwet2 = 0.81, prec = 79.8, rec = 78.6, f1 = 79.2),
-        list(tid = 10, uid = get_uid("user1", 2),        kat = "3", dat = "2026-10-27", n = 8,  acc = 87.5, b_acc = 85.0, iota = 0.825, a_iota = 0.840, c_kap = 0.81, k_lin = 0.83, k_sq = 0.85, f_kap = 0.80, ken_w = 0.84, a_nom = 0.80, a_ord = 0.83, gwet1 = 0.85, gwet2 = 0.87, prec = 86.8, rec = 85.6, f1 = 86.2)
+        list(tid = 1,  uid = get_tr_uid("user1", 2),        kat = "1", dat = "2026-10-20", n = 8,  acc = 75.0, b_acc = 73.0, iota = 0.695, a_iota = 0.710, c_kap = 0.68, k_lin = 0.70, k_sq = 0.72, f_kap = 0.67, ken_w = 0.71, a_nom = 0.67, a_ord = 0.70, gwet1 = 0.72, gwet2 = 0.74, prec = 74.0, rec = 73.5, f1 = 74.2),
+        list(tid = 2,  uid = get_tr_uid("user1", 2),        kat = "1", dat = "2026-10-24", n = 10, acc = 80.0, b_acc = 78.5, iota = 0.745, a_iota = 0.760, c_kap = 0.74, k_lin = 0.76, k_sq = 0.78, f_kap = 0.73, ken_w = 0.77, a_nom = 0.73, a_ord = 0.76, gwet1 = 0.78, gwet2 = 0.80, prec = 79.5, rec = 78.8, f1 = 79.1),
+        list(tid = 3,  uid = get_tr_uid("user1", 2),        kat = "1", dat = "2026-10-28", n = 12, acc = 90.0, b_acc = 88.0, iota = 0.855, a_iota = 0.870, c_kap = 0.85, k_lin = 0.87, k_sq = 0.89, f_kap = 0.84, ken_w = 0.88, a_nom = 0.84, a_ord = 0.87, gwet1 = 0.88, gwet2 = 0.90, prec = 89.8, rec = 89.0, f1 = 89.4),
+        list(tid = 4,  uid = get_tr_uid("admin", 1),        kat = "1", dat = "2026-10-22", n = 10, acc = 85.0, b_acc = 83.5, iota = 0.802, a_iota = 0.815, c_kap = 0.79, k_lin = 0.81, k_sq = 0.83, f_kap = 0.78, ken_w = 0.82, a_nom = 0.78, a_ord = 0.81, gwet1 = 0.82, gwet2 = 0.84, prec = 84.5, rec = 83.8, f1 = 84.0),
+        list(tid = 5,  uid = get_tr_uid("admin", 1),        kat = "1", dat = "2026-10-29", n = 14, acc = 92.5, b_acc = 91.0, iota = 0.890, a_iota = 0.905, c_kap = 0.88, k_lin = 0.90, k_sq = 0.92, f_kap = 0.87, ken_w = 0.91, a_nom = 0.87, a_ord = 0.90, gwet1 = 0.91, gwet2 = 0.93, prec = 92.0, rec = 91.5, f1 = 91.8),
+        list(tid = 6,  uid = get_tr_uid("eva_lindner", 3),  kat = "1", dat = "2026-10-25", n = 12, acc = 91.7, b_acc = 89.2, iota = 0.872, a_iota = 0.888, c_kap = 0.86, k_lin = 0.88, k_sq = 0.90, f_kap = 0.85, ken_w = 0.89, a_nom = 0.85, a_ord = 0.88, gwet1 = 0.89, gwet2 = 0.91, prec = 90.8, rec = 90.0, f1 = 90.4),
+        list(tid = 7,  uid = get_tr_uid("user1", 2),        kat = "2", dat = "2026-10-26", n = 10, acc = 70.0, b_acc = 68.0, iota = 0.635, a_iota = 0.650, c_kap = 0.62, k_lin = 0.64, k_sq = 0.66, f_kap = 0.61, ken_w = 0.65, a_nom = 0.61, a_ord = 0.64, gwet1 = 0.66, gwet2 = 0.68, prec = 70.0, rec = 69.0, f1 = 69.5),
+        list(tid = 8,  uid = get_tr_uid("user1", 2),        kat = "2", dat = "2026-10-31", n = 12, acc = 83.3, b_acc = 81.5, iota = 0.785, a_iota = 0.800, c_kap = 0.77, k_lin = 0.79, k_sq = 0.81, f_kap = 0.76, ken_w = 0.80, a_nom = 0.76, a_ord = 0.79, gwet1 = 0.81, gwet2 = 0.83, prec = 82.5, rec = 81.6, f1 = 82.0),
+        list(tid = 9,  uid = get_tr_uid("admin", 1),        kat = "2", dat = "2026-10-27", n = 10, acc = 80.0, b_acc = 78.0, iota = 0.762, a_iota = 0.778, c_kap = 0.75, k_lin = 0.77, k_sq = 0.79, f_kap = 0.74, ken_w = 0.78, a_nom = 0.74, a_ord = 0.77, gwet1 = 0.79, gwet2 = 0.81, prec = 79.8, rec = 78.6, f1 = 79.2),
+        list(tid = 10, uid = get_tr_uid("user1", 2),        kat = "3", dat = "2026-10-27", n = 8,  acc = 87.5, b_acc = 85.0, iota = 0.825, a_iota = 0.840, c_kap = 0.81, k_lin = 0.83, k_sq = 0.85, f_kap = 0.80, ken_w = 0.84, a_nom = 0.80, a_ord = 0.83, gwet1 = 0.85, gwet2 = 0.87, prec = 86.8, rec = 85.6, f1 = 86.2)
       )
 
       for (tr in trainings_data) {
