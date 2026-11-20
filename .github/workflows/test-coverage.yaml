@@ -30,8 +30,13 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: true
       CODINGMANAGER_SKIP_E2E: "true"
+      TESTTHAT_PARALLEL: "false"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       DEBIAN_FRONTEND: noninteractive
+      COVR_STAGE_DIR: /tmp/covr-ci
 
     steps:
       - name: Checkout repository
@@ -59,60 +64,230 @@ jobs:
             any::covr
             any::xml2
             any::withr
-          needs: coverage
+          needs: check
           cache-version: 2
 
-      - name: Compute test coverage with covr (unit, integration, and module server tests)
+      - name: Compute test coverage per test file with covr and merge
+        shell: bash
         run: |
-          t_start <- proc.time()[["elapsed"]]
-          log_phase <- function(msg, phase_start = NULL) {
-            now_utc <- format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC")
-            total_s <- proc.time()[["elapsed"]] - t_start
-            if (is.null(phase_start)) {
-              cat(sprintf("[%s] [Total %6.1fs] %s\n", now_utc, total_s, msg))
-            } else {
-              phase_s <- proc.time()[["elapsed"]] - phase_start
-              cat(sprintf("[%s] [Total %6.1fs | Phase %6.1fs] %s\n", now_utc, total_s, phase_s, msg))
-            }
-            flush.console()
+          set -euo pipefail
+
+          STAGE_DIR="${COVR_STAGE_DIR:-/tmp/covr-ci}"
+          SHARD_DIR="$STAGE_DIR/shards"
+          LOG_FILE="$STAGE_DIR/covr-diagnostics.log"
+          rm -rf "$STAGE_DIR"
+          mkdir -p "$SHARD_DIR"
+
+          log_msg() {
+            local ts
+            ts="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            printf '[%s] %s\n' "$ts" "$1" | tee -a "$LOG_FILE"
+          }
+
+          log_msg "=== Starting per-file isolated covr coverage run ==="
+          log_msg "CPU cores: $(nproc) | TESTTHAT_PARALLEL=${TESTTHAT_PARALLEL} | OMP_NUM_THREADS=${OMP_NUM_THREADS}"
+          R --version | head -n 1 | tee -a "$LOG_FILE"
+          free -m | tee -a "$LOG_FILE"
+
+          cat > "$STAGE_DIR/run_one_covr.R" <<'RSCRIPT_ONE'
+          args <- commandArgs(trailingOnly = TRUE)
+          stem <- args[[1]]
+          stage_dir <- args[[2]]
+          shard_dir <- file.path(stage_dir, "shards")
+
+          read_peak_rss_mb <- function() {
+            if (!file.exists("/proc/self/status")) return(NA_real_)
+            st <- tryCatch(readLines("/proc/self/status", warn = FALSE), error = function(e) character(0))
+            hit <- grep("^VmHWM:", st, value = TRUE)
+            if (length(hit) == 0L) return(NA_real_)
+            kb <- suppressWarnings(as.numeric(gsub("[^0-9]", "", hit[[1]])))
+            if (is.na(kb)) NA_real_ else kb / 1024
           }
 
           options(covr.record_tests = FALSE)
-          log_phase(sprintf(
-            "Starting covr::package_coverage() (R %s, CODINGMANAGER_SKIP_E2E=%s, covr.record_tests=%s)",
-            paste(R.version$major, R.version$minor, sep = "."),
-            Sys.getenv("CODINGMANAGER_SKIP_E2E", unset = "<unset>"),
-            as.character(getOption("covr.record_tests"))
-          ))
+          t0 <- proc.time()[["elapsed"]]
+          test_dir_abs <- normalizePath("tests/testthat", winslash = "/", mustWork = TRUE)
+          escaped_stem <- gsub("([.|()\\^{}+$*?\\[\\]])", "\\\\\\1", stem)
+          test_code <- sprintf(
+            'library(CodingManageR); testthat::test_dir(%s, filter = %s, stop_on_failure = TRUE)',
+            deparse(test_dir_abs),
+            deparse(paste0("^", escaped_stem, "$"))
+          )
 
-          t_cov <- proc.time()[["elapsed"]]
+          cat(sprintf("[%s] [%s] Running covr::package_coverage(type = 'none')...\n",
+                      format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"), stem))
+          flush.console()
+
           cov <- covr::package_coverage(
-            type = "tests",
+            type = "none",
+            code = test_code,
             quiet = FALSE,
             clean = TRUE
           )
-          log_phase("Completed covr::package_coverage() instrumentation and test execution", t_cov)
 
-          t_tally <- proc.time()[["elapsed"]]
-          total_pct <- covr::percent_coverage(cov)
-          cat(sprintf("\n=== CodingManageR Total Test Coverage: %.2f%% ===\n\n", total_pct))
+          df_tally <- covr::tally_coverage(cov, by = "line")
+          saveRDS(df_tally, file = file.path(shard_dir, paste0("tally-", stem, ".rds")))
 
-          df_cov <- covr::tally_coverage(cov)
-          if (nrow(df_cov) > 0) {
-            for (f in sort(unique(df_cov$filename))) {
-              sub <- df_cov[df_cov$filename == f, , drop = FALSE]
-              pct <- 100 * mean(sub$value > 0)
-              cat(sprintf("  %-38s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
-            }
+          tpl_xml <- file.path(stage_dir, "template-cobertura.xml")
+          if (!file.exists(tpl_xml)) {
+            covr::to_cobertura(cov, filename = tpl_xml)
+          }
+
+          elapsed_s <- proc.time()[["elapsed"]] - t0
+          peak_mb <- read_peak_rss_mb()
+          file_lines <- if (nrow(df_tally) > 0L) {
+            stats::aggregate(value ~ filename + line, data = df_tally, FUN = sum)
+          } else {
+            data.frame(filename = character(0), line = integer(0), value = numeric(0))
+          }
+          n_valid <- nrow(file_lines)
+          n_hit <- sum(file_lines$value > 0)
+          pct <- if (n_valid > 0L) 100 * n_hit / n_valid else 0
+
+          cat(sprintf(
+            "[%s] [%s] DONE | elapsed=%6.1fs | peak_rss=%6.1f MB | shard_coverage=%6.2f%% (%d / %d lines)\n",
+            format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"),
+            stem, elapsed_s, peak_mb, pct, n_hit, n_valid
+          ))
+          flush.console()
+          RSCRIPT_ONE
+
+          cat > "$STAGE_DIR/merge_covr.R" <<'RSCRIPT_MERGE'
+          args <- commandArgs(trailingOnly = TRUE)
+          stage_dir <- args[[1]]
+          shard_dir <- file.path(stage_dir, "shards")
+          tpl_xml <- file.path(stage_dir, "template-cobertura.xml")
+
+          t0 <- proc.time()[["elapsed"]]
+          rds_files <- sort(list.files(shard_dir, pattern = "^tally-.*\\.rds$", full.names = TRUE))
+          if (length(rds_files) == 0L) {
+            stop("No coverage tally shard files found in ", shard_dir)
+          }
+          if (!file.exists(tpl_xml)) {
+            stop("Template Cobertura XML not found at ", tpl_xml)
+          }
+
+          all_df <- do.call(rbind, lapply(rds_files, readRDS))
+          file_agg <- stats::aggregate(value ~ filename + line, data = all_df, FUN = sum)
+          meth_rows <- all_df[!is.na(all_df$functions), , drop = FALSE]
+          meth_agg <- if (nrow(meth_rows) > 0L) {
+            stats::aggregate(value ~ filename + functions + line, data = meth_rows, FUN = sum)
+          } else {
+            data.frame(filename = character(0), functions = character(0), line = integer(0), value = numeric(0))
+          }
+
+          lines_valid <- nrow(file_agg)
+          lines_covered <- sum(file_agg$value > 0)
+          overall_rate <- if (lines_valid > 0L) lines_covered / lines_valid else 0
+
+          cat(sprintf("\n=== CodingManageR Combined Test Coverage (%d test files): %.2f%% (%d / %d lines) ===\n\n",
+                      length(rds_files), 100 * overall_rate, lines_covered, lines_valid))
+          for (f in sort(unique(file_agg$filename))) {
+            sub <- file_agg[file_agg$filename == f, , drop = FALSE]
+            pct <- 100 * mean(sub$value > 0)
+            cat(sprintf("  %-38s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
           }
           cat("\n")
-          log_phase("Completed covr::tally_coverage() summary", t_tally)
 
-          t_xml <- proc.time()[["elapsed"]]
-          covr::to_cobertura(cov, filename = "cobertura.xml")
-          xml_size <- if (file.exists("cobertura.xml")) file.info("cobertura.xml")$size else NA_real_
-          log_phase(sprintf("Exported cobertura.xml (%.1f KB)", xml_size / 1024), t_xml)
-        shell: Rscript {0}
+          file_hits <- stats::setNames(
+            as.integer(file_agg$value),
+            paste(file_agg$filename, file_agg$line, sep = "\r")
+          )
+          meth_hits <- stats::setNames(
+            as.integer(meth_agg$value),
+            paste(meth_agg$filename, meth_agg$functions, meth_agg$line, sep = "\r")
+          )
+
+          doc <- xml2::read_xml(tpl_xml)
+          class_nodes <- xml2::xml_find_all(doc, ".//class")
+          for (cls in class_nodes) {
+            fname <- xml2::xml_attr(cls, "filename")
+
+            ln_nodes <- xml2::xml_find_all(cls, "./lines/line")
+            if (length(ln_nodes) > 0L) {
+              nums <- xml2::xml_attr(ln_nodes, "number")
+              h <- unname(file_hits[paste(fname, nums, sep = "\r")])
+              h[is.na(h)] <- 0L
+              xml2::xml_set_attr(ln_nodes, "hits", as.character(h))
+              xml2::xml_set_attr(cls, "line-rate", as.character(sum(h > 0L) / length(h)))
+            } else {
+              xml2::xml_set_attr(cls, "line-rate", "0")
+            }
+
+            method_nodes <- xml2::xml_find_all(cls, "./methods/method")
+            for (mnode in method_nodes) {
+              mname <- xml2::xml_attr(mnode, "name")
+              mln_nodes <- xml2::xml_find_all(mnode, "./lines/line")
+              if (length(mln_nodes) > 0L) {
+                mnums <- xml2::xml_attr(mln_nodes, "number")
+                mh <- unname(meth_hits[paste(fname, mname, mnums, sep = "\r")])
+                missing_idx <- is.na(mh)
+                if (any(missing_idx)) {
+                  mh[missing_idx] <- unname(file_hits[paste(fname, mnums[missing_idx], sep = "\r")])
+                }
+                mh[is.na(mh)] <- 0L
+                xml2::xml_set_attr(mln_nodes, "hits", as.character(mh))
+                xml2::xml_set_attr(mnode, "line-rate", as.character(sum(mh > 0L) / length(mh)))
+              } else {
+                xml2::xml_set_attr(mnode, "line-rate", "0")
+              }
+            }
+          }
+
+          pkg_nodes <- xml2::xml_find_all(doc, ".//package")
+          if (length(pkg_nodes) > 0L) {
+            xml2::xml_set_attr(pkg_nodes, "line-rate", as.character(overall_rate))
+          }
+
+          root_node <- xml2::xml_root(doc)
+          xml2::xml_set_attr(root_node, "line-rate", as.character(overall_rate))
+          xml2::xml_set_attr(root_node, "lines-covered", as.character(lines_covered))
+          xml2::xml_set_attr(root_node, "lines-valid", as.character(lines_valid))
+          xml2::xml_set_attr(root_node, "timestamp", as.character(Sys.time()))
+
+          xml2::write_xml(doc, file = "cobertura.xml")
+          invisible(xml2::read_xml("cobertura.xml"))
+          xml_kb <- file.info("cobertura.xml")$size / 1024
+          cat(sprintf(
+            "[%s] Merged cobertura.xml written and validated (%.1f KB) in %.1fs\n",
+            format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"),
+            xml_kb,
+            proc.time()[["elapsed"]] - t0
+          ))
+          flush.console()
+          RSCRIPT_MERGE
+
+          mapfile -t TEST_FILES < <(find tests/testthat -maxdepth 1 -type f -name 'test-*.R' ! -name 'test-shinytest2-e2e.R' | sort)
+          log_msg "Discovered ${#TEST_FILES[@]} non-E2E test files for isolated covr execution."
+
+          for tf in "${TEST_FILES[@]}"; do
+            base="$(basename "$tf")"
+            stem="${base#test-}"
+            stem="${stem%.R}"
+            log_msg ">>> Launching isolated Rscript subprocess for: ${base} (filter=^${stem}$)"
+            rc=0
+            Rscript "$STAGE_DIR/run_one_covr.R" "$stem" "$STAGE_DIR" 2>&1 | tee -a "$LOG_FILE" || rc=$?
+            if [ "$rc" -ne 0 ]; then
+              log_msg "!!! FAILURE: ${base} exited with code ${rc}"
+              free -m | tee -a "$LOG_FILE"
+              exit "$rc"
+            fi
+            avail_mb="$(free -m | awk '/^Mem:/ {print $7}')"
+            log_msg "<<< Subprocess for ${base} exited cleanly (available runner RAM: ${avail_mb} MB)"
+          done
+
+          log_msg ">>> Merging all per-file coverage shards into ./cobertura.xml"
+          Rscript "$STAGE_DIR/merge_covr.R" "$STAGE_DIR" 2>&1 | tee -a "$LOG_FILE"
+          log_msg "=== Per-file covr coverage run completed successfully ==="
+
+      - name: Upload coverage diagnostics log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: covr-diagnostics-log
+          path: /tmp/covr-ci/covr-diagnostics.log
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
