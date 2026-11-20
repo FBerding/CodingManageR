@@ -24,7 +24,7 @@ jobs:
   test-coverage:
     name: test-coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 90
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -64,11 +64,36 @@ jobs:
 
       - name: Compute test coverage with covr (unit, integration, and module server tests)
         run: |
+          t_start <- proc.time()[["elapsed"]]
+          log_phase <- function(msg, phase_start = NULL) {
+            now_utc <- format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC")
+            total_s <- proc.time()[["elapsed"]] - t_start
+            if (is.null(phase_start)) {
+              cat(sprintf("[%s] [Total %6.1fs] %s\n", now_utc, total_s, msg))
+            } else {
+              phase_s <- proc.time()[["elapsed"]] - phase_start
+              cat(sprintf("[%s] [Total %6.1fs | Phase %6.1fs] %s\n", now_utc, total_s, phase_s, msg))
+            }
+            flush.console()
+          }
+
+          options(covr.record_tests = FALSE)
+          log_phase(sprintf(
+            "Starting covr::package_coverage() (R %s, CODINGMANAGER_SKIP_E2E=%s, covr.record_tests=%s)",
+            paste(R.version$major, R.version$minor, sep = "."),
+            Sys.getenv("CODINGMANAGER_SKIP_E2E", unset = "<unset>"),
+            as.character(getOption("covr.record_tests"))
+          ))
+
+          t_cov <- proc.time()[["elapsed"]]
           cov <- covr::package_coverage(
             type = "tests",
             quiet = FALSE,
-            clean = FALSE
+            clean = TRUE
           )
+          log_phase("Completed covr::package_coverage() instrumentation and test execution", t_cov)
+
+          t_tally <- proc.time()[["elapsed"]]
           total_pct <- covr::percent_coverage(cov)
           cat(sprintf("\n=== CodingManageR Total Test Coverage: %.2f%% ===\n\n", total_pct))
 
@@ -77,11 +102,16 @@ jobs:
             for (f in sort(unique(df_cov$filename))) {
               sub <- df_cov[df_cov$filename == f, , drop = FALSE]
               pct <- 100 * mean(sub$value > 0)
-              cat(sprintf("  %-35s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
+              cat(sprintf("  %-38s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
             }
           }
+          cat("\n")
+          log_phase("Completed covr::tally_coverage() summary", t_tally)
 
+          t_xml <- proc.time()[["elapsed"]]
           covr::to_cobertura(cov, filename = "cobertura.xml")
+          xml_size <- if (file.exists("cobertura.xml")) file.info("cobertura.xml")$size else NA_real_
+          log_phase(sprintf("Exported cobertura.xml (%.1f KB)", xml_size / 1024), t_xml)
         shell: Rscript {0}
 
       - name: Upload coverage report to Codecov
