@@ -146,17 +146,21 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
 
       if (!schulung_gestartet()) {
         fluidRow(
-          column(width = 6,
-                 wellPanel(
-                   h4(tr("training.config_title", lang)),
-                   p(tags$small(class = "text-muted", tr("training.config_desc", lang))),
-                   br(),
-                   selectInput(ns("gewaehlte_kategorie"), tr("training.select_scale_label", lang), choices = k_liste, selected = sel_kat),
-                   uiOutput(ns("dynamischer_einheiten_input")),
-                   br(),
-                   actionButton(ns("start_schulung_btn"), tr("training.btn_start", lang), class = "btn-success w-100"),
-                   actionButton(ns("btn_beispiele_config"), paste0("\U0001f4a1 ", tr("training.btn_show_examples", lang)), class = "btn-outline-info w-100 mt-2")
-                 )
+          column(
+            width = 7,
+            div(
+              class = "cm-surface",
+              h4(class = "mb-1", tr("training.config_title", lang)),
+              p(class = "text-muted small mb-3", tr("training.config_desc", lang)),
+              hr(),
+              selectInput(ns("gewaehlte_kategorie"), tr("training.select_scale_label", lang), choices = k_liste, selected = sel_kat, width = "100%"),
+              uiOutput(ns("dynamischer_einheiten_input")),
+              div(
+                class = "d-grid gap-2 mt-3",
+                actionButton(ns("start_schulung_btn"), tr("training.btn_start", lang), class = "btn btn-primary w-100"),
+                actionButton(ns("btn_beispiele_config"), tr("training.btn_show_examples", lang), icon = icon("book-open"), class = "btn btn-outline-secondary w-100")
+              )
+            )
           )
         )
       } else if (schulung_gestartet() && !schulung_abgeschlossen()) {
@@ -164,75 +168,87 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         slider_val <- isolate(input$bewertung_slider)
         if (is.null(slider_val) || is.na(slider_val)) slider_val <- 0
 
-        fluidPage(
-          fluidRow(
-            column(width = 12,
-                   div(class = "card text-white bg-primary mb-3",
-                       div(class = "card-body d-flex justify-content-between align-items-center",
-                           {
-                             k_spalten <- get_kategorie_spalten()
-                             kat_lbl <- if (length(k_spalten) > 0) names(k_spalten)[which(k_spalten == sel_kat)[1]] else NULL
-                             if (is.na(kat_lbl) || is.null(kat_lbl) || kat_lbl == "") kat_lbl <- paste0("ID #", sel_kat)
-                             h5(class = "card-title mb-0", tr("training.scale_badge", lang, kat_lbl))
-                           },
-                           div(class = "text-end", h4(class = "mb-0", paste0(zaehler() + 1, " / ", ziel_einheiten())))
-                       )
-                   )
-            )
+        div(
+          class = "cm-module-section",
+          div(
+            class = "cm-session-banner d-flex flex-wrap justify-content-between align-items-center gap-3",
+            {
+              k_spalten <- get_kategorie_spalten()
+              kat_lbl <- if (length(k_spalten) > 0) names(k_spalten)[which(k_spalten == sel_kat)[1]] else NULL
+              if (is.na(kat_lbl) || is.null(kat_lbl) || kat_lbl == "") kat_lbl <- paste0("ID #", sel_kat)
+              h5(class = "mb-0", tr("training.scale_badge", lang, kat_lbl))
+            },
+            div(class = "text-end", h4(class = "cm-session-counter", paste0(zaehler() + 1, " / ", ziel_einheiten())))
           ),
 
           if (is.null(fall) || nrow(fall) == 0) {
-            wellPanel(p(tr("training.err_no_gold_cases", lang)))
+            div(class = "cm-surface", p(class = "mb-0", tr("training.err_no_gold_cases", lang)))
           } else {
             fluidRow(
-              column(width = 8,
-                     wellPanel(
-                       div(class = "d-flex justify-content-between align-items-center mb-2",
-                           h5(class = "mb-0", tr("training.current_case", lang))
-                       ),
-                       hr(),
-                       div(
-                         style = "max-height: 250px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border: 1px solid #ced4da; border-radius: 4px; font-family: monospace; white-space: pre-wrap;",
-                         fall$text
-                       ),
-                       hr(),
-                       p(tags$small(paste(tr("coding.case_selection", lang), paste0("#", fall$text_id))),
-                         if (!is.null(fall$source_id) && !is.na(fall$source_id[1])) {
-                           tags$span(class = "badge bg-secondary ms-2", paste0(tr("training.source_ref", lang), " [#", fall$source_id[1], "] ", fall$text_kurzreferenz[1]))
-                         }
-                       )
-                     )
+              column(
+                width = 8,
+                div(
+                  class = "cm-surface",
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    h5(class = "mb-0", tr("training.current_case", lang))
+                  ),
+                  hr(),
+                  div(class = "cm-case-text", fall$text),
+                  hr(),
+                  div(
+                    class = "d-flex flex-wrap align-items-center gap-2 text-muted small",
+                    tags$span(class = "font-monospace", paste(tr("coding.case_selection", lang), paste0("#", fall$text_id))),
+                    if (!is.null(fall$source_id) && !is.na(fall$source_id[1])) {
+                      tagList(
+                        tags$span("\u00b7"),
+                        tags$span(paste0(tr("training.source_ref", lang), " [#", fall$source_id[1], "] ", fall$text_kurzreferenz[1]))
+                      )
+                    }
+                  )
+                )
               ),
-              column(width = 4,
-                     wellPanel(
-                       div(class = "d-flex justify-content-between align-items-center mb-3",
-                           h5(class = "mb-0 fw-bold", tr("training.your_rating", lang)),
-                           actionButton(ns("btn_beispiele"), paste0("\U0001f4a1 ", tr("training.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
-                       ),
-                       hr(),
-                       sliderInput(ns("bewertung_slider"), tr("training.slider_label", lang, max_bewertung_wert()),
-                                   min = 0, max = max_bewertung_wert(), value = slider_val, step = 1),
-                       br(),
-                       div(class = "card bg-light mb-3",
-                           div(class = "card-header", tags$strong(tr("examples.definition_label", lang))),
-                           div(class = "card-body", p(class = "card-text", style = "font-size: 0.95em; color: #2c3e50; font-weight: bold;", textOutput(ns("wert_definition")))))
-                     ),
-                     div(class = "card bg-light mb-3",
-                         div(class = "card-header", tags$strong(tr("examples.general_def", lang))),
-                         div(class = "card-body", p(class = "card-text", style = "font-size: 0.9em;",
-                                                    if (nzchar(beschreibung_text())) beschreibung_text() else tr("common.no_description", lang)))
-                     )
+              column(
+                width = 4,
+                div(
+                  class = "cm-surface",
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    h5(class = "mb-0", tr("training.your_rating", lang)),
+                    actionButton(ns("btn_beispiele"), tr("training.btn_show_examples", lang), icon = icon("book-open"), class = "btn btn-sm btn-outline-primary")
+                  ),
+                  hr(),
+                  sliderInput(ns("bewertung_slider"), tr("training.slider_label", lang, max_bewertung_wert()),
+                              min = 0, max = max_bewertung_wert(), value = slider_val, step = 1),
+                  div(
+                    class = "cm-surface-subtle mt-3 mb-3",
+                    tags$div(class = "small fw-semibold text-muted mb-1", tr("examples.definition_label", lang)),
+                    p(class = "mb-0 fw-semibold", style = "font-size: 0.92rem;", textOutput(ns("wert_definition")))
+                  ),
+                  div(
+                    class = "cm-surface-subtle",
+                    tags$div(class = "small fw-semibold text-muted mb-1", tr("examples.general_def", lang)),
+                    p(class = "mb-0 text-muted", style = "font-size: 0.88rem;",
+                      if (nzchar(beschreibung_text())) beschreibung_text() else tr("common.no_description", lang))
+                  )
+                )
               )
             )
           },
 
-          br(),
           fluidRow(
-            column(width = 3,
-                   actionButton(ns("naechster_fall_btn"),
-                                if (zaehler() + 1 == ziel_einheiten()) tr("training.btn_finish", lang) else tr("training.btn_next_case", lang),
-                                class = "btn-info w-100")),
-            column(width = 3, actionButton(ns("back_to_config_btn"), tr("training.btn_abort", lang), class = "btn-secondary w-100"))
+            column(
+              width = 3,
+              actionButton(
+                ns("naechster_fall_btn"),
+                if (zaehler() + 1 == ziel_einheiten()) tr("training.btn_finish", lang) else tr("training.btn_next_case", lang),
+                class = "btn btn-primary w-100"
+              )
+            ),
+            column(
+              width = 3,
+              actionButton(ns("back_to_config_btn"), tr("training.btn_abort", lang), class = "btn btn-outline-secondary w-100")
+            )
           )
         )
       } else {
@@ -240,22 +256,22 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         kat_lbl <- if (length(k_spalten) > 0) names(k_spalten)[which(k_spalten == sel_kat)[1]] else NULL
         if (is.na(kat_lbl) || is.null(kat_lbl) || kat_lbl == "") kat_lbl <- paste0("ID #", sel_kat)
 
-        fluidPage(
-          div(class = "alert alert-success text-center",
-              h2(paste0("\U0001f389 ", tr("training.completed_title", lang))),
-              p(tr("training.completed_subtitle", lang, kat_lbl, as.integer(ziel_einheiten())))
+        div(
+          class = "cm-module-section",
+          div(
+            class = "alert alert-success mb-3",
+            h4(class = "mb-1", tr("training.completed_title", lang)),
+            p(class = "mb-0", tr("training.completed_subtitle", lang, kat_lbl, as.integer(ziel_einheiten())))
           ),
           uiOutput(ns("external_metrics_panel")),
-          br(),
-          wellPanel(
-            div(class = "d-flex justify-content-between align-items-center mb-2",
-                h4(class = "mb-0", paste0("\U0001f4ca ", tr("training.comparison_table_title", lang)))
-            ),
-            br(),
-            tableOutput(ns("session_summary_table")), br(),
-            div(class = "d-flex gap-2",
-                actionButton(ns("restart_schulung_btn"), tr("training.btn_new_training", lang), class = "btn-primary"),
-                downloadButton(ns("download_session_csv"), tr("training.btn_download_csv", lang), class = "btn btn-success")
+          div(
+            class = "cm-surface",
+            h4(class = "mb-3", tr("training.comparison_table_title", lang)),
+            tableOutput(ns("session_summary_table")),
+            div(
+              class = "d-flex flex-wrap gap-2 mt-3",
+              actionButton(ns("restart_schulung_btn"), tr("training.btn_new_training", lang), class = "btn btn-primary"),
+              downloadButton(ns("download_session_csv"), tr("training.btn_download_csv", lang), class = "btn btn-outline-primary")
             )
           )
         )
@@ -320,36 +336,41 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
 
       m <- berechne_aifeducation_metriken(user_vals = res_data$user_val, true_vals = res_data$true_val, max_val = max_bewertung_wert())
 
-      wellPanel(
-        style = "background-color: #f8f9fa; border-left: 5px solid #2c3e50;",
-        h4(paste0("\U0001f4c8 ", tr("training.summary_all_metrics_title", lang))), hr(),
+      div(
+        class = "cm-surface",
+        h4(class = "mb-2", tr("training.summary_all_metrics_title", lang)),
+        hr(),
         fluidRow(
-          column(width = 4,
-                 h6(tags$strong(tr("metrics.group_classification", lang))),
-                 p(paste0(tr("metrics.accuracy.label", lang), ": "), m$accuracy, " %"),
-                 p(paste0(tr("metrics.balanced_accuracy.label", lang), ": "), m$balanced_accuracy, " %"),
-                 p(paste0(tr("metrics.macro_precision.label", lang), ": "), m$macro_precision, " %"),
-                 p(paste0(tr("metrics.macro_recall.label", lang), ": "), m$macro_recall, " %"),
-                 p(paste0(tr("metrics.macro_f1.label", lang), ": "), m$macro_f1, " %")
+          column(
+            width = 4,
+            h6(tags$strong(tr("metrics.group_classification", lang))),
+            p(class = "mb-1 small", paste0(tr("metrics.accuracy.label", lang), ": "), tags$code(paste0(m$accuracy, " %"))),
+            p(class = "mb-1 small", paste0(tr("metrics.balanced_accuracy.label", lang), ": "), tags$code(paste0(m$balanced_accuracy, " %"))),
+            p(class = "mb-1 small", paste0(tr("metrics.macro_precision.label", lang), ": "), tags$code(paste0(m$macro_precision, " %"))),
+            p(class = "mb-1 small", paste0(tr("metrics.macro_recall.label", lang), ": "), tags$code(paste0(m$macro_recall, " %"))),
+            p(class = "mb-1 small", paste0(tr("metrics.macro_f1.label", lang), ": "), tags$code(paste0(m$macro_f1, " %")))
           ),
-          column(width = 8,
-                 h6(tags$strong(paste0(tr("metrics.group_nominal", lang), " & ", tr("metrics.group_ordinal", lang)))),
-                 fluidRow(
-                   column(width = 6,
-                          p(paste0(tr("metrics.iota_index.label", lang), ": "), tags$code(m$iota_index)),
-                          p(paste0(tr("metrics.avg_iota2.label", lang), ": "), tags$code(m$avg_iota2)),
-                          p(paste0(tr("metrics.cohens_kappa.label", lang), ": "), tags$code(m$cohens_kappa)),
-                          p(paste0(tr("metrics.kappa_linear.label", lang), ": "), tags$code(m$kappa_linear)),
-                          p(paste0(tr("metrics.kappa_squared.label", lang), ": "), tags$code(m$kappa_squared))
-                   ),
-                   column(width = 6,
-                          p(paste0(tr("metrics.fleiss_kappa.label", lang), ": "), tags$code(m$fleiss_kappa)),
-                          p(paste0(tr("metrics.kendall_w.label", lang), ": "), tags$code(m$kendall_w)),
-                          p(paste0(tr("metrics.alpha_nominal.label", lang), ": "), tags$code(m$alpha_nominal)),
-                          p(paste0(tr("metrics.alpha_ordinal.label", lang), ": "), tags$code(m$alpha_ordinal)),
-                          p(paste0(tr("metrics.gwet_ac2_quadratic.label", lang), ": "), tags$code(m$gwet_ac2_quadratic))
-                   )
-                 )
+          column(
+            width = 8,
+            h6(tags$strong(paste0(tr("metrics.group_nominal", lang), " & ", tr("metrics.group_ordinal", lang)))),
+            fluidRow(
+              column(
+                width = 6,
+                p(class = "mb-1 small", paste0(tr("metrics.iota_index.label", lang), ": "), tags$code(m$iota_index)),
+                p(class = "mb-1 small", paste0(tr("metrics.avg_iota2.label", lang), ": "), tags$code(m$avg_iota2)),
+                p(class = "mb-1 small", paste0(tr("metrics.cohens_kappa.label", lang), ": "), tags$code(m$cohens_kappa)),
+                p(class = "mb-1 small", paste0(tr("metrics.kappa_linear.label", lang), ": "), tags$code(m$kappa_linear)),
+                p(class = "mb-1 small", paste0(tr("metrics.kappa_squared.label", lang), ": "), tags$code(m$kappa_squared))
+              ),
+              column(
+                width = 6,
+                p(class = "mb-1 small", paste0(tr("metrics.fleiss_kappa.label", lang), ": "), tags$code(m$fleiss_kappa)),
+                p(class = "mb-1 small", paste0(tr("metrics.kendall_w.label", lang), ": "), tags$code(m$kendall_w)),
+                p(class = "mb-1 small", paste0(tr("metrics.alpha_nominal.label", lang), ": "), tags$code(m$alpha_nominal)),
+                p(class = "mb-1 small", paste0(tr("metrics.alpha_ordinal.label", lang), ": "), tags$code(m$alpha_ordinal)),
+                p(class = "mb-1 small", paste0(tr("metrics.gwet_ac2_quadratic.label", lang), ": "), tags$code(m$gwet_ac2_quadratic))
+              )
+            )
           )
         )
       )
@@ -592,7 +613,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         ""
       }
       showModal(modalDialog(
-        title = tags$div(tags$strong(paste0("\U0001f4a1 ", tr("examples.modal_title", lang))),
+        title = tags$div(tags$strong(tr("examples.modal_title", lang)),
                          tags$br(),
                          tags$small(class = "text-muted", tr("examples.example_label", lang))),
         size = "l",
@@ -601,7 +622,7 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
           actionButton(ns("btn_anderes_beispiel"), tr("coding.btn_skip", lang), icon = icon("random"), class = "btn-primary"),
           modalButton(tr("examples.btn_close", lang))
         ),
-        fluidPage(
+        div(
           fluidRow(
             column(width = 6,
                    selectInput(ns("modal_beispiel_kategorie"), tr("admin.filter_scale_label", lang),
@@ -683,7 +704,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
               tags$span(class = "text-muted small", tr("common.case_number", lang, as.integer(bsp$text_id[1])))
           ),
           div(
-            style = "max-height: 250px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border: 1px solid #ced4da; border-radius: 4px; font-family: monospace; white-space: pre-wrap;",
+            class = "cm-case-text",
+            style = "max-height: 260px;",
             bsp$text[1]
           ),
           br(),

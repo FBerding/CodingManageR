@@ -64,10 +64,13 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
   valid_subtabs <- c("tab_users", "tab_texts", "tab_sources", "tab_scales", "tab_reliability", "tab_coding_search", "tab_data", "tab_diagnose")
   active_subtab <- if (!is.null(selected_subtab) && selected_subtab %in% valid_subtabs) selected_subtab else "tab_users"
 
-  fluidPage(
-    h2(paste0("\U0001f6e0\ufe0f ", tr("admin.title", lang))),
-    p(tr("admin.subtitle", lang)),
-    br(),
+  div(
+    class = "cm-module-section",
+    div(
+      class = "cm-page-intro",
+      h2(tr("admin.title", lang)),
+      p(tr("admin.subtitle", lang))
+    ),
 
     tabsetPanel(
       id = ns("admin_subtabs"),
@@ -78,38 +81,41 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 1: USER MANAGEMENT (user_tokens) - WITH 25-USER PAGINATION
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("users"), tr("admin.tab_users", lang)),
+        title = tagList(icon("users"), " ", tr("admin.tab_users", lang)),
         value = "tab_users",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #2c3e50; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex justify-content-between align-items-center mb-3",
-              div(
-                h4(style = "margin: 0; color: #2c3e50;", paste0("\U0001f464 ", tr("admin.users.title", lang))),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.users.subtitle", lang))
-              ),
-              actionButton(ns("btn_open_add_user"), tr("admin.users.btn_add", lang),
-                           icon = icon("user-plus"), class = "btn-success")
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
+            div(
+              h4(class = "mb-1", tr("admin.users.title", lang)),
+              p(class = "text-muted small mb-0", tr("admin.users.subtitle", lang))
+            ),
+            actionButton(ns("btn_open_add_user"), tr("admin.users.btn_add", lang),
+                         icon = icon("user-plus"), class = "btn btn-primary btn-sm")
           ),
           hr(),
 
           fluidRow(
-            column(width = 6,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("user_search_query"), label = NULL, placeholder = tr("admin.users.search_placeholder", lang), width = "100%")
-                   )
+            column(
+              width = 6,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("user_search_query"), label = NULL, placeholder = tr("admin.users.search_placeholder", lang), width = "100%")
+              )
             ),
-            column(width = 6,
-                   div(class = "text-end text-muted small pt-2",
-                       uiOutput(ns("users_counter_badge"))
-                   )
+            column(
+              width = 6,
+              div(
+                class = "text-end text-muted small pt-2",
+                uiOutput(ns("users_counter_badge"))
+              )
             )
           ),
 
           uiOutput(ns("users_table_container")),
-          br(),
-          uiOutput(ns("users_pagination_controls"))
+          div(class = "mt-3", uiOutput(ns("users_pagination_controls")))
         )
       ),
 
@@ -117,36 +123,37 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 2: CASE TEXTS & SOURCE ASSIGNMENT (texts & sources) - WITH 25-ITEM PAGINATION
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("file-lines"), tr("admin.tab_texts", lang)),
+        title = tagList(icon("file-lines"), " ", tr("admin.tab_texts", lang)),
         value = "tab_texts",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #3498db; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex justify-content-between align-items-center mb-3",
-              div(
-                h4(style = "margin: 0; color: #2c3e50;", paste0("\U0001f4d1 ", tr("admin.texts.title", lang))),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.texts.subtitle", lang))
-              )
+        div(
+          class = "cm-surface",
+          div(
+            class = "mb-3",
+            h4(class = "mb-1", tr("admin.texts.title", lang)),
+            p(class = "text-muted small mb-0", tr("admin.texts.subtitle", lang))
           ),
           hr(),
 
           fluidRow(
-            column(width = 6,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("texts_search_query"), label = NULL, placeholder = tr("admin.texts.search_placeholder", lang), width = "100%")
-                   )
+            column(
+              width = 6,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("texts_search_query"), label = NULL, placeholder = tr("admin.texts.search_placeholder", lang), width = "100%")
+              )
             ),
-            column(width = 6,
-                   div(class = "text-end text-muted small pt-2",
-                       uiOutput(ns("texts_counter_badge"))
-                   )
+            column(
+              width = 6,
+              div(
+                class = "text-end text-muted small pt-2",
+                uiOutput(ns("texts_counter_badge"))
+              )
             )
           ),
 
           uiOutput(ns("texts_management_table_container")),
-          br(),
-          uiOutput(ns("texts_pagination_controls"))
+          div(class = "mt-3", uiOutput(ns("texts_pagination_controls")))
         )
       ),
 
@@ -154,32 +161,36 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 3: SOURCE MANAGEMENT (sources)
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("book"), tr("admin.tab_sources", lang)),
+        title = tagList(icon("book"), " ", tr("admin.tab_sources", lang)),
         value = "tab_sources",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #34495e; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
-              div(
-                h4(style = "margin: 0; color: #2c3e50;", tr("admin.sources.title", lang)),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.sources.subtitle", lang))
-              ),
-              actionButton(ns("btn_open_add_source"), tr("admin.sources.btn_add", lang),
-                           icon = icon("plus"), class = "btn-success")
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
+            div(
+              h4(class = "mb-1", tr("admin.sources.title", lang)),
+              p(class = "text-muted small mb-0", tr("admin.sources.subtitle", lang))
+            ),
+            actionButton(ns("btn_open_add_source"), tr("admin.sources.btn_add", lang),
+                         icon = icon("plus"), class = "btn btn-primary btn-sm")
           ),
           hr(),
 
           fluidRow(
-            column(width = 6,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("source_search_query"), label = NULL, placeholder = tr("admin.sources.search_placeholder", lang), width = "100%")
-                   )
+            column(
+              width = 6,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("source_search_query"), label = NULL, placeholder = tr("admin.sources.search_placeholder", lang), width = "100%")
+              )
             ),
-            column(width = 6,
-                   div(class = "text-end text-muted small pt-2",
-                       uiOutput(ns("sources_counter_text"))
-                   )
+            column(
+              width = 6,
+              div(
+                class = "text-end text-muted small pt-2",
+                uiOutput(ns("sources_counter_text"))
+              )
             )
           ),
 
@@ -191,33 +202,35 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 4: SCALE MANAGEMENT
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("sliders-h"), tr("admin.tab_scales", lang)),
+        title = tagList(icon("sliders-h"), " ", tr("admin.tab_scales", lang)),
         value = "tab_scales",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #3498db; background-color: #ffffff;",
-          fluidRow(
-            column(width = 8,
-                   h4(icon("ruler-combined", class = "me-2 text-primary"), tr("admin.scales.title", lang)),
-                   p(class = "text-muted mb-0", tr("admin.scales.subtitle", lang))
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
+            div(
+              h4(class = "mb-1", tr("admin.scales.title", lang)),
+              p(class = "text-muted small mb-0", tr("admin.scales.subtitle", lang))
             ),
-            column(width = 4, class = "text-end align-self-center",
-                   actionButton(ns("btn_open_add_scale"), tr("admin.scales.btn_add", lang), icon = icon("plus"), class = "btn-success")
-            )
+            actionButton(ns("btn_open_add_scale"), tr("admin.scales.btn_add", lang), icon = icon("plus"), class = "btn btn-primary btn-sm")
           ),
           hr(),
 
           fluidRow(
-            column(width = 6,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("scale_search_query"), label = NULL, placeholder = tr("admin.scales.search_placeholder", lang), width = "100%")
-                   )
+            column(
+              width = 6,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("scale_search_query"), label = NULL, placeholder = tr("admin.scales.search_placeholder", lang), width = "100%")
+              )
             ),
-            column(width = 6,
-                   div(class = "text-end text-muted small pt-2",
-                       uiOutput(ns("scales_counter_text"))
-                   )
+            column(
+              width = 6,
+              div(
+                class = "text-end text-muted small pt-2",
+                uiOutput(ns("scales_counter_text"))
+              )
             )
           ),
 
@@ -229,50 +242,54 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 5: RELIABILITY & CODING PROGRESS OF ALL USERS
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("chart-line"), tr("admin.tab_reliability", lang)),
+        title = tagList(icon("chart-line"), " ", tr("admin.tab_reliability", lang)),
         value = "tab_reliability",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #2980b9; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
-              div(
-                h4(style = "margin: 0; color: #2c3e50;", icon("chart-bar", class = "me-2 text-primary"), tr("admin.reliability.title", lang)),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.reliability.subtitle", lang))
-              ),
-              actionButton(ns("btn_refresh_reliability"), tr("admin.reliability.btn_refresh", lang),
-                           icon = icon("rotate"), class = "btn-outline-primary btn-sm")
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
+            div(
+              h4(class = "mb-1", tr("admin.reliability.title", lang)),
+              p(class = "text-muted small mb-0", tr("admin.reliability.subtitle", lang))
+            ),
+            actionButton(ns("btn_refresh_reliability"), tr("admin.reliability.btn_refresh", lang),
+                         icon = icon("rotate"), class = "btn btn-outline-primary btn-sm")
           ),
           hr(),
 
           uiOutput(ns("admin_reliability_kpis")),
-          br(),
 
           fluidRow(
-            column(width = 4,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("rel_search_query"), label = NULL, placeholder = tr("admin.reliability.search_placeholder", lang), width = "100%")
-                   )
+            column(
+              width = 4,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("rel_search_query"), label = NULL, placeholder = tr("admin.reliability.search_placeholder", lang), width = "100%")
+              )
             ),
-            column(width = 4,
-                   selectInput(ns("rel_scale_select"), label = NULL,
-                               choices = setNames("all", tr("admin.reliability.all_dimensions", lang)),
-                               selected = "all", width = "100%")
+            column(
+              width = 4,
+              selectInput(ns("rel_scale_select"), label = NULL,
+                          choices = setNames("all", tr("admin.reliability.all_dimensions", lang)),
+                          selected = "all", width = "100%")
             ),
-            column(width = 4,
-                   selectInput(ns("rel_metric_select"), label = NULL,
-                               choices = get_reliability_metric_choices(lang, include_all_core = FALSE),
-                               selected = "cohens_kappa", width = "100%")
+            column(
+              width = 4,
+              selectInput(ns("rel_metric_select"), label = NULL,
+                          choices = get_reliability_metric_choices(lang, include_all_core = FALSE),
+                          selected = "cohens_kappa", width = "100%")
             )
           ),
 
-          div(class = "card p-3 mb-4 bg-light border",
-              div(class = "d-flex justify-content-between align-items-center mb-2",
-                  h5(style = "margin:0; font-size: 0.95rem; font-weight: 600; color: #2c3e50;",
-                     icon("chart-column", class = "me-1 text-primary"), tr("admin.reliability.chart_card_title", lang)),
-                  span(class = "text-muted small", tr("admin.reliability.chart_bench_note", lang))
-              ),
-              plotOutput(ns("admin_reliability_comparison_plot"), height = "320px")
+          div(
+            class = "cm-surface-subtle mb-4",
+            div(
+              class = "d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2",
+              h5(class = "mb-0", tr("admin.reliability.chart_card_title", lang)),
+              span(class = "text-muted small", tr("admin.reliability.chart_bench_note", lang))
+            ),
+            plotOutput(ns("admin_reliability_comparison_plot"), height = "320px")
           ),
 
           uiOutput(ns("admin_reliability_table_container"))
@@ -283,11 +300,10 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 6: TARGETED CODING SEARCH & VALUE CORRECTION (user_ratings)
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("search"), uiOutput(ns("tab_coding_search_title"), inline = TRUE)),
+        title = tagList(icon("search"), " ", uiOutput(ns("tab_coding_search_title"), inline = TRUE)),
         value = "tab_coding_search",
-        br(),
-        wellPanel(
-          style = "background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
+        div(
+          class = "cm-surface",
           uiOutput(ns("coding_search_header_ui")),
           hr(),
           fluidRow(
@@ -349,8 +365,7 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
             uiOutput(ns("coding_search_counter_ui"))
           ),
           uiOutput(ns("coding_search_table_container")),
-          br(),
-          uiOutput(ns("coding_search_pagination_controls"))
+          div(class = "mt-3", uiOutput(ns("coding_search_pagination_controls")))
         )
       ),
 
@@ -358,163 +373,181 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 7: DATA & IMPORT/EXPORT
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("database"), tr("admin.tab_data", lang)),
+        title = tagList(icon("database"), " ", tr("admin.tab_data", lang)),
         value = "tab_data",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #18bc9c; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2",
-              div(
-                h4(style = "margin: 0; color: #16a085;", paste0("\U0001f4ca ", tr("admin.export_master_title", lang))),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.export_master_desc", lang))
-              )
+        div(
+          class = "cm-surface",
+          div(
+            class = "mb-2",
+            h4(class = "mb-1", tr("admin.export_master_title", lang)),
+            p(class = "text-muted small mb-0", tr("admin.export_master_desc", lang))
           ),
           hr(),
 
           fluidRow(
-            column(width = 4,
-              div(class = "p-3 rounded border bg-light h-100 d-flex flex-column justify-content-between",
+            column(
+              width = 4,
+              div(
+                class = "cm-surface-subtle h-100 d-flex flex-column justify-content-between",
                 div(
-                  div(class = "d-flex justify-content-between align-items-center mb-2",
-                    tags$strong(class = "text-dark small", icon("sliders-h", class = "me-1 text-primary"), tr("admin.scales_dimension", lang)),
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    tags$strong(class = "text-dark small", tr("admin.scales_dimension", lang)),
                     uiOutput(ns("export_scales_status_badge"))
                   ),
                   p(class = "text-muted small mb-2", tr("admin.scales_card_desc", lang)),
                   uiOutput(ns("export_scales_counter_ui"))
                 ),
-                div(class = "mt-3 pt-2 border-top",
+                div(
+                  class = "mt-3 pt-2 border-top",
                   actionButton(ns("btn_open_modal_export_scales"), tr("admin.scales_btn", lang), icon = icon("sliders-h"), class = "btn btn-outline-primary btn-sm w-100")
                 )
               )
             ),
 
-            column(width = 4,
-              div(class = "p-3 rounded border bg-light h-100 d-flex flex-column justify-content-between",
+            column(
+              width = 4,
+              div(
+                class = "cm-surface-subtle h-100 d-flex flex-column justify-content-between",
                 div(
-                  div(class = "d-flex justify-content-between align-items-center mb-2",
-                    tags$strong(class = "text-dark small", icon("book", class = "me-1 text-info"), tr("admin.sources_dimension", lang)),
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    tags$strong(class = "text-dark small", tr("admin.sources_dimension", lang)),
                     uiOutput(ns("export_sources_status_badge"))
                   ),
                   p(class = "text-muted small mb-2", tr("admin.sources_card_desc", lang)),
                   uiOutput(ns("export_sources_counter_ui"))
                 ),
-                div(class = "mt-3 pt-2 border-top",
-                  actionButton(ns("btn_open_modal_export_sources"), tr("admin.sources_btn", lang), icon = icon("book"), class = "btn btn-outline-info btn-sm w-100")
+                div(
+                  class = "mt-3 pt-2 border-top",
+                  actionButton(ns("btn_open_modal_export_sources"), tr("admin.sources_btn", lang), icon = icon("book"), class = "btn btn-outline-primary btn-sm w-100")
                 )
               )
             ),
 
-            column(width = 4,
-              div(class = "p-3 rounded border bg-light h-100 d-flex flex-column justify-content-between",
+            column(
+              width = 4,
+              div(
+                class = "cm-surface-subtle h-100 d-flex flex-column justify-content-between",
                 div(
-                  div(class = "d-flex justify-content-between align-items-center mb-2",
-                    tags$strong(class = "text-dark small", icon("users", class = "me-1 text-success"), tr("admin.users_dimension", lang)),
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    tags$strong(class = "text-dark small", tr("admin.users_dimension", lang)),
                     uiOutput(ns("export_users_status_badge"))
                   ),
                   p(class = "text-muted small mb-2", tr("admin.users_card_desc", lang)),
                   uiOutput(ns("export_users_counter_ui"))
                 ),
-                div(class = "mt-3 pt-2 border-top",
-                  actionButton(ns("btn_open_modal_export_users"), tr("admin.users_btn", lang), icon = icon("users"), class = "btn btn-outline-success btn-sm w-100")
+                div(
+                  class = "mt-3 pt-2 border-top",
+                  actionButton(ns("btn_open_modal_export_users"), tr("admin.users_btn", lang), icon = icon("users"), class = "btn btn-outline-primary btn-sm w-100")
                 )
               )
             )
           ),
-          br(),
 
-          div(class = "p-3 rounded border bg-light d-flex flex-column sm:flex-row justify-content-between align-items-center gap-3",
+          div(
+            class = "cm-surface-subtle mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3",
             div(
               uiOutput(ns("export_filter_summary_badge")),
               p(class = "text-muted small mb-0 mt-1",
-                icon("info-circle", class = "me-1 text-info"),
+                icon("info-circle", class = "me-1 text-primary"),
                 tr("admin.export_filter_note", lang))
             ),
-            div(class = "shrink-0",
-              downloadButton(ns("download_master_dataset_btn"), tr("admin.download_csv", lang), class = "btn btn-success font-monospace")
+            div(
+              class = "flex-shrink-0",
+              downloadButton(ns("download_master_dataset_btn"), tr("admin.download_csv", lang), class = "btn btn-primary font-monospace")
             )
           )
         ),
-        br(),
 
-        wellPanel(
-          style = "border-left: 5px solid #28a745; background-color: #ffffff;",
-          h4(paste0("\U0001f4e5 ", tr("admin.upload_title", lang))),
-          p(tr("admin.upload_desc", lang)),
-          br(),
+        div(
+          class = "cm-surface",
+          h4(class = "mb-1", tr("admin.upload_title", lang)),
+          p(class = "text-muted small mb-3", tr("admin.upload_desc", lang)),
+          hr(),
           fluidRow(
-            column(width = 4,
-                   fileInput(ns("upload_scales_file"), tr("admin.upload_slot_scales", lang),
-                             accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
-                   p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
-                   downloadButton(ns("download_template_scales"), tr("admin.upload_btn_template", lang),
-                                  icon = icon("file-csv"), class = "btn-sm btn-outline-secondary w-100 mb-3")
+            column(
+              width = 4,
+              fileInput(ns("upload_scales_file"), tr("admin.upload_slot_scales", lang),
+                        accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
+              p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
+              downloadButton(ns("download_template_scales"), tr("admin.upload_btn_template", lang),
+                             icon = icon("file-csv"), class = "btn btn-sm btn-outline-secondary w-100 mb-3")
             ),
-            column(width = 4,
-                   fileInput(ns("upload_texts_file"), tr("admin.upload_slot_texts", lang),
-                             accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
-                   p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
-                   downloadButton(ns("download_template_texts"), tr("admin.upload_btn_template", lang),
-                                  icon = icon("file-csv"), class = "btn-sm btn-outline-secondary w-100 mb-3")
+            column(
+              width = 4,
+              fileInput(ns("upload_texts_file"), tr("admin.upload_slot_texts", lang),
+                        accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
+              p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
+              downloadButton(ns("download_template_texts"), tr("admin.upload_btn_template", lang),
+                             icon = icon("file-csv"), class = "btn btn-sm btn-outline-secondary w-100 mb-3")
             ),
-            column(width = 4,
-                   fileInput(ns("upload_sources_file"), tr("admin.upload_slot_sources", lang),
-                             accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
-                   p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
-                   downloadButton(ns("download_template_sources"), tr("admin.upload_btn_template", lang),
-                                  icon = icon("file-csv"), class = "btn-sm btn-outline-secondary w-100 mb-3")
+            column(
+              width = 4,
+              fileInput(ns("upload_sources_file"), tr("admin.upload_slot_sources", lang),
+                        accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
+              p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
+              downloadButton(ns("download_template_sources"), tr("admin.upload_btn_template", lang),
+                             icon = icon("file-csv"), class = "btn btn-sm btn-outline-secondary w-100 mb-3")
             )
           ),
           fluidRow(
-            column(width = 6,
-                   fileInput(ns("upload_ratings_file"), tr("admin.upload_slot_ratings", lang),
-                             accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
-                   p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
-                   downloadButton(ns("download_template_ratings"), tr("admin.upload_btn_template", lang),
-                                  icon = icon("file-csv"), class = "btn-sm btn-outline-secondary w-100 mb-2")
+            column(
+              width = 6,
+              fileInput(ns("upload_ratings_file"), tr("admin.upload_slot_ratings", lang),
+                        accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
+              p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
+              downloadButton(ns("download_template_ratings"), tr("admin.upload_btn_template", lang),
+                             icon = icon("file-csv"), class = "btn btn-sm btn-outline-secondary w-100 mb-2")
             ),
-            column(width = 6,
-                   fileInput(ns("upload_training_file"), tr("admin.upload_slot_training", lang),
-                             accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
-                   p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
-                   downloadButton(ns("download_template_training"), tr("admin.upload_btn_template", lang),
-                                  icon = icon("file-csv"), class = "btn-sm btn-outline-secondary w-100 mb-2")
+            column(
+              width = 6,
+              fileInput(ns("upload_training_file"), tr("admin.upload_slot_training", lang),
+                        accept = c("text/csv", "text/comma-separated-values", "text/plain", ".csv")),
+              p(tags$small(class = "text-muted", tr("admin.upload_csv_hint", lang))),
+              downloadButton(ns("download_template_training"), tr("admin.upload_btn_template", lang),
+                             icon = icon("file-csv"), class = "btn btn-sm btn-outline-secondary w-100 mb-2")
             )
           )
         ),
-        br(),
 
         fluidRow(
-          column(width = 6,
-                 wellPanel(
-                   h5(tr("admin.raw_master_title", lang)),
-                   hr(),
-                   div(class = "d-flex justify-content-between align-items-center mb-2",
-                       span(tr("admin.raw_label_scales", lang)),
-                       downloadButton(ns("download_scales_btn"), tr("admin.raw_download_btn", lang), class = "btn-sm btn-secondary")
-                   ),
-                   div(class = "d-flex justify-content-between align-items-center mb-2",
-                       span(tr("admin.raw_label_texts", lang)),
-                       downloadButton(ns("download_texts_btn"), tr("admin.raw_download_btn", lang), class = "btn-sm btn-secondary")
-                   ),
-                   div(class = "d-flex justify-content-between align-items-center",
-                       span(tr("admin.raw_label_sources", lang)),
-                       downloadButton(ns("download_sources_btn"), tr("admin.raw_download_btn", lang), class = "btn-sm btn-secondary")
-                   )
-                 )
+          column(
+            width = 6,
+            div(
+              class = "cm-surface",
+              h5(class = "mb-2", tr("admin.raw_master_title", lang)),
+              hr(),
+              div(class = "d-flex justify-content-between align-items-center mb-2",
+                  span(tr("admin.raw_label_scales", lang)),
+                  downloadButton(ns("download_scales_btn"), tr("admin.raw_download_btn", lang), class = "btn btn-sm btn-outline-secondary")
+              ),
+              div(class = "d-flex justify-content-between align-items-center mb-2",
+                  span(tr("admin.raw_label_texts", lang)),
+                  downloadButton(ns("download_texts_btn"), tr("admin.raw_download_btn", lang), class = "btn btn-sm btn-outline-secondary")
+              ),
+              div(class = "d-flex justify-content-between align-items-center",
+                  span(tr("admin.raw_label_sources", lang)),
+                  downloadButton(ns("download_sources_btn"), tr("admin.raw_download_btn", lang), class = "btn btn-sm btn-outline-secondary")
+              )
+            )
           ),
-          column(width = 6,
-                 wellPanel(
-                   h5(tr("admin.raw_results_title", lang)),
-                   hr(),
-                   div(class = "d-flex justify-content-between align-items-center mb-2",
-                       span(tr("admin.raw_label_ratings", lang)),
-                       downloadButton(ns("download_ratings_btn"), tr("admin.raw_download_btn", lang), class = "btn-sm btn-primary")
-                   ),
-                   div(class = "d-flex justify-content-between align-items-center",
-                       span(tr("admin.raw_label_training", lang)),
-                       downloadButton(ns("download_training_log_btn"), tr("admin.raw_download_btn", lang), class = "btn-sm btn-primary")
-                   )
-                 )
+          column(
+            width = 6,
+            div(
+              class = "cm-surface",
+              h5(class = "mb-2", tr("admin.raw_results_title", lang)),
+              hr(),
+              div(class = "d-flex justify-content-between align-items-center mb-2",
+                  span(tr("admin.raw_label_ratings", lang)),
+                  downloadButton(ns("download_ratings_btn"), tr("admin.raw_download_btn", lang), class = "btn btn-sm btn-outline-primary")
+              ),
+              div(class = "d-flex justify-content-between align-items-center",
+                  span(tr("admin.raw_label_training", lang)),
+                  downloadButton(ns("download_training_log_btn"), tr("admin.raw_download_btn", lang), class = "btn btn-sm btn-outline-primary")
+              )
+            )
           )
         )
       ),
@@ -523,29 +556,29 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
       # TAB 8: DATABASE DIAGNOSTICS & INTEGRITY AUDIT (9 TABLES)
       # ------------------------------------------------------------------------
       tabPanel(
-        title = tagList(icon("stethoscope"), tr("admin.tab_diagnostics", lang)),
+        title = tagList(icon("stethoscope"), " ", tr("admin.tab_diagnostics", lang)),
         value = "tab_diagnose",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #0d9488; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);",
-          div(class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
-              div(
-                h4(style = "margin: 0; color: #0f766e;", paste0("\U0001fa7a ", tr("admin.diagnostics_title", lang))),
-                p(class = "text-muted", style = "margin: 4px 0 0 0;", tr("admin.diagnostics_desc", lang))
-              ),
-              actionButton(ns("btn_refresh_diagnostics"), tr("admin.diag_btn_refresh_now", lang),
-                           icon = icon("sync"), class = "btn-outline-primary")
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2",
+            div(
+              h4(class = "mb-1", tr("admin.diagnostics_title", lang)),
+              p(class = "text-muted small mb-0", tr("admin.diagnostics_desc", lang))
+            ),
+            actionButton(ns("btn_refresh_diagnostics"), tr("admin.diag_btn_refresh_now", lang),
+                         icon = icon("sync"), class = "btn btn-outline-primary btn-sm")
           ),
           hr(),
 
           uiOutput(ns("db_diag_summary_cards")),
-          br(),
+          div(class = "mt-3"),
 
-          h5(class = "fw-bold text-dark mb-2", icon("table", class = "me-2 text-primary"), tr("admin.diag_table_overview_title", lang)),
+          h5(class = "mb-2", tr("admin.diag_table_overview_title", lang)),
           uiOutput(ns("db_diag_tables_overview")),
-          br(),
+          div(class = "mt-4"),
 
-          h5(class = "fw-bold text-dark mb-2", icon("shield-alt", class = "me-2 text-success"), tr("admin.diag_audit_title", lang)),
+          h5(class = "mb-2", tr("admin.diag_audit_title", lang)),
           uiOutput(ns("db_diag_integrity_audit"))
         )
       )

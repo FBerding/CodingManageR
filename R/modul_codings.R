@@ -307,71 +307,67 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         )
 
         fluidRow(
-          column(width = 8,
-                 wellPanel(
-                   h4(tr("coding.config_card_title", lang)),
-                   p(tr("coding.config_desc", lang)),
-                   if (!is.null(erlaubte_sids) && length(erlaubte_sids) == 0) {
-                     div(class = "alert alert-danger", icon("exclamation-triangle", class = "me-1"),
-                         " ", tr("coding.no_permission_desc", lang))
-                   },
-                   if (!is.null(erlaubte_kodier_sids) && length(erlaubte_kodier_sids) == 0) {
-                     div(class = "alert alert-danger", icon("ban", class = "me-1"),
-                         " ", tr("coding.no_coding_sources_err", lang))
-                   },
-                   hr(),
+          column(
+            width = 8,
+            div(
+              class = "cm-surface",
+              h4(class = "mb-1", tr("coding.config_card_title", lang)),
+              p(class = "text-muted small mb-3", tr("coding.config_desc", lang)),
+              if (!is.null(erlaubte_sids) && length(erlaubte_sids) == 0) {
+                div(class = "alert alert-danger", icon("exclamation-triangle", class = "me-1"),
+                    " ", tr("coding.no_permission_desc", lang))
+              },
+              if (!is.null(erlaubte_kodier_sids) && length(erlaubte_kodier_sids) == 0) {
+                div(class = "alert alert-danger", icon("ban", class = "me-1"),
+                    " ", tr("coding.no_coding_sources_err", lang))
+              },
+              hr(),
 
-                   selectInput(ns("gewaehlte_kategorie"), tr("coding.select_scale_label", lang),
-                               choices = k_liste, selected = sel_kat, width = "100%"),
-                   br(),
+              selectInput(ns("gewaehlte_kategorie"), tr("coding.select_scale_label", lang),
+                          choices = k_liste, selected = sel_kat, width = "100%"),
 
-                   div(class = "p-3 mb-3 bg-light border rounded",
-                       h5(style = "margin-top: 0;", tr("coding.select_mode_label", lang)),
-                       p(class = "text-muted small", tr("coding.subtitle", lang)),
-                       radioButtons(
-                         ns("fall_filter_modus"),
-                         label = NULL,
-                         choices = radio_choices,
-                         selected = sel_f_modus,
-                         width = "100%"
-                       ),
-                       conditionalPanel(
-                         condition = sprintf("input['%s'] == 'quelle'", ns("fall_filter_modus")),
-                         div(class = "ps-3 pe-2 pt-2 border-top",
-                             if (length(choices_filter_quellen) > 0) {
-                               selectInput(ns("gewaehlte_text_quelle"), tr("coding.select_text_source_label", lang),
-                                           choices = choices_filter_quellen, selected = sel_t_src, width = "100%")
-                             } else {
-                               p(class = "text-danger small", tr("coding.no_permission_desc", lang))
-                             }
-                         )
-                       )
-                   ),
-                   br(),
+              div(
+                class = "cm-surface-subtle my-3",
+                h5(class = "mb-1", tr("coding.select_mode_label", lang)),
+                p(class = "text-muted small mb-2", tr("coding.subtitle", lang)),
+                radioButtons(
+                  ns("fall_filter_modus"),
+                  label = NULL,
+                  choices = radio_choices,
+                  selected = sel_f_modus,
+                  width = "100%"
+                ),
+                conditionalPanel(
+                  condition = sprintf("input['%s'] == 'quelle'", ns("fall_filter_modus")),
+                  div(
+                    class = "ps-3 pe-2 pt-2 border-top",
+                    if (length(choices_filter_quellen) > 0) {
+                      selectInput(ns("gewaehlte_text_quelle"), tr("coding.select_text_source_label", lang),
+                                  choices = choices_filter_quellen, selected = sel_t_src, width = "100%")
+                    } else {
+                      p(class = "text-danger small mb-0", tr("coding.no_permission_desc", lang))
+                    }
+                  )
+                )
+              ),
 
-                   if (length(choices_kodier_quellen) > 0) {
-                     tagList(
-                       div(
-                         tags$label(class = "fw-bold", tr("coding.select_coding_source_label", lang)),
-                         selectInput(ns("gewaehlte_quelle"), label = NULL,
-                                     choices = choices_kodier_quellen, selected = sel_c_src, width = "100%")
-                       )
-                     )
-                   } else if (hat_quellen) {
-                     div(class = "alert alert-warning",
-                         h5(paste0("\u26a0\ufe0f ", tr("coding.no_coding_sources_err", lang))),
-                         p(tr("coding.no_permission_desc", lang))
-                     )
-                   } else {
-                     div(class = "alert alert-warning",
-                         h5(paste0("\u26a0\ufe0f ", tr("coding.no_coding_sources_err", lang))),
-                         p(tr("coding.no_permission_desc", lang))
-                     )
-                   },
+              if (length(choices_kodier_quellen) > 0) {
+                div(
+                  class = "mb-3",
+                  tags$label(class = "fw-semibold mb-1", tr("coding.select_coding_source_label", lang)),
+                  selectInput(ns("gewaehlte_quelle"), label = NULL,
+                              choices = choices_kodier_quellen, selected = sel_c_src, width = "100%")
+                )
+              } else {
+                div(
+                  class = "alert alert-warning mb-3",
+                  h5(class = "mb-1", tr("coding.no_coding_sources_err", lang)),
+                  p(class = "mb-0", tr("coding.no_permission_desc", lang))
+                )
+              },
 
-                   br(),
-                   uiOutput(ns("konfiguration_status_ui"))
-                 )
+              uiOutput(ns("konfiguration_status_ui"))
+            )
           )
         )
       } else {
@@ -386,106 +382,108 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         kat_lbl <- if (length(k_spalten) > 0) names(k_spalten)[which(k_spalten == sel_kat)[1]] else NULL
         if (is.na(kat_lbl) || is.null(kat_lbl) || kat_lbl == "") kat_lbl <- paste0("ID #", sel_kat)
 
-        fluidPage(
-          fluidRow(
-            column(width = 12,
-                   div(class = "card text-white bg-dark mb-3 shadow-sm",
-                       div(class = "card-body py-3",
-                            div(class = "d-flex justify-content-between align-items-center mb-1",
-                                div(
-                                  h5(class = "card-title mb-1 text-success", tr("training.scale_badge", lang, kat_lbl)),
-                                  div(class = "d-flex flex-wrap gap-2 mt-2",
-                                      if (f_modus == "alle") {
-                                        tags$span(class = "badge bg-secondary",
-                                                  icon("random", class = "me-1"), tr("coding.case_random", lang))
-                                      } else {
-                                        tags$span(class = "badge bg-info text-dark",
-                                                  icon("filter", class = "me-1"),
-                                                  paste0("[#", text_quelle$source_id, "] ", text_quelle$Kurzreferenz))
-                                      },
-                                      if (!is.null(fall) && nrow(fall) > 0 && !is.null(fall$text_kurzreferenz)) {
-                                        tags$span(class = "badge bg-primary",
-                                                  icon("file-lines", class = "me-1"),
-                                                  paste0(tr("coding.source_info", lang), " ", fall$text_kurzreferenz))
-                                      },
-                                      if (!is.null(kodier_quelle)) {
-                                        tags$span(class = "badge bg-success",
-                                                  icon("bookmark", class = "me-1"),
-                                                  paste0(tr("coding.coding_source_info", lang), " [#", kodier_quelle$source_id, "] ", kodier_quelle$Kurzreferenz))
-                                      }
-                                  )
-                                ),
-                                div(class = "text-end",
-                                    span(class = "text-muted small", tr("dashboard.col_total", lang)),
-                                    h4(class = "text-warning mb-0", verbleibende_faelle())
-                                )
-                            ),
-                            if (!is.null(kodier_quelle)) {
-                              div(class = "border-top border-secondary pt-1 mt-2 text-muted", style = "font-size: 0.8em;",
-                                  tags$em(paste(tr("coding.coding_source_info", lang), kodier_quelle$Referenz))
-                              )
-                            }
-                        )
+        div(
+          class = "cm-module-section",
+          div(
+            class = "cm-session-banner",
+            div(
+              class = "d-flex flex-wrap justify-content-between align-items-start gap-3",
+              div(
+                h5(class = "mb-0", tr("training.scale_badge", lang, kat_lbl)),
+                div(
+                  class = "cm-session-meta",
+                  if (f_modus == "alle") {
+                    tags$span(icon("random", class = "me-1"), tr("coding.case_random", lang))
+                  } else {
+                    tags$span(icon("filter", class = "me-1"), paste0("[#", text_quelle$source_id, "] ", text_quelle$Kurzreferenz))
+                  },
+                  if (!is.null(fall) && nrow(fall) > 0 && !is.null(fall$text_kurzreferenz)) {
+                    tagList(
+                      tags$span("\u00b7"),
+                      tags$span(icon("file-lines", class = "me-1"), paste0(tr("coding.source_info", lang), " ", fall$text_kurzreferenz))
                     )
-            )
+                  },
+                  if (!is.null(kodier_quelle)) {
+                    tagList(
+                      tags$span("\u00b7"),
+                      tags$span(icon("bookmark", class = "me-1"), paste0(tr("coding.coding_source_info", lang), " [#", kodier_quelle$source_id, "] ", kodier_quelle$Kurzreferenz))
+                    )
+                  }
+                )
+              ),
+              div(
+                class = "text-end",
+                span(class = "text-muted small d-block", tr("dashboard.col_total", lang)),
+                h4(class = "cm-session-counter", verbleibende_faelle())
+              )
+            ),
+            if (!is.null(kodier_quelle)) {
+              div(
+                class = "border-top pt-2 mt-2 text-muted small",
+                tags$em(paste(tr("coding.coding_source_info", lang), kodier_quelle$Referenz))
+              )
+            }
           ),
 
           if (is.null(fall) || nrow(fall) == 0) {
-            wellPanel(
-              h4(paste0("\U0001f389 ", tr("coding.all_done_title", lang))),
-              p(tr("coding.no_more_cases", lang)),
-              br(),
-              actionButton(ns("back_to_select_btn"), tr("coding.btn_back_config", lang), class = "btn-primary")
+            div(
+              class = "cm-surface",
+              h4(class = "mb-2", tr("coding.all_done_title", lang)),
+              p(class = "text-muted mb-3", tr("coding.no_more_cases", lang)),
+              actionButton(ns("back_to_select_btn"), tr("coding.btn_back_config", lang), class = "btn btn-primary")
             )
           } else {
             fluidRow(
-              column(width = 8,
-                     wellPanel(
-                       div(class = "d-flex justify-content-between align-items-center mb-2",
-                           div(class = "d-flex align-items-center gap-2",
-                               h5(style = "margin: 0;", tr("coding.text_content", lang)),
-                               tags$span(class = "badge bg-secondary font-monospace", tr("common.case_number", lang, as.integer(fall$text_id)))
-                           )
-                       ),
-                       hr(),
-                       div(
-                         style = "max-height: 280px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border: 1px solid #ced4da; border-radius: 4px; font-family: monospace; font-size: 0.9em; white-space: pre-wrap;",
-                         fall$text
-                       ),
-                       hr(),
-                       div(class = "d-flex justify-content-between align-items-center text-muted small",
-                           span(paste(tr("common.case_number", lang, as.integer(fall$text_id)), "|", tr("coding.source_info", lang), ifelse(is.null(fall$text_kurzreferenz) || is.na(fall$text_kurzreferenz), tr("common.none", lang), fall$text_kurzreferenz))),
-                           span(tr("coding.title", lang))
-                       )
-                     )
+              column(
+                width = 8,
+                div(
+                  class = "cm-surface",
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    h5(class = "mb-0", tr("coding.text_content", lang)),
+                    tags$span(class = "text-muted small font-monospace", tr("common.case_number", lang, as.integer(fall$text_id)))
+                  ),
+                  hr(),
+                  div(class = "cm-case-text", fall$text),
+                  hr(),
+                  div(
+                    class = "d-flex flex-wrap justify-content-between align-items-center text-muted small gap-2",
+                    span(paste(tr("common.case_number", lang, as.integer(fall$text_id)), "\u00b7", tr("coding.source_info", lang), ifelse(is.null(fall$text_kurzreferenz) || is.na(fall$text_kurzreferenz), tr("common.none", lang), fall$text_kurzreferenz))),
+                    span(tr("coding.title", lang))
+                  )
+                )
               ),
-              column(width = 4,
-                     wellPanel(
-                       div(class = "d-flex justify-content-between align-items-center mb-3",
-                           h5(class = "mb-0 fw-bold", tr("coding.ratings_header", lang)),
-                           actionButton(ns("btn_beispiele"), paste0("\U0001f4a1 ", tr("coding.btn_show_examples", lang)), class = "btn btn-sm btn-outline-primary")
-                       ),
-                       hr(),
-                       sliderInput(ns("bewertung_slider"), tr("coding.slider_label", lang, kat_lbl, max_bewertung_wert()),
-                                   min = 0, max = max_bewertung_wert(), value = slider_val, step = 1),
-                       br(),
-                       div(class = "card bg-light mb-3",
-                           div(class = "card-header py-1", tags$strong(style = "font-size: 0.85em;", tr("examples.definition_label", lang))),
-                           div(class = "card-body py-2", p(class = "card-text", style = "font-size: 0.95em; color: #2c3e50; font-weight: bold;", textOutput(ns("wert_definition"))))),
-                       div(class = "card bg-light mb-3",
-                           div(class = "card-header py-1", tags$strong(style = "font-size: 0.85em;", tr("examples.general_def", lang))),
-                           div(class = "card-body py-2", p(class = "card-text", style = "font-size: 0.85em;", textOutput(ns("beschreibung_text_ui"))))
-                       )
-                     )
+              column(
+                width = 4,
+                div(
+                  class = "cm-surface",
+                  div(
+                    class = "d-flex justify-content-between align-items-center mb-2",
+                    h5(class = "mb-0", tr("coding.ratings_header", lang)),
+                    actionButton(ns("btn_beispiele"), tr("coding.btn_show_examples", lang), icon = icon("book-open"), class = "btn btn-sm btn-outline-primary")
+                  ),
+                  hr(),
+                  sliderInput(ns("bewertung_slider"), tr("coding.slider_label", lang, kat_lbl, max_bewertung_wert()),
+                              min = 0, max = max_bewertung_wert(), value = slider_val, step = 1),
+                  div(
+                    class = "cm-surface-subtle mt-3 mb-3",
+                    tags$div(class = "small fw-semibold text-muted mb-1", tr("examples.definition_label", lang)),
+                    p(class = "mb-0 fw-semibold", style = "font-size: 0.92rem;", textOutput(ns("wert_definition")))
+                  ),
+                  div(
+                    class = "cm-surface-subtle",
+                    tags$div(class = "small fw-semibold text-muted mb-1", tr("examples.general_def", lang)),
+                    p(class = "mb-0 text-muted", style = "font-size: 0.88rem;", textOutput(ns("beschreibung_text_ui")))
+                  )
+                )
               )
             )
           },
 
-          br(),
           if (!is.null(fall) && nrow(fall) > 0) {
             fluidRow(
-              column(width = 4, actionButton(ns("save_next_btn"), tr("coding.btn_save_and_next", lang), icon = icon("check"), class = "btn-success w-100")),
-              column(width = 3, actionButton(ns("back_to_select_btn"), tr("coding.btn_back_config", lang), class = "btn-secondary w-100"))
+              column(width = 4, actionButton(ns("save_next_btn"), tr("coding.btn_save_and_next", lang), icon = icon("check"), class = "btn btn-primary w-100")),
+              column(width = 3, actionButton(ns("back_to_select_btn"), tr("coding.btn_back_config", lang), class = "btn btn-outline-secondary w-100"))
             )
           }
         )
@@ -679,7 +677,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         ""
       }
       showModal(modalDialog(
-        title = tags$div(tags$strong(paste0("\U0001f4a1 ", tr("examples.modal_title", lang))),
+        title = tags$div(tags$strong(tr("examples.modal_title", lang)),
                          tags$br(),
                          tags$small(class = "text-muted", tr("examples.example_label", lang))),
         size = "l",
@@ -688,7 +686,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
           actionButton(ns("btn_anderes_beispiel"), tr("coding.btn_skip", lang), icon = icon("random"), class = "btn-primary"),
           modalButton(tr("examples.btn_close", lang))
         ),
-        fluidPage(
+        div(
           fluidRow(
             column(width = 6,
                    selectInput(ns("modal_beispiel_kategorie"), tr("admin.filter_scale_label", lang),
@@ -773,7 +771,8 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
               tags$span(class = "text-muted small", tr("common.case_number", lang, as.integer(bsp$text_id[1])))
           ),
           div(
-            style = "max-height: 250px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border: 1px solid #ced4da; border-radius: 4px; font-family: monospace; white-space: pre-wrap;",
+            class = "cm-case-text",
+            style = "max-height: 260px;",
             bsp$text[1]
           ),
           br(),

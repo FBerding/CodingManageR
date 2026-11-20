@@ -27,10 +27,11 @@ coding_manager_ui <- function(lang = "de") {
   init_lang <- detect_browser_language(lang, fallback = "de")
 
   fluidPage(
-    theme = bslib::bs_theme(version = 5, bootswatch = "flatly"),
+    theme = coding_manager_theme(),
     title = "CodingManageR",
     tags$head(
       tags$title("CodingManageR"),
+      coding_manager_css(),
       tags$script(HTML("
         document.addEventListener('DOMContentLoaded', function() {
           if (window.Shiny) {
@@ -43,9 +44,15 @@ coding_manager_ui <- function(lang = "de") {
       "))
     ),
     div(
-      class = "container-fluid py-3",
-      `data-initial-lang` = init_lang,
-      uiOutput("page_content")
+      class = "container-fluid cm-root-container",
+      div(
+        class = "cm-app",
+        div(
+          class = "cm-shell",
+          `data-initial-lang` = init_lang,
+          uiOutput("page_content")
+        )
+      )
     )
   )
 }
@@ -308,40 +315,37 @@ coding_manager_server <- function(input, output, session,
     if (!isTRUE(logged_in())) {
       return(
         div(
-          class = "row justify-content-center mt-5",
+          class = "cm-login-wrap",
           div(
-            class = "col-md-5 col-lg-4",
+            class = "cm-login-card",
             div(
-              class = "card shadow-sm border",
-              div(
-                class = "card-header bg-dark text-white d-flex justify-content-between align-items-center",
-                tags$span(class = "fw-bold", "CodingManageR"),
-                language_selector_ui("login_language", current_lang = lang)
+              class = "cm-login-header",
+              tags$span(class = "cm-brand", "CodingManageR"),
+              language_selector_ui("login_language", current_lang = lang)
+            ),
+            div(
+              class = "cm-login-body",
+              h4(class = "mb-1", tr("auth.login_title", lang)),
+              p(class = "text-muted small mb-4", tr("auth.subtitle", lang)),
+              textInput(
+                "login_username",
+                label = tr("auth.username", lang),
+                placeholder = tr("auth.username_placeholder", lang),
+                width = "100%"
               ),
-              div(
-                class = "card-body p-4",
-                h4(class = "card-title mb-1", tr("auth.login_title", lang)),
-                p(class = "text-muted small mb-3", tr("auth.subtitle", lang)),
-                textInput(
-                  "login_username",
-                  label = tr("auth.username", lang),
-                  placeholder = tr("auth.username_placeholder", lang),
-                  width = "100%"
-                ),
-                passwordInput(
-                  "login_token",
-                  label = tr("auth.token", lang),
-                  placeholder = tr("auth.token_placeholder", lang),
-                  width = "100%"
-                ),
-                actionButton(
-                  "btn_login",
-                  label = tr("auth.login_btn", lang),
-                  icon = icon("sign-in-alt"),
-                  class = "btn btn-primary w-100 mt-2"
-                ),
-                uiOutput("login_error_ui")
-              )
+              passwordInput(
+                "login_token",
+                label = tr("auth.token", lang),
+                placeholder = tr("auth.token_placeholder", lang),
+                width = "100%"
+              ),
+              actionButton(
+                "btn_login",
+                label = tr("auth.login_btn", lang),
+                icon = icon("sign-in-alt"),
+                class = "btn btn-primary w-100 mt-2"
+              ),
+              uiOutput("login_error_ui")
             )
           )
         )
@@ -386,27 +390,25 @@ coding_manager_server <- function(input, output, session,
     }
 
     tagList(
-      div(
-        class = "d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 mb-3 bg-dark text-white rounded shadow-sm",
+      tags$header(
+        class = "cm-header",
         div(
-          class = "d-flex align-items-center gap-3",
-          tags$strong(class = "fs-5", "CodingManageR"),
-          tags$span(
-            class = "badge bg-secondary font-monospace",
-            tr("header.user_badge", lang, u_name, as.character(u_id))
-          ),
-          tags$span(
-            class = if (is_admin) "badge bg-warning text-dark" else "badge bg-info text-dark",
-            tr("header.role_badge", lang, u_role)
+          class = "cm-header-left",
+          tags$span(class = "cm-brand", "CodingManageR"),
+          div(
+            class = "cm-header-meta",
+            tags$span(class = "font-monospace", tr("header.user_badge", lang, u_name, as.character(u_id))),
+            tags$span(class = "cm-header-meta-sep", "\u00b7"),
+            tags$span(tr("header.role_badge", lang, u_role))
           )
         ),
         div(
-          class = "d-flex align-items-center gap-2",
+          class = "cm-header-actions",
           actionButton(
             "btn_refresh_view",
             label = tr("header.refresh_btn", lang),
             icon = icon("rotate"),
-            class = "btn btn-sm btn-outline-light"
+            class = "btn btn-sm btn-outline-secondary"
           ),
           language_selector_ui("header_language", current_lang = lang),
           actionButton(
@@ -417,9 +419,12 @@ coding_manager_server <- function(input, output, session,
           )
         )
       ),
-      do.call(
-        tabsetPanel,
-        c(list(id = "main_nav_tabs", selected = active_main_tab, type = "pills"), tabs)
+      div(
+        class = "cm-main-nav",
+        do.call(
+          tabsetPanel,
+          c(list(id = "main_nav_tabs", selected = active_main_tab, type = "tabs"), tabs)
+        )
       )
     )
   })

@@ -30,7 +30,8 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
   ns <- NS(id)
   active_tab <- if (!is.null(selected_tab) && selected_tab %in% c("tab_progress", "tab_scales_overview")) selected_tab else "tab_progress"
 
-  fluidPage(
+  div(
+    class = "cm-module-section",
     tabsetPanel(
       id = ns("dashboard_tabs"),
       selected = active_tab,
@@ -40,10 +41,11 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
       tabPanel(
         title = tagList(icon("chart-line"), " ", tr("dashboard.tab_progress", lang)),
         value = "tab_progress",
-        br(),
-        h3(tr("dashboard.personal_heading", lang)),
-        p(tr("dashboard.subtitle", lang)),
-        br(),
+        div(
+          class = "cm-page-intro",
+          h3(tr("dashboard.personal_heading", lang)),
+          p(tr("dashboard.subtitle", lang))
+        ),
 
         # Separate KPI cards by rating mode/type
         fluidRow(
@@ -51,50 +53,45 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
           uiOutput(ns("stat_card_total_schulung")),
           uiOutput(ns("stat_card_sessions"))
         ),
-        br(), hr(),
 
         # Performance across previous coding training sessions (coding_training)
-        fluidRow(
-          column(width = 12,
-                 wellPanel(
-                   div(class = "d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2",
-                       h4(class = "mb-0", paste0("\U0001f4c8 ", tr("dashboard.chart_card_title", lang))),
-                       div(class = "d-flex gap-2 flex-wrap",
-                           div(style = "min-width: 220px;",
-                               selectInput(ns("dashboard_selected_kategorie"), tr("dashboard.category_filter_label", lang), choices = NULL)
-                           ),
-                           div(style = "min-width: 290px;",
-                               selectInput(
-                                 ns("dashboard_plot_metric"),
-                                 tr("dashboard.chart_metric_select_label", lang),
-                                 choices = get_reliability_metric_choices(lang, include_all_core = TRUE),
-                                 selected = "all_core"
-                               )
-                           )
-                       )
-                   ),
-                   p(tags$small(class = "text-muted", tr("dashboard.training_history_desc", lang))),
-                   uiOutput(ns("training_kpi_summary")),
-                   br(),
-                   plotOutput(ns("training_reliability_plot"), height = "360px"),
-                   br(),
-                   h5(class = "mt-3 mb-2 text-secondary", icon("table", class = "me-1"), tr("dashboard.training_history_title", lang)),
-                   uiOutput(ns("training_performance_table"))
-                 )
-          )
+        div(
+          class = "cm-surface",
+          div(
+            class = "d-flex justify-content-between align-items-start mb-3 flex-wrap gap-3",
+            div(
+              h4(class = "mb-1", tr("dashboard.chart_card_title", lang)),
+              p(class = "text-muted small mb-0", tr("dashboard.training_history_desc", lang))
+            ),
+            div(
+              class = "d-flex gap-2 flex-wrap",
+              div(
+                style = "min-width: 220px;",
+                selectInput(ns("dashboard_selected_kategorie"), tr("dashboard.category_filter_label", lang), choices = NULL)
+              ),
+              div(
+                style = "min-width: 280px;",
+                selectInput(
+                  ns("dashboard_plot_metric"),
+                  tr("dashboard.chart_metric_select_label", lang),
+                  choices = get_reliability_metric_choices(lang, include_all_core = TRUE),
+                  selected = "all_core"
+                )
+              )
+            )
+          ),
+          uiOutput(ns("training_kpi_summary")),
+          div(class = "my-3", plotOutput(ns("training_reliability_plot"), height = "360px")),
+          h5(class = "mt-4 mb-2 text-secondary", icon("table", class = "me-1"), tr("dashboard.training_history_title", lang)),
+          uiOutput(ns("training_performance_table"))
         ),
-        br(), hr(),
 
         # Breakdown by category, type, and remaining open cases
-        fluidRow(
-          column(width = 10,
-                 wellPanel(
-                   h4(tr("dashboard.category_breakdown_title", lang)),
-                   p(tags$small(class = "text-muted", tr("dashboard.subtitle", lang))),
-                   br(),
-                   tableOutput(ns("kategorie_breakdown_table"))
-                 )
-          )
+        div(
+          class = "cm-surface",
+          h4(class = "mb-1", tr("dashboard.category_breakdown_title", lang)),
+          p(class = "text-muted small mb-3", tr("dashboard.subtitle", lang)),
+          tableOutput(ns("kategorie_breakdown_table"))
         )
       ),
 
@@ -102,30 +99,35 @@ dashboardUI <- function(id, kategorie_spalten = NULL, lang = "en", selected_tab 
       tabPanel(
         title = tagList(icon("ruler-combined"), " ", tr("dashboard.tab_scales", lang)),
         value = "tab_scales_overview",
-        br(),
-        wellPanel(
-          style = "border-left: 5px solid #2980b9; background-color: #ffffff;",
+        div(
+          class = "cm-surface",
           fluidRow(
-            column(width = 8,
-                   h3(icon("sliders-h", class = "me-2 text-primary"), tr("dashboard.scales_title", lang)),
-                   p(class = "text-muted mb-0", tr("dashboard.scales_desc", lang))
+            column(
+              width = 8,
+              h3(class = "mb-1", tr("dashboard.scales_title", lang)),
+              p(class = "text-muted small mb-0", tr("dashboard.scales_desc", lang))
             ),
-            column(width = 4, class = "text-end align-self-center",
-                   div(class = "text-muted small",
-                       uiOutput(ns("dashboard_scales_count"))
-                   )
+            column(
+              width = 4,
+              class = "text-end align-self-center",
+              div(
+                class = "text-muted small",
+                uiOutput(ns("dashboard_scales_count"))
+              )
             )
           ),
           hr(),
 
           # Quick search with ID and name filter plus reset button
           fluidRow(
-            column(width = 7,
-                   div(class = "input-group mb-3",
-                       span(class = "input-group-text", icon("search")),
-                       textInput(ns("dashboard_scale_search"), label = NULL, placeholder = tr("dashboard.scales_search_placeholder", lang), width = "100%"),
-                       actionButton(ns("btn_reset_scale_search"), tr("common.reset", lang), icon = icon("times"), class = "btn btn-outline-secondary")
-                   )
+            column(
+              width = 7,
+              div(
+                class = "input-group mb-3",
+                span(class = "input-group-text", icon("search")),
+                textInput(ns("dashboard_scale_search"), label = NULL, placeholder = tr("dashboard.scales_search_placeholder", lang), width = "100%"),
+                actionButton(ns("btn_reset_scale_search"), tr("common.reset", lang), icon = icon("times"), class = "btn btn-outline-secondary")
+              )
             )
           ),
 
@@ -406,7 +408,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         plot_df <- plot_df[!is.na(plot_df$value), ]
 
         color_palette <- setNames(
-          c("#2980b9", "#27ae60", "#8e44ad", "#e67e22"),
+          c("#1B365D", "#166534", "#475569", "#B45309"),
           c(lbl_kappa, lbl_alpha, lbl_gwet, lbl_iota)
         )
 
@@ -414,12 +416,12 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         y_lower <- if (is.finite(min_val) && min_val < 0) min(-0.2, min_val - 0.05) else 0
 
         p <- ggplot(plot_df, aes(x = sitzung_nr, y = value, color = metric_name, group = metric_name)) +
-          geom_hline(yintercept = 0.80, linetype = "dashed", color = "#27ae60", alpha = 0.6, linewidth = 0.6) +
-          geom_hline(yintercept = 0.60, linetype = "dashed", color = "#f39c12", alpha = 0.6, linewidth = 0.6) +
-          geom_hline(yintercept = 0.40, linetype = "dashed", color = "#e74c3c", alpha = 0.6, linewidth = 0.6) +
-          annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#27ae60", size = 3.3, hjust = 0) +
-          annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#f39c12", size = 3.3, hjust = 0) +
-          annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#e74c3c", size = 3.3, hjust = 0) +
+          geom_hline(yintercept = 0.80, linetype = "dashed", color = "#166534", alpha = 0.55, linewidth = 0.55) +
+          geom_hline(yintercept = 0.60, linetype = "dashed", color = "#B45309", alpha = 0.55, linewidth = 0.55) +
+          geom_hline(yintercept = 0.40, linetype = "dashed", color = "#991B1B", alpha = 0.55, linewidth = 0.55) +
+          annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#166534", size = 3.2, hjust = 0) +
+          annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#B45309", size = 3.2, hjust = 0) +
+          annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#991B1B", size = 3.2, hjust = 0) +
           geom_line(linewidth = 1.1) +
           geom_point(size = 3.5) +
           scale_color_manual(name = paste0(tr("dashboard.chart_legend_metric", lang), ":"), values = color_palette) +
@@ -486,16 +488,18 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
 
       p <- p +
         scale_x_continuous(breaks = x_breaks, labels = x_labels, limits = c(0.5, max(1.5, n_sitzungen + 0.5))) +
-        theme_minimal(base_size = 13) +
+        theme_minimal(base_size = 12) +
         theme(
-          plot.title = element_text(face = "bold", size = 14, color = "#2c3e50", margin = margin(b = 4)),
-          plot.subtitle = element_text(size = 11, color = "#6c757d", margin = margin(b = 10)),
-          axis.title.x = element_text(face = "bold", margin = margin(t = 10), color = "#495057"),
-          axis.title.y = element_text(face = "bold", margin = margin(r = 10), color = "#495057"),
+          plot.title = element_text(face = "bold", size = 13, color = "#16243A", margin = margin(b = 4)),
+          plot.subtitle = element_text(size = 10.5, color = "#526071", margin = margin(b = 10)),
+          axis.title.x = element_text(face = "bold", margin = margin(t = 10), color = "#334155"),
+          axis.title.y = element_text(face = "bold", margin = margin(r = 10), color = "#334155"),
+          axis.text = element_text(color = "#526071"),
           axis.text.x = element_text(angle = if (n_sitzungen > 8) 35 else 0, hjust = if (n_sitzungen > 8) 1 else 0.5),
+          panel.grid.major = element_line(color = "#E2E8F0", linewidth = 0.4),
           panel.grid.minor = element_blank(),
           legend.position = "top",
-          legend.title = element_text(face = "bold")
+          legend.title = element_text(face = "bold", color = "#16243A")
         )
 
       return(p)
@@ -731,8 +735,8 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
           width = 6,
           class = "mb-4",
           div(
-            class = "card h-100 shadow-sm border",
-            style = "border-top: 4px solid #3498db !important;",
+            class = "card h-100 border",
+            style = "border-top: 3px solid var(--cm-navy) !important;",
             div(
               class = "card-header bg-white d-flex justify-content-between align-items-center py-2",
               tags$span(class = "badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1",

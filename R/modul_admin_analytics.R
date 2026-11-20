@@ -313,29 +313,49 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
     val_color <- if (is.na(mean_val)) "text-muted" else if (mean_val >= threshold_gut) "text-success" else if (mean_val >= threshold_mod) "text-warning" else "text-danger"
 
     fluidRow(
-      column(width = 3,
-             div(class = "card p-3 shadow-xs text-center border-0", style = "background-color: #2c3e50; color: #ffffff; border-radius: 8px;",
-                 h3(style = "margin: 0; font-weight: 700; font-family: monospace;", n_total_users),
-                 p(class = "mb-0 small", style = "opacity: 0.85;", tr("admin.reliability.kpi_coders_total", lang, n_active_users))
-             )
+      column(
+        width = 3,
+        div(
+          class = "card cm-kpi-card bg-primary mb-3",
+          div(
+            class = "card-body p-3",
+            h3(class = "cm-kpi-value", n_total_users),
+            p(class = "cm-kpi-title", tr("admin.reliability.kpi_coders_total", lang, n_active_users))
+          )
+        )
       ),
-      column(width = 3,
-             div(class = "card p-3 shadow-xs text-center border-0", style = "background-color: #27ae60; color: #ffffff; border-radius: 8px;",
-                 h3(style = "margin: 0; font-weight: 700; font-family: monospace;", sum_echte),
-                 p(class = "mb-0 small", style = "opacity: 0.85;", tr("admin.reliability.kpi_real_codings", lang))
-             )
+      column(
+        width = 3,
+        div(
+          class = "card cm-kpi-card bg-success mb-3",
+          div(
+            class = "card-body p-3",
+            h3(class = "cm-kpi-value", sum_echte),
+            p(class = "cm-kpi-title", tr("admin.reliability.kpi_real_codings", lang))
+          )
+        )
       ),
-      column(width = 3,
-             div(class = "card p-3 shadow-xs text-center border-0", style = "background-color: #2980b9; color: #ffffff; border-radius: 8px;",
-                 h3(style = "margin: 0; font-weight: 700; font-family: monospace;", sum_sessions),
-                 p(class = "mb-0 small", style = "opacity: 0.85;", tr("admin.reliability.kpi_sessions_total", lang))
-             )
+      column(
+        width = 3,
+        div(
+          class = "card cm-kpi-card bg-info mb-3",
+          div(
+            class = "card-body p-3",
+            h3(class = "cm-kpi-value", sum_sessions),
+            p(class = "cm-kpi-title", tr("admin.reliability.kpi_sessions_total", lang))
+          )
+        )
       ),
-      column(width = 3,
-             div(class = "card p-3 shadow-xs text-center border bg-white", style = "border-radius: 8px;",
-                 h3(class = paste0("mb-0 font-monospace fw-bold ", val_color), val_display),
-                 p(class = "mb-0 small text-muted", tr("admin.reliability.kpi_mean_active", lang, meta$short_label))
-             )
+      column(
+        width = 3,
+        div(
+          class = "card cm-kpi-card mb-3",
+          div(
+            class = "card-body p-3",
+            h3(class = paste0("cm-kpi-value ", val_color), val_display),
+            p(class = "cm-kpi-title", tr("admin.reliability.kpi_mean_active", lang, meta$short_label))
+          )
+        )
       )
     )
   })
@@ -400,23 +420,23 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
     plot_data$username <- factor(plot_data$username, levels = plot_data$username[order(plot_data$plot_val, decreasing = FALSE)])
 
     color_map <- setNames(
-      c("#27ae60", "#f39c12", "#e74c3c", "#bdc3c7"),
+      c("#166534", "#B45309", "#991B1B", "#94A3B8"),
       c(tier_good, tier_mod, tier_low, tier_none)
     )
 
     p <- ggplot(plot_data, aes(x = username, y = plot_val, fill = tier)) +
-      geom_col(width = 0.55, alpha = 0.9) +
-      geom_hline(yintercept = bench_moderat, linetype = "dashed", color = "#f39c12", linewidth = 0.7) +
-      geom_hline(yintercept = bench_gut, linetype = "dashed", color = "#27ae60", linewidth = 0.7) +
+      geom_col(width = 0.55, alpha = 0.92) +
+      geom_hline(yintercept = bench_moderat, linetype = "dashed", color = "#B45309", linewidth = 0.6) +
+      geom_hline(yintercept = bench_gut, linetype = "dashed", color = "#166534", linewidth = 0.6) +
       annotate("text", x = 0.7, y = bench_moderat,
                label = paste0(tr("metrics.bench_mod_short", lang), " (", bench_moderat, if (is_pct) "%" else "", ")"),
-               color = "#d35400", size = 3.2, hjust = 1.05) +
+               color = "#92400E", size = 3.2, hjust = 1.05) +
       annotate("text", x = 0.7, y = bench_gut,
                label = paste0(tr("metrics.bench_good_short", lang), " (", bench_gut, if (is_pct) "%" else "", ")"),
-               color = "#27ae60", size = 3.2, hjust = 1.05) +
+               color = "#166534", size = 3.2, hjust = 1.05) +
       geom_text(aes(label = ifelse(is.na(val), tr("common.no_data", lang),
                                    if (is_pct) paste0(sprintf("%.1f", val), " %") else sprintf("%.3f", val))),
-                hjust = -0.15, size = 3.4, fontface = "bold", color = "#2c3e50") +
+                hjust = -0.15, size = 3.3, fontface = "bold", color = "#16243A") +
       scale_fill_manual(values = color_map, name = tr("admin.reliability.legend_classification", lang)) +
       coord_flip(ylim = c(0, if (is_pct) 115 else 1.18)) +
       labs(
@@ -428,12 +448,12 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
       theme(
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_line(color = "#ecf0f1"),
-        axis.text.y = element_text(face = "bold", color = "#2c3e50"),
-        axis.text.x = element_text(color = "#7f8c8d"),
+        panel.grid.major.x = element_line(color = "#E2E8F0"),
+        axis.text.y = element_text(face = "bold", color = "#16243A"),
+        axis.text.x = element_text(color = "#526071"),
         legend.position = "bottom",
-        legend.title = element_text(size = 9, face = "bold"),
-        legend.text = element_text(size = 9)
+        legend.title = element_text(size = 9, face = "bold", color = "#16243A"),
+        legend.text = element_text(size = 9, color = "#526071")
       )
 
     p
@@ -699,7 +719,7 @@ admin_register_coding_search_server <- function(input, output, session, ctx) {
   output$coding_search_header_ui <- renderUI({
     lang <- get_lang()
     div(
-      h4(style = "margin: 0; color: #2c3e50;", icon("search", class = "me-2 text-primary"), tr("admin.coding_search_title", lang)),
+      h4(class = "mb-0", icon("search", class = "me-2 text-primary"), tr("admin.coding_search_title", lang)),
       p(class = "text-muted mb-0 mt-1", tr("admin.coding_search_desc", lang))
     )
   })
@@ -1105,30 +1125,30 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
 
     fluidRow(
       column(width = 3,
-        div(class = "p-3 rounded border bg-light shadow-2xs mb-2",
-          div(class = "text-muted small fw-bold text-uppercase", tr("admin.diag_engine_label", lang)),
+        div(class = "card cm-kpi-card bg-primary mb-2",
+          div(class = "cm-kpi-label", tr("admin.diag_engine_label", lang)),
           h5(class = "mt-1 mb-0 text-dark", rep$engine),
           span(class = "text-muted small", tr("admin.diag_checked_at", lang, rep$timestamp))
         )
       ),
       column(width = 3,
-        div(class = "p-3 rounded border bg-light shadow-2xs mb-2",
-          div(class = "text-muted small fw-bold text-uppercase", tr("admin.diag_schema_9_title", lang)),
+        div(class = paste0("card cm-kpi-card mb-2 bg-", if (rep$existing_tables_count == 9) "success" else "danger"),
+          div(class = "cm-kpi-label", tr("admin.diag_schema_9_title", lang)),
           h5(class = paste0("mt-1 mb-0 text-", if (rep$existing_tables_count == 9) "success" else "danger"),
              tr("admin.diag_tables_active", lang, rep$existing_tables_count, rep$total_tables)),
           span(class = "text-muted small", tr("admin.diag_all_9_checked", lang))
         )
       ),
       column(width = 3,
-        div(class = "p-3 rounded border bg-light shadow-2xs mb-2",
-          div(class = "text-muted small fw-bold text-uppercase", tr("admin.diag_card_records", lang)),
+        div(class = "card cm-kpi-card bg-secondary mb-2",
+          div(class = "cm-kpi-label", tr("admin.diag_card_records", lang)),
           h5(class = "mt-1 mb-0 text-dark font-monospace", format_int_locale(rep$total_records, lang)),
           span(class = "text-muted small", tr("admin.diag_summed_all", lang))
         )
       ),
       column(width = 3,
-        div(class = paste0("p-3 rounded border shadow-2xs mb-2 bg-", status_color, " bg-opacity-10 border-", status_color),
-          div(class = paste0("small fw-bold text-uppercase text-", status_color), tr("admin.diag_card_integrity", lang)),
+        div(class = paste0("card cm-kpi-card mb-2 bg-", status_color),
+          div(class = paste0("cm-kpi-label text-", status_color), tr("admin.diag_card_integrity", lang)),
           h5(class = paste0("mt-1 mb-0 text-", status_color), status_text),
           span(class = "small text-muted", if (rep$foreign_keys_active) tr("admin.diag_fk_on", lang) else tr("admin.diag_fk_off", lang))
         )

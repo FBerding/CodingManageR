@@ -27,13 +27,13 @@ render_kpi_card_ui <- function(title, value, subtitle = NULL, bg_class = "bg-pri
   column(
     width = width,
     div(
-      class = paste("card text-white mb-3 shadow-sm", bg_class),
+      class = paste("card cm-kpi-card mb-3", bg_class),
       div(
-        class = "card-body text-center p-3",
-        h3(class = "card-title mb-1 font-monospace fw-bold", as.character(value)),
-        p(class = "card-text small mb-0 opacity-75", title),
+        class = "card-body p-3",
+        h3(class = "cm-kpi-value", as.character(value)),
+        p(class = "cm-kpi-title", title),
         if (!is.null(subtitle) && subtitle != "") {
-          div(class = "text-white-50 text-xs mt-1", subtitle)
+          div(class = "cm-kpi-subtitle", subtitle)
         } else {
           NULL
         }
@@ -129,28 +129,27 @@ build_scale_examples_modal <- function(scale_df, active_level = NULL, lang = "en
     if (is.null(ex_text) || is.na(ex_text) || ex_text == "") ex_text <- tr("examples.no_example_text", lang)
 
     is_highlighted <- !is.null(active_level) && as.integer(active_level) == lvl
-    border_style <- if (is_highlighted) "border-left: 4px solid #059669; background-color: #f0fdf4;" else "border-left: 3px solid #cbd5e1; background-color: #f8fafc;"
+    item_cls <- if (is_highlighted) "cm-example-item cm-example-item--active" else "cm-example-item"
 
     div(
-      class = "p-3 mb-2 rounded border shadow-xs",
-      style = border_style,
+      class = item_cls,
       div(
         class = "d-flex justify-content-between align-items-center mb-1",
-        span(class = "fw-bold", tr("examples.level_heading", lang, lvl)),
+        span(class = "fw-semibold", tr("examples.level_heading", lang, lvl)),
         if (is_highlighted) span(class = "badge bg-success", tr("examples.active_selection", lang)) else NULL
       ),
-      p(class = "text-secondary small mb-0 font-monospace", ex_text)
+      p(class = "text-secondary small mb-0", ex_text)
     )
   })
 
   modalDialog(
     title = tagList(icon("book-open", class = "me-2 text-primary"), paste0(s_name, " (", s_label, ")")),
     div(
-      class = "mb-3 p-3 bg-light rounded border",
-      h6(class = "fw-bold text-dark", tr("examples.general_def", lang)),
+      class = "mb-3 cm-surface-subtle",
+      h6(class = "fw-semibold mb-1", tr("examples.general_def", lang)),
       p(class = "text-muted small mb-0", s_desc)
     ),
-    h6(class = "fw-bold mb-2 text-dark", tr("examples.modal_title", lang)),
+    h6(class = "fw-semibold mb-2", tr("examples.modal_title", lang)),
     do.call(div, level_blocks),
     size = "l",
     easyClose = TRUE,
@@ -239,10 +238,10 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
     size = "l",
     easyClose = TRUE,
     div(
-      class = "mb-3 p-3 bg-light rounded border",
+      class = "mb-3 cm-surface-subtle",
       div(
         class = "d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom",
-        tags$span(class = "small fw-bold text-uppercase text-muted", tr("admin.modal_case_context", lang)),
+        tags$span(class = "small fw-semibold text-muted", tr("admin.modal_case_context", lang)),
         tags$div(
           class = "small font-monospace text-muted",
           paste0("Rating #", r_id, " \u00b7 ", tr("common.case_number", lang, t_id), " \u00b7 ", coder, " \u00b7 ", type_label, " \u00b7 ", tstamp)
@@ -254,15 +253,15 @@ build_edit_coding_value_modal <- function(ns, rating_row, lang = "en") {
         if (nzchar(s_desc)) p(class = "text-muted small mb-0 mt-1", s_desc) else NULL
       ),
       div(
-        class = "p-2 bg-white rounded border small text-dark",
-        style = "max-height: 150px; overflow-y: auto; white-space: pre-wrap;",
+        class = "cm-case-text",
+        style = "max-height: 160px; padding: 12px 14px; font-size: 0.88rem;",
         case_txt
       )
     ),
     div(
-      class = "d-flex align-items-center justify-content-between mb-2 p-2 rounded border bg-white",
-      tags$span(class = "small fw-bold text-muted", tr("admin.modal_current_value", lang)),
-      tags$span(class = "badge bg-dark font-monospace fs-6", as.character(cur_val))
+      class = "d-flex align-items-center justify-content-between mb-3 p-2 px-3 rounded border bg-white",
+      tags$span(class = "small fw-semibold text-muted", tr("admin.modal_current_value", lang)),
+      tags$span(class = "badge bg-dark font-monospace", as.character(cur_val))
     ),
     radioButtons(
       inputId = ns("edit_coding_new_value"),
@@ -371,9 +370,8 @@ build_coding_search_table_ui <- function(ns, page_df, lang = "en") {
   tags$div(
     class = "table-responsive",
     tags$table(
-      class = "table table-hover align-middle table-bordered bg-white mb-0",
+      class = "table table-hover align-middle bg-white mb-0",
       tags$thead(
-        class = "table-light text-muted small text-uppercase",
         tags$tr(
           tags$th(style = "width: 90px;", tr("admin.col_rating_id", lang)),
           tags$th(tr("admin.col_case_text", lang)),
@@ -420,7 +418,7 @@ build_coding_search_pagination_ui <- function(ns, total_rows, cur_page, tot_page
   end_idx <- min(total_rows, cur_page * page_size)
 
   div(
-    class = "d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 bg-light rounded border",
+    class = "d-flex flex-wrap justify-content-between align-items-center gap-3 cm-pagination-bar",
     div(
       class = "text-muted small",
       tags$strong(tr("common.showing_entries", lang, start_idx, end_idx, total_rows)),

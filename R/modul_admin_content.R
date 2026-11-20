@@ -869,7 +869,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
           tags$span(class = "badge bg-primary-subtle text-primary border border-primary-subtle", style = "font-size: 0.9em;", s_short)
         ),
         tags$td(
-          style = "vertical-align: middle; font-weight: 600; width: 22%; color: #2c3e50;",
+          style = "vertical-align: middle; font-weight: 600; width: 22%; color: var(--cm-ink);",
           s_name
         ),
         tags$td(
