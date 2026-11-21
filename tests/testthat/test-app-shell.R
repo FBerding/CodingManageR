@@ -89,6 +89,8 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
       expect_match(user_page, "tab_dashboard")
       expect_match(user_page, "tab_training")
       expect_match(user_page, "tab_codings")
+      expect_match(user_page, "nav-tabs")
+      expect_false(grepl("nav-pills", user_page))
       expect_false(grepl("tab_admin", user_page))
 
       # 5. Header Refresh button bumps both triggers
@@ -117,4 +119,42 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
       expect_match(admin_page, "mod_admin")
     }
   )
+})
+
+test_that("university platform theme and bundled CSS define explicit offline tokens without external CDNs", {
+  # Verifies deterministic local-vs-web styling contracts:
+  # 1) coding_manager_theme() pins Bootstrap 5 with bootswatch = NULL and university navy/slate Sass tokens
+  # 2) coding_manager_css() defines fixed 1280px shell geometry, underlined tabs, and offline system fonts
+  # 3) Neither bundled CSS nor rendered coding_manager_ui() references remote CDN or Google Fonts URLs
+  theme <- CodingManageR:::coding_manager_theme()
+  expect_s3_class(theme, "bs_theme")
+  expect_equal(as.character(bslib::theme_version(theme)), "5")
+
+  if (exists("theme_bootswatch", envir = asNamespace("bslib"), inherits = FALSE)) {
+    expect_null(bslib::theme_bootswatch(theme))
+  }
+
+  theme_vars <- bslib::bs_get_variables(theme, c("primary", "secondary", "body-bg"))
+  expect_match(theme_vars[["primary"]], "^#1b365d$", ignore.case = TRUE)
+  expect_match(theme_vars[["secondary"]], "^#526071$", ignore.case = TRUE)
+  expect_match(theme_vars[["body-bg"]], "^#f6f8fa$", ignore.case = TRUE)
+
+  css_html <- ui_to_html(CodingManageR:::coding_manager_css())
+  expect_match(css_html, "<style")
+  expect_match(css_html, "--cm-navy:\\s*#1B365D")
+  expect_match(css_html, "--cm-bg-canvas:\\s*#F6F8FA")
+  expect_match(css_html, "--cm-max-width:\\s*1280px")
+  expect_match(css_html, "\\.cm-shell")
+  expect_match(css_html, "\\.cm-header")
+  expect_match(css_html, "\\.cm-kpi-card")
+  expect_match(css_html, "\\.cm-case-text")
+  expect_match(css_html, "\\.cm-session-banner")
+  expect_match(css_html, "\\.nav-tabs")
+  expect_false(grepl("https?://|fonts\\.googleapis|@import\\s+url", css_html, ignore.case = TRUE))
+
+  root_html <- ui_to_html(coding_manager_ui())
+  expect_match(root_html, "cm-root-container")
+  expect_match(root_html, "cm-app")
+  expect_match(root_html, "cm-shell")
+  expect_false(grepl("fonts\\.googleapis", root_html, ignore.case = TRUE))
 })

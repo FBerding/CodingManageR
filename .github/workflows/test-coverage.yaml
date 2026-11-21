@@ -74,9 +74,12 @@ jobs:
 
           STAGE_DIR="${COVR_STAGE_DIR:-/tmp/covr-ci}"
           SHARD_DIR="$STAGE_DIR/shards"
+          SUBLOG_DIR="$STAGE_DIR/logs"
           LOG_FILE="$STAGE_DIR/covr-diagnostics.log"
+          SUMMARY_TSV="$STAGE_DIR/summary_rows.tsv"
           rm -rf "$STAGE_DIR"
-          mkdir -p "$SHARD_DIR"
+          mkdir -p "$SHARD_DIR" "$SUBLOG_DIR"
+          : > "$SUMMARY_TSV"
 
           log_msg() {
             local ts
@@ -144,6 +147,16 @@ jobs:
           n_hit <- sum(file_lines$value > 0)
           pct <- if (n_valid > 0L) 100 * n_hit / n_valid else 0
 
+          metrics_line <- sprintf(
+            "%.1fs\t%.1f MB\t%.2f%% (%d/%d)",
+            elapsed_s,
+            if (is.na(peak_mb)) 0 else peak_mb,
+            pct,
+            n_hit,
+            n_valid
+          )
+          writeLines(metrics_line, con = file.path(stage_dir, paste0("metrics-", stem, ".tsv")))
+
           cat(sprintf(
             "[%s] [%s] DONE | elapsed=%6.1fs | peak_rss=%6.1f MB | shard_coverage=%6.2f%% (%d / %d lines)\n",
             format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"),
@@ -182,10 +195,18 @@ jobs:
 
           cat(sprintf("\n=== CodingManageR Combined Test Coverage (%d test files): %.2f%% (%d / %d lines) ===\n\n",
                       length(rds_files), 100 * overall_rate, lines_covered, lines_valid))
+          md_lines <- c(
+            sprintf("### Combined Coverage: %.2f%% (%d / %d lines across %d test files)",
+                    100 * overall_rate, lines_covered, lines_valid, length(rds_files)),
+            "",
+            "| Source File | Coverage | Covered / Valid Lines |",
+            "| :--- | ---: | ---: |"
+          )
           for (f in sort(unique(file_agg$filename))) {
             sub <- file_agg[file_agg$filename == f, , drop = FALSE]
             pct <- 100 * mean(sub$value > 0)
             cat(sprintf("  %-38s : %6.2f%% (%d / %d lines)\n", f, pct, sum(sub$value > 0), nrow(sub)))
+            md_lines <- c(md_lines, sprintf("| `%s` | %.2f%% | %d / %d |", f, pct, sum(sub$value > 0), nrow(sub)))
           }
           cat("\n")
 
@@ -248,6 +269,13 @@ jobs:
           xml2::write_xml(doc, file = "cobertura.xml")
           invisible(xml2::read_xml("cobertura.xml"))
           xml_kb <- file.info("cobertura.xml")$size / 1024
+          md_lines <- c(
+            md_lines,
+            "",
+            sprintf("_Merged `cobertura.xml` written and validated (%.1f KB) in %.1fs._", xml_kb, proc.time()[["elapsed"]] - t0)
+          )
+          writeLines(md_lines, con = file.path(stage_dir, "combined_summary.md"))
+
           cat(sprintf(
             "[%s] Merged cobertura.xml written and validated (%.1f KB) in %.1fs\n",
             format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC", tz = "UTC"),
@@ -264,13 +292,33 @@ jobs:
             base="$(basename "$tf")"
             stem="${base#test-}"
             stem="${stem%.R}"
+            sublog="$SUBLOG_DIR/${stem}.log"
+            metrics_file="$STAGE_DIR/metrics-${stem}.tsv"
+            t_start="$(date +%s)"
             log_msg ">>> Launching isolated Rscript subprocess for: ${base} (filter=^${stem}$)"
             rc=0
-            Rscript "$STAGE_DIR/run_one_covr.R" "$stem" "$STAGE_DIR" 2>&1 | tee -a "$LOG_FILE" || rc=$?
+            Rscript "$STAGE_DIR/run_one_covr.R" "$stem" "$STAGE_DIR" 2>&1 | tee "$sublog" | tee -a "$LOG_FILE" || rc=$?
+            t_end="$(date +%s)"
+            wall_s=$((t_end - t_start))
             if [ "$rc" -ne 0 ]; then
-              log_msg "!!! FAILURE: ${base} exited with code ${rc}"
+              log_msg "!!! FAILURE: ${base} exited with code ${rc} after ${wall_s}s"
+              printf '%s\tFAIL (exit %s)\t%ss\t-\t-\n' "$base" "$rc" "$wall_s" >> "$SUMMARY_TSV"
+              printf '%s\t%s\n' "$base" "$rc" > "$STAGE_DIR/failure_meta.tsv"
+              start_ln="$(awk '/Failed tests|Failure|Error|Backtrace:|FAIL [0-9]+/ { print NR; exit }' "$sublog" || true)"
+              if [ -n "$start_ln" ]; then
+                tail -n +"$start_ln" "$sublog" | tail -n 80 > "$STAGE_DIR/failure_excerpt.txt" || true
+              else
+                tail -n 80 "$sublog" > "$STAGE_DIR/failure_excerpt.txt" || true
+              fi
+              printf '::error file=tests/testthat/%s,title=test-coverage failed in %s::Subprocess exited with code %s after %ss. See Job Summary for extracted testthat failure details.\n' "$base" "$base" "$rc" "$wall_s"
               free -m | tee -a "$LOG_FILE"
               exit "$rc"
+            fi
+            if [ -f "$metrics_file" ]; then
+              IFS=$'\t' read -r m_elapsed m_rss m_cov < "$metrics_file"
+              printf '%s\tPASS\t%s\t%s\t%s\n' "$base" "$m_elapsed" "$m_rss" "$m_cov" >> "$SUMMARY_TSV"
+            else
+              printf '%s\tPASS\t%ss\t-\t-\n' "$base" "$wall_s" >> "$SUMMARY_TSV"
             fi
             avail_mb="$(free -m | awk '/^Mem:/ {print $7}')"
             log_msg "<<< Subprocess for ${base} exited cleanly (available runner RAM: ${avail_mb} MB)"
@@ -279,6 +327,49 @@ jobs:
           log_msg ">>> Merging all per-file coverage shards into ./cobertura.xml"
           Rscript "$STAGE_DIR/merge_covr.R" "$STAGE_DIR" 2>&1 | tee -a "$LOG_FILE"
           log_msg "=== Per-file covr coverage run completed successfully ==="
+
+      - name: Write coverage and failure summary to GitHub Job Summary
+        if: always()
+        shell: bash
+        run: |
+          STAGE_DIR="${COVR_STAGE_DIR:-/tmp/covr-ci}"
+          SUMMARY_TSV="$STAGE_DIR/summary_rows.tsv"
+          {
+            echo "## CodingManageR Test Coverage Summary"
+            echo ""
+            if [ -f "$STAGE_DIR/failure_meta.tsv" ]; then
+              IFS=$'\t' read -r fail_file fail_rc < "$STAGE_DIR/failure_meta.tsv"
+              echo "> **Status:** Failed in \`tests/testthat/${fail_file}\` (exit code \`${fail_rc}\`)"
+            elif [ -f "$STAGE_DIR/combined_summary.md" ]; then
+              echo "> **Status:** Passed (all isolated test shards completed and merged)"
+            else
+              echo "> **Status:** Did not complete before coverage summary generation"
+            fi
+            echo ""
+            if [ -s "$SUMMARY_TSV" ]; then
+              echo "### Per-Test-File Execution"
+              echo ""
+              echo "| Test File | Status | Elapsed | Peak RSS | Shard Coverage |"
+              echo "| :--- | :--- | ---: | ---: | ---: |"
+              while IFS=$'\t' read -r tf st el rss cov; do
+                printf '| `%s` | %s | %s | %s | %s |\n' "$tf" "$st" "$el" "$rss" "$cov"
+              done < "$SUMMARY_TSV"
+              echo ""
+            fi
+            if [ -f "$STAGE_DIR/failure_excerpt.txt" ]; then
+              IFS=$'\t' read -r fail_file fail_rc < "$STAGE_DIR/failure_meta.tsv"
+              echo "### Failure Details (\`tests/testthat/${fail_file}\`)"
+              echo ""
+              echo '```text'
+              cat "$STAGE_DIR/failure_excerpt.txt"
+              echo '```'
+              echo ""
+            fi
+            if [ -f "$STAGE_DIR/combined_summary.md" ]; then
+              cat "$STAGE_DIR/combined_summary.md"
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage diagnostics log
         if: always()

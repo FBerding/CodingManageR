@@ -393,7 +393,7 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
                 div(
                   class = "cm-session-meta",
                   if (f_modus == "alle") {
-                    tags$span(icon("random", class = "me-1"), tr("coding.case_random", lang))
+                    tags$span(class = "badge bg-secondary", icon("random", class = "me-1"), tr("coding.case_random", lang))
                   } else {
                     tags$span(icon("filter", class = "me-1"), paste0("[#", text_quelle$source_id, "] ", text_quelle$Kurzreferenz))
                   },
