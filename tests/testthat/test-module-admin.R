@@ -667,3 +667,419 @@ test_that("adminServer Subtabs 7 & 8 (Import/Export Modals, CSV Downloads/Upload
     }
   )
 })
+
+test_that("adminServer handles coordinator fallbacks, user self-edit/permissions guards, and content validation edge cases", {
+  # Covers remaining non-MySQL branches in R/modul_admin.R, R/modul_admin_users.R, and R/modul_admin_content.R:
+  # 1) adminUI() with valid selected_subtab and invalid fallback
+  # 2) adminServer() with scalar current_user/current_lang and current_user_id = NULL DB lookup
+  # 3) Users: nonexistent target guards, admin scale-permissions notification, admin self-edit modal/save,
+  #    deleting a user with existing ratings warning, and empty-scales/empty-sources permission notifications
+  # 4) Content: empty texts/sources/scales search results, source add/edit validation errors & blocked delete
+  #    confirmation, scale search filtering, page clamping, and scale add/edit validation errors
+  ui_sel <- ui_to_html(adminUI("adm_sel", lang = "en", selected_subtab = "tab_scales"))
+  expect_match(ui_sel, "adm_sel-scales_table_container")
+  ui_inv <- ui_to_html(adminUI("adm_inv", lang = "de", selected_subtab = "nonexistent_tab"))
+  expect_match(ui_inv, "adm_inv-users_table_container")
+
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+  admin_id <- get_user_info_db(con, "admin")$id
+  user1_id <- get_user_info_db(con, "user1")$id
+  # Give user1 a rating so delete modal displays the ratings-present info banner
+  DBI::dbExecute(con, "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id) VALUES (?, 208, '1', 2, 'kodierung', 1)", params = list(user1_id))
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con,
+      current_user = "admin",
+      current_user_id = NULL,
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      # Coordinator scalar/NULL resolution
+      expect_equal(aktiver_admin(), "admin")
+      expect_equal(aktiver_admin_id(), admin_id)
+
+      # --- USERS EDGE CASES ---
+      expect_no_error({
+        session$setInputs(trigger_manage_user_sources = "nonexistent_user_xyz")
+        session$setInputs(trigger_manage_user_scales = "nonexistent_user_xyz")
+        session$setInputs(trigger_edit_user = "nonexistent_user_xyz")
+        session$setInputs(trigger_delete_user = "nonexistent_user_xyz")
+        session$flushReact()
+      })
+
+      # Admin scale permissions -> immediate message notification
+      expect_no_error({
+        session$setInputs(trigger_manage_user_scales = admin_id)
+        session$flushReact()
+      })
+
+      # Admin self-edit modal & save (keeps role = admin, is_active = 1 even if inputs differ)
+      session$setInputs(trigger_edit_user = admin_id)
+      session$flushReact()
+      session$setInputs(edit_token = "geheim123", edit_permissions = "user", edit_is_active = 0L, btn_save_edited_user = 1L)
+      session$flushReact()
+      adm_row <- DBI::dbGetQuery(con, "SELECT permissions, is_active FROM user_tokens WHERE user_id = ?", params = list(admin_id))
+      expect_equal(adm_row$permissions[1], "admin")
+      expect_equal(adm_row$is_active[1], 1L)
+
+      # Delete modal for user1 (has ratings -> info alert branch; do not confirm delete)
+      expect_no_error({
+        session$setInputs(trigger_delete_user = user1_id)
+        session$flushReact()
+      })
+
+      # --- TEXTS EMPTY SEARCH ---
+      session$setInputs(texts_search_query = "zzz_no_matching_text_999")
+      session$flushReact()
+      expect_match(ui_to_html(output$texts_management_table_container), "alert-warning")
+      expect_null(output$texts_pagination_controls)
+      session$setInputs(texts_search_query = "")
+      session$flushReact()
+
+      # --- SOURCES SEARCH, VALIDATION ERRORS & BLOCKED DELETE CONFIRMATION ---
+      session$setInputs(source_search_query = "Mueller2024")
+      session$flushReact()
+      expect_match(ui_to_html(output$sources_table_container), "Mueller2024")
+
+      session$setInputs(source_search_query = "zzz_no_source_999")
+      session$flushReact()
+      expect_match(ui_to_html(output$sources_table_container), "alert-light")
+      session$setInputs(source_search_query = "")
+
+      # Add source: missing full ref, missing custom license, duplicate short ref
+      session$setInputs(new_kurzreferenz = "ValidRef", new_referenz = "x", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 1L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
+
+      session$setInputs(new_kurzreferenz = "ValidRef", new_referenz = "Full valid citation 2026", new_lizenz_select = "__custom__", new_lizenz_custom = "", btn_save_new_source = 2L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
+
+      session$setInputs(new_kurzreferenz = "Mueller2024", new_referenz = "Full valid citation 2026", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 3L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
+
+      # Edit source #2: short ref too short & duplicate of #1 ('Mueller2024')
+      session$setInputs(trigger_edit_source = 2L)
+      session$flushReact()
+      session$setInputs(edit_kurzreferenz = "x", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 1L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
+
+      session$setInputs(edit_kurzreferenz = "Mueller2024", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 2L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
+
+      # Blocked delete confirmation for referenced source #1
+      session$setInputs(trigger_delete_source = 1L)
+      session$flushReact()
+      session$setInputs(btn_confirm_delete_source = 1L)
+      session$flushReact()
+      expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM sources WHERE source_id = 1")$n[1], 1L)
+
+      # --- SCALES SEARCH, EMPTY RESULT, PAGE CLAMPING & ADD/EDIT VALIDATIONS ---
+      session$setInputs(scale_search_query = "Empathie")
+      session$flushReact()
+      expect_match(ui_to_html(output$scales_counter_text), "1")
+      expect_match(ui_to_html(output$scales_table_container), "K1_Empathie")
+
+      session$setInputs(scale_search_query = "zzz_no_scale_999")
+      session$flushReact()
+      expect_match(ui_to_html(output$scales_table_container), "alert-light")
+      session$setInputs(scale_search_query = "")
+      session$flushReact()
+
+      # Add scale validation: short name, max_value out of range, duplicate name
+      session$setInputs(new_scale_short_label = "Ok", new_scale_name = "a", new_scale_max_value = 3L, btn_save_new_scale = 1L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_scale_feedback), "alert-danger")
+
+      session$setInputs(new_scale_short_label = "Ok", new_scale_name = "K99_RangeBad", new_scale_max_value = 9L, btn_save_new_scale = 2L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_scale_feedback), "alert-danger")
+
+      session$setInputs(new_scale_short_label = "Ok", new_scale_name = "K1_Empathie", new_scale_max_value = 3L, btn_save_new_scale = 3L)
+      session$flushReact()
+      expect_match(ui_to_html(output$add_scale_feedback), "alert-danger")
+
+      # Edit scale #2 validation: empty short_label, short name, duplicate name 'K1_Empathie'
+      session$setInputs(trigger_edit_scale = 2L)
+      session$flushReact()
+      session$setInputs(edit_scale_short_label = "", edit_scale_name = "K2_Struktur", btn_save_edit_scale = 1L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
+
+      session$setInputs(edit_scale_short_label = "Struk", edit_scale_name = "x", btn_save_edit_scale = 2L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
+
+      session$setInputs(edit_scale_short_label = "Struk", edit_scale_name = "K1_Empathie", btn_save_edit_scale = 3L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
+    }
+  )
+
+  # Empty DB (0 sources, 0 scales) exercises empty permission modal notifications and default current_user = NULL
+  db_empty <- local_test_db(seeded = TRUE, empty = TRUE)
+  DBI::dbExecute(db_empty$con, "INSERT INTO user_tokens (username, token, permissions, is_active) VALUES ('coder_empty', 'tok1234', 'user', 1)")
+  coder_empty_id <- get_user_info_db(db_empty$con, "coder_empty")$id
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = db_empty$con,
+      current_user = NULL,
+      current_user_id = NULL,
+      scales_trigger = NULL,
+      current_lang = "de"
+    ),
+    {
+      expect_equal(aktiver_admin(), "admin")
+      expect_no_error({
+        session$setInputs(trigger_manage_user_sources = coder_empty_id)
+        session$setInputs(trigger_manage_user_scales = coder_empty_id)
+        session$flushReact()
+      })
+    }
+  )
+})
+
+test_that("adminServer covers export filter modal searches, zero-selection warnings, upload errors, legacy exports, and template fallbacks", {
+  # Covers remaining non-MySQL branches in R/modul_admin_data.R:
+  # 1) Live search (matched + unmatched) inside Scales, Sources, and Users export filter modals
+  # 2) Zero-selection warning badges (bg-warning) & blocked summary badge + export_err_missing_group
+  # 3) Texts CSV upload missing source_id column & DB transaction abort (duplicate PK in same CSV)
+  # 4) Legacy schema master export (texts without source_id, user_ratings without user_id)
+  # 5) CSV template fallback switch across all 5 tables when tables do not yet exist
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+
+  csv_texts_no_src <- write_temp_csv(data.frame(text_id = 910L, text = "No source_id column", stringsAsFactors = FALSE))
+  csv_texts_dup_pk <- write_temp_csv(data.frame(
+    text_id = c(920L, 920L),
+    text = c("Duplicate PK row 1", "Duplicate PK row 2"),
+    source_id = c(1L, 1L),
+    stringsAsFactors = FALSE
+  ))
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con,
+      current_user = shiny::reactiveVal("admin"),
+      current_user_id = shiny::reactiveVal(1L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en")
+    ),
+    {
+      # 1. Modal live search (matching + empty match) for Scales, Sources, Users
+      session$setInputs(input_modal_scales_search = "Empathie")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_scales_page_ui), "K1_Empathie")
+      session$setInputs(input_modal_scales_search = "zzz_none")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_scales_page_ui), "text-muted")
+      session$setInputs(input_modal_scales_search = "")
+      session$flushReact()
+
+      session$setInputs(input_modal_sources_search = "Mueller")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_sources_page_ui), "Mueller2024")
+      session$setInputs(input_modal_sources_search = "zzz_none")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_sources_page_ui), "text-muted")
+      session$setInputs(input_modal_sources_search = "")
+      session$flushReact()
+
+      session$setInputs(input_modal_users_search = "user1")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_users_page_ui), "user1")
+      session$setInputs(input_modal_users_search = "zzz_none")
+      session$flushReact()
+      expect_match(ui_to_html(output$modal_users_page_ui), "text-muted")
+      session$setInputs(input_modal_users_search = "")
+      session$flushReact()
+
+      # 2. Deselect all across all 3 dimensions -> warning badges + blocked summary + missing-group export
+      # Render page UIs first so filtered_modal_*_ids() contain all IDs
+      invisible(output$modal_scales_page_ui)
+      invisible(output$modal_sources_page_ui)
+      invisible(output$modal_users_page_ui)
+      session$setInputs(
+        btn_modal_scales_deselect_all = 1L,
+        btn_modal_sources_deselect_all = 1L,
+        btn_modal_users_deselect_all = 1L
+      )
+      session$flushReact()
+      expect_match(ui_to_html(output$export_scales_status_badge), "bg-warning")
+      expect_match(ui_to_html(output$export_sources_status_badge), "bg-warning")
+      expect_match(ui_to_html(output$export_users_status_badge), "bg-warning")
+      expect_match(ui_to_html(output$export_filter_summary_badge), "bg-warning")
+      expect_no_error(invisible(output$download_master_dataset_btn))
+
+      # 3. Upload error paths: missing source_id column & transaction failure on duplicate PK
+      session$setInputs(upload_texts_file = list(datapath = csv_texts_no_src, name = "no_src.csv"))
+      session$flushReact()
+      expect_null(pending_import())
+
+      session$setInputs(upload_texts_file = list(datapath = csv_texts_dup_pk, name = "dup_pk.csv"))
+      session$flushReact()
+      expect_false(is.null(pending_import()))
+      expect_no_error({
+        session$setInputs(conflict_resolution_mode = "skip", btn_confirm_append_table = 1L)
+        session$flushReact()
+      })
+    }
+  )
+
+  # 4. Legacy schema master export (texts without source_id, user_ratings without user_id)
+  con_leg <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_leg))
+  DBI::dbExecute(con_leg, "CREATE TABLE user_tokens (user_id INT, username TEXT, token TEXT, permissions TEXT, is_active INT);")
+  DBI::dbExecute(con_leg, "CREATE TABLE sources (source_id INT, Kurzreferenz TEXT, Referenz TEXT, Lizenz TEXT, erfasst_am TEXT);")
+  DBI::dbExecute(con_leg, "CREATE TABLE texts (text_id INT, text TEXT);")
+  DBI::dbExecute(con_leg, "CREATE TABLE scale_definitions (scale_id INT, short_label TEXT, name TEXT, max_value INT, def_desc TEXT, def_n_0 TEXT, def_n_1 TEXT, def_n_2 TEXT, def_n_3 TEXT, def_n_4 TEXT, def_n_5 TEXT);")
+  DBI::dbExecute(con_leg, "CREATE TABLE user_ratings (rating_id INT, username TEXT, text_id INT, kategorie TEXT, bewertung INT, typ TEXT, source_id INT, zeitstempel TEXT);")
+  DBI::dbExecute(con_leg, "INSERT INTO user_tokens VALUES (1, 'admin', 'pw', 'admin', 1);")
+  DBI::dbExecute(con_leg, "INSERT INTO sources VALUES (0, 'LegDef', 'Legacy Default', 'CC0', '2026-01-01');")
+  DBI::dbExecute(con_leg, "INSERT INTO sources VALUES (1, 'Src1', 'Ref1', 'CC-BY 4.0', '2026-01-01');")
+  DBI::dbExecute(con_leg, "INSERT INTO texts VALUES (1, 'Legacy text without source_id');")
+  DBI::dbExecute(con_leg, "INSERT INTO scale_definitions VALUES (1, 'S1', 'Scale1', 2, 'd', '0', '1', '2', '', '', '');")
+  DBI::dbExecute(con_leg, "INSERT INTO user_ratings VALUES (1, 'admin', 1, '1', 2, 'kodierung', 1, '2026-01-01');")
+
+  shiny::testServer(
+    adminServer,
+    args = list(db_con = con_leg, current_user = "admin", current_user_id = 1L, current_lang = "en"),
+    {
+      session$flushReact()
+      leg_master <- output$download_master_dataset_btn
+      expect_true(file.exists(leg_master))
+      expect_gt(file.info(leg_master)$size, 20)
+      expect_match(paste(readLines(leg_master, warn = FALSE), collapse = "\n"), "Legacy text without source_id")
+    }
+  )
+
+  # 5. Template CSV switch fallback when tables are absent from DB
+  con_blank <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_blank))
+  shiny::testServer(
+    adminServer,
+    args = list(db_con = con_blank, current_user = "admin", current_user_id = 1L, current_lang = "en"),
+    {
+      for (tpl in c(
+        "download_template_scales", "download_template_texts", "download_template_sources",
+        "download_template_ratings", "download_template_training"
+      )) {
+        tpl_path <- output[[tpl]]
+        expect_true(file.exists(tpl_path), info = paste("Missing fallback template:", tpl))
+      }
+    }
+  )
+})
+
+test_that("adminServer covers all 16 reliability metrics, zero-session fallbacks, nonexistent rating edit, and missing-table diagnostics", {
+  # Covers remaining non-MySQL branches in R/modul_admin_analytics.R:
+  # 1) All 16 reliability metric switch branches (+ unknown fallback) in KPI cards and comparison plot
+  # 2) Zero-training / zero-coding DB fallback (both global and scale-filtered = 36+ lines)
+  # 3) Coder drilldown modal with 0 trainings/0 codings and with NA balanced_accuracy/iota fields
+  # 4) Nonexistent rating_id passed to trigger_edit_coding_rating -> error notification
+  # 5) Diagnostics with a dropped table (coding_training missing -> danger schema card + check error badge)
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+  markus_id <- get_user_info_db(con, "markus_meier")$id
+
+  # Insert a training row with NA balanced_accuracy/iota & low kappa (<0.6) for user1
+  user1_id <- get_user_info_db(con, "user1")$id
+  DBI::dbExecute(
+    con,
+    "INSERT INTO coding_training (user_id, kategorie, datum, anzahl_einheiten, accuracy, balanced_accuracy, iota_index, avg_iota2, cohens_kappa, alpha_nominal, gwet_ac1)
+     VALUES (?, '1', '2026-11-12', 5, 55.0, NULL, NULL, NULL, 0.45, 0.44, 0.50)",
+    params = list(user1_id)
+  )
+
+  all_metrics <- c(
+    "cohens_kappa", "alpha_nominal", "alpha_ordinal", "fleiss_kappa",
+    "kappa_linear", "kappa_squared", "gwet_ac1", "gwet_ac2_quadratic",
+    "kendall_w", "avg_iota2", "iota_index",
+    "accuracy", "balanced_accuracy", "macro_f1", "macro_precision", "macro_recall",
+    "unknown_metric_fallback"
+  )
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con,
+      current_user = shiny::reactiveVal("admin"),
+      current_user_id = shiny::reactiveVal(1L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en")
+    ),
+    {
+      session$setInputs(rel_scale_select = "all", rel_search_query = "")
+      for (m_key in all_metrics) {
+        session$setInputs(rel_metric_select = m_key)
+        session$flushReact()
+        expect_match(ui_to_html(output$admin_reliability_kpis), "card")
+        expect_true(!is.null(output$admin_reliability_comparison_plot))
+      }
+
+      # Drilldown modal for user1 (includes NA balanced_accuracy row) & markus_meier (0 trainings, 0 codings)
+      expect_no_error({
+        session$setInputs(trigger_rel_user_detail = user1_id)
+        session$flushReact()
+        session$setInputs(trigger_rel_user_detail = markus_id)
+        session$flushReact()
+      })
+
+      # Nonexistent rating_id edit trigger -> error notification and early return
+      expect_no_error({
+        session$setInputs(trigger_edit_coding_rating = 999999L)
+        session$flushReact()
+      })
+    }
+  )
+
+  # Isolated empty DB (0 trainings, 0 codings) + dropped coding_training table for diagnostics
+  db_zero <- local_test_db(seeded = TRUE, empty = TRUE)
+  con_zero <- db_zero$con
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con_zero,
+      current_user = "admin",
+      current_user_id = 1L,
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      # Global zero-training/zero-coding fallback
+      session$setInputs(rel_scale_select = "all", rel_metric_select = "cohens_kappa", rel_search_query = "")
+      session$flushReact()
+      expect_match(ui_to_html(output$admin_reliability_kpis), "card")
+      expect_true(!is.null(output$admin_reliability_comparison_plot))
+      expect_match(ui_to_html(output$admin_reliability_table_container), "admin")
+
+      # Scale-specific zero-training/zero-coding fallback
+      session$setInputs(rel_scale_select = "1")
+      session$flushReact()
+      expect_match(ui_to_html(output$admin_reliability_kpis), "card")
+      expect_match(ui_to_html(output$admin_reliability_table_container), "admin")
+
+      # Drop coding_training to trigger missing-table & check-error diagnostics branches
+      DBI::dbExecute(con_zero, "DROP TABLE coding_training;")
+      session$setInputs(btn_refresh_diagnostics = 1L)
+      session$flushReact()
+      rep_missing <- db_diagnostics_report()
+      expect_equal(rep_missing$existing_tables_count, 8L)
+      expect_match(ui_to_html(output$db_diag_summary_cards), "bg-danger")
+      expect_match(ui_to_html(output$db_diag_tables_overview), "bg-danger")
+      expect_match(ui_to_html(output$db_diag_integrity_audit), "bg-warning")
+    }
+  )
+})
+

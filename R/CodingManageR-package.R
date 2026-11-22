@@ -10,6 +10,7 @@
 #' - Stratified gold-standard training pools across all ordinal scale levels
 #' - Live field coding with per-user source and scale permissions
 #' - Consolidated master CSV exports and schema-validated CSV imports
+#' - On-demand interactive Getting Started spotlight tutorial with role-aware tracks
 #' - Bilingual (German/English) localization with automatic browser detection
 #'
 #' @import DBI

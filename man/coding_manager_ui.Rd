@@ -14,9 +14,9 @@ A Shiny UI tag list suitable for \code{shiny::shinyApp()}.
 }
 \description{
 Constructs the top-level Bootstrap 5 / \code{bslib} page shell for CodingManageR,
-including browser language auto-detection and the reactive \code{page_content}
-outlet that switches between the sign-in screen and the authenticated
-multi-tab workspace.
+including browser language auto-detection, interactive spotlight tutorial
+assets, and the reactive \code{page_content} outlet that switches between the
+sign-in screen and the authenticated multi-tab workspace.
 }
 \examples{
 \dontrun{

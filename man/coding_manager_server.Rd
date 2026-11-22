@@ -39,8 +39,9 @@ Invisibly returns \code{NULL}.
 \description{
 Manages database connectivity, user authentication (including inactive
 account lockout), bilingual UI localization (\code{de}/\code{en}), reactive scale
-catalog synchronization, and routing to the Dashboard, Coding Training, Live
-Coding, and Admin Console Shiny modules.
+catalog synchronization, the on-demand role-aware Getting Started spotlight
+tutorial (including automatic tab/subtab switching), and routing to the
+Dashboard, Coding Training, Live Coding, and Admin Console Shiny modules.
 }
 \examples{
 \dontrun{

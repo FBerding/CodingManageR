@@ -21,7 +21,8 @@
 - **Role-Based Live Coding Workspace**: Enforces granular per-user permissions across coding scales, text sources, and scientific coding sources, while automatically excluding already-coded and gold-standard cases.
 - **Personal Progress Dashboard**: Tracks live codings, training ratings, completed sessions, reliability trajectories across all 16 metrics, and a searchable coding scale handbook.
 - **8-Tab Administration Console**: Manages users (access tokens, active/inactive status, permissions), case texts, bibliographic sources, ordinal scales, team reliability comparisons, individual rating corrections, schema-validated CSV imports/exports, and a 9-table database integrity audit.
-- **Bilingual Interface**: Built-in German (`de`) and English (`en`) interface with automatic browser language detection and live switching in the header.
+- **Interactive Getting Started Tutorial**: On-demand spotlight overlay with anchored tooltips, automatic tab/subtab switching, keyboard navigation, and role-aware workflow tracks (3-part, 12-step track for administrators; focused 4-step coding track for coders).
+- **Bilingual Interface**: Built-in German (`de`) and English (`en`) interface with automatic browser language detection and live switching in the header (including live language sync inside the tutorial).
 
 ## Installation
 
@@ -60,7 +61,12 @@ library(CodingManageR)
 
 # Start a clean project with a local SQLite database
 run_app(sqlite_path = "coding_portal.sqlite", empty = TRUE)
+
+# Store additional independent projects in separate .sqlite files
+run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
 ```
+
+Each `.sqlite` file is a self-contained project (with its own scales, sources, texts, users, and ratings). To back up, rename, or archive a local project, stop the Shiny app cleanly first so SQLite flushes its write-ahead log (`-wal`/`-shm`), then copy or move the `.sqlite` file.
 
 If you want to explore the interface first with built-in sample scales, example texts, gold-standard reference cases, and demo accounts, start with `empty = FALSE`:
 
@@ -76,7 +82,7 @@ Default accounts created in demo mode (`empty = FALSE`):
 | Coder | `user1` | `token2026` | Dashboard, Training & Live Coding (assigned scales/sources) |
 | Locked Demo | `inaktiv_demo` | `gesperrt123` | Deactivated account (`is_active = 0`) |
 
-> In clean mode (`empty = TRUE`), sign in as `admin` with token `geheim123` and change the password immediately in **Admin Console -> User Management**.
+> In clean mode (`empty = TRUE`), sign in as `admin` with token `geheim123` and change the password immediately in **Admin Console -> User Management**. Click **Getting Started** in the top header at any time to launch the interactive in-app walkthrough.
 
 ### Multi-User Deployment (Shiny Server + MariaDB/MySQL)
 

@@ -1,4 +1,121 @@
-url: ~
+url: https://fberding.github.io/CodingManageR/
 template:
   bootstrap: 5
 
+home:
+  title: "CodingManageR: Multi-User Qualitative Coding Portal & Training Manager"
+  description: >-
+    A multi-user R Shiny web application and training portal for qualitative
+    text coding across ordinal scales with 16 inter-rater reliability metrics,
+    stratified gold-standard training pools, and an interactive Getting Started
+    tutorial overlay.
+
+navbar:
+  structure:
+    left: [intro, articles, reference]
+    right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/introduction.html
+    articles:
+      text: Guides
+      menu:
+        - text: Installing and Launching CodingManageR
+          href: articles/CodingManageR.html
+        - text: Introduction to CodingManageR (3-Part Workflow)
+          href: articles/introduction.html
+
+articles:
+  - title: User Guides
+    navbar: ~
+    contents:
+      - CodingManageR
+      - introduction
+
+reference:
+  - title: Launching the Application
+    desc: Entrypoints for running CodingManageR locally (SQLite) or on Shiny Server (MariaDB/MySQL).
+    contents:
+      - run_app
+      - coding_manager_ui
+      - coding_manager_server
+
+  - title: Shiny Workspace Modules
+    desc: Modular UI and server components for the Dashboard, Coding Training, Live Coding, and Admin Console workspaces.
+    contents:
+      - dashboardUI
+      - dashboardServer
+      - schulungUI
+      - schulungServer
+      - kodierungenUI
+      - kodierungenServer
+      - adminUI
+      - adminServer
+
+  - title: Database Connections, Schema & Seeding
+    desc: Connection pooling, SQLite/MariaDB dialect helpers, transaction management, schema creation, and initial data seeding.
+    contents:
+      - get_db_pool
+      - get_db_connection
+      - close_db_pool
+      - close_db_connection
+      - is_mysql
+      - is_mysql_connection
+      - is_pool_connection
+      - get_db_random_function
+      - with_db_transaction
+      - create_all_tables
+      - seed_initial_data
+
+  - title: Database Queries, Permissions & Rating Corrections
+    desc: Per-user authorization lookups, unrated case sampling, paginated coding search, and rating value updates.
+    contents:
+      - get_user_info_db
+      - get_user_permitted_sources_db
+      - get_user_permitted_coding_sources_db
+      - count_unrated_cases_db
+      - draw_unrated_case_db
+      - search_case_codings_db
+      - get_coding_detail_db
+      - update_coding_rating_value_db
+      - generate_security_token
+
+  - title: Inter-Rater Reliability & Stratified Training
+    desc: Computation of 16 reliability metrics via aifeducation, stratified training pool sampling, and metric metadata helpers.
+    contents:
+      - berechne_aifeducation_metriken
+      - generate_stratified_training_pool
+      - get_reliability_metric_choices
+      - get_reliability_metric_meta
+      - classify_reliability_magnitude
+      - format_metric_display
+      - get_source_license_choices
+
+  - title: Data Export, Templates & Import Validation
+    desc: Consolidated master dataset exports, raw table CSV snapshots, template generators, and import schema validation.
+    contents:
+      - fetch_consolidated_master_export
+      - export_table_to_csv
+      - export_table_template_csv
+      - clean_table_columns
+      - get_table_pk_definition
+      - validate_import_schema
+
+  - title: Localization & UI Builders
+    desc: Bilingual German/English translation utilities and reusable Bootstrap 5 UI components.
+    contents:
+      - tr
+      - load_translations
+      - find_translations_file
+      - get_supported_languages
+      - get_language_choices
+      - detect_browser_language
+      - language_selector_ui
+      - render_kpi_card_ui
+      - render_metric_badge_ui
+      - build_scale_examples_modal
+      - build_edit_coding_value_modal
+      - build_coding_search_table_ui
+      - build_coding_search_pagination_ui
+      - format_int_locale

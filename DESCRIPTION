@@ -14,7 +14,8 @@ Description: A multi-user R Shiny web application and training portal for
     MySQL/MariaDB connections for Open Source Shiny Server deployments.
     Provides 16 inter-rater reliability and agreement metrics, stratified
     gold-standard training pools, consolidated CSV master exports, strict
-    schema-validated CSV imports, and bilingual (German/English) localization.
+    schema-validated CSV imports, an interactive role-aware in-app Getting
+    Started tutorial overlay, and bilingual (German/English) localization.
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

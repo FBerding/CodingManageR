@@ -89,6 +89,7 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
       expect_match(user_page, "tab_dashboard")
       expect_match(user_page, "tab_training")
       expect_match(user_page, "tab_codings")
+      expect_match(user_page, "btn_start_tutorial")
       expect_match(user_page, "nav-tabs")
       expect_false(grepl("nav-pills", user_page))
       expect_false(grepl("tab_admin", user_page))
@@ -117,6 +118,32 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
       admin_page <- ui_to_html(output$page_content)
       expect_match(admin_page, "tab_admin")
       expect_match(admin_page, "mod_admin")
+      expect_match(admin_page, "btn_start_tutorial")
+
+      # 8. On-demand Getting Started tutorial lifecycle (start, tab sync, language refresh, close)
+      expect_false(tutorial_active())
+      session$setInputs(btn_start_tutorial = 1L)
+      session$flushReact()
+      expect_true(tutorial_active())
+
+      expect_no_error({
+        session$setInputs(tutorial_nav_request = list(
+          main_tab = "tab_admin",
+          sub_tab_id = "mod_admin-admin_subtabs",
+          sub_tab = "tab_sources",
+          nonce = 1L
+        ))
+        session$flushReact()
+      })
+
+      session$setInputs(selected_ui_lang = "en")
+      session$flushReact()
+      expect_equal(current_lang(), "en")
+      expect_true(tutorial_active())
+
+      session$setInputs(tutorial_closed = 1L)
+      session$flushReact()
+      expect_false(tutorial_active())
     }
   )
 })
@@ -156,5 +183,129 @@ test_that("university platform theme and bundled CSS define explicit offline tok
   expect_match(root_html, "cm-root-container")
   expect_match(root_html, "cm-app")
   expect_match(root_html, "cm-shell")
+  expect_match(root_html, "cm_start_tutorial")
   expect_false(grepl("fonts\\.googleapis", root_html, ignore.case = TRUE))
 })
+
+test_that("getting started tutorial builds role-aware bilingual tracks and offline spotlight assets", {
+  # Verifies:
+  # 1) Admin track contains all 3 workflow parts (12 steps) across setup, coding, and admin tools
+  # 2) Standard coder track contains only Part 2 (4 steps) with zero admin tabs exposed
+  # 3) English and German localization produce distinct non-empty titles, bodies, and tips
+  # 4) Bundled spotlight CSS/JS assets contain zero external CDN URLs
+  admin_en <- CodingManageR:::build_tutorial_payload(role = "admin", lang = "en")
+  expect_true(admin_en$is_admin)
+  expect_equal(admin_en$total_parts, 3L)
+  expect_length(admin_en$parts, 3L)
+  expect_length(admin_en$steps, 12L)
+  admin_tabs <- vapply(admin_en$steps, function(s) s$main_tab, character(1))
+  expect_true(all(c("tab_admin", "tab_training", "tab_dashboard", "tab_codings") %in% admin_tabs))
+
+  admin_de <- CodingManageR:::build_tutorial_payload(role = "admin", lang = "de", preserve_step = TRUE)
+  expect_true(admin_de$preserve_step)
+  expect_equal(admin_de$lang, "de")
+  expect_length(admin_de$steps, 12L)
+  expect_false(identical(admin_en$steps[[1]]$title, admin_de$steps[[1]]$title))
+  expect_true(all(vapply(admin_de$steps, function(s) nzchar(s$title) && nzchar(s$body) && nzchar(s$tip), logical(1))))
+
+  coder_en <- CodingManageR:::build_tutorial_payload(role = "user", lang = "en")
+  expect_false(coder_en$is_admin)
+  expect_equal(coder_en$total_parts, 1L)
+  expect_length(coder_en$steps, 4L)
+  coder_tabs <- vapply(coder_en$steps, function(s) s$main_tab, character(1))
+  expect_false("tab_admin" %in% coder_tabs)
+  expect_setequal(unique(coder_tabs), c("tab_dashboard", "tab_training", "tab_codings"))
+
+  coder_de <- CodingManageR:::build_tutorial_payload(role = "user", lang = "de")
+  expect_length(coder_de$steps, 4L)
+  expect_false(identical(coder_en$steps[[1]]$title, coder_de$steps[[1]]$title))
+
+  assets_html <- ui_to_html(CodingManageR:::coding_manager_tutorial_assets())
+  expect_match(assets_html, "cm-tour-spotlight")
+  expect_match(assets_html, "cm-tour-tooltip")
+  expect_match(assets_html, "cm_start_tutorial")
+  expect_match(assets_html, "cm_close_tutorial")
+  expect_match(assets_html, "tutorial_nav_request")
+  expect_false(grepl("https?://|fonts\\.googleapis|@import\\s+url", assets_html, ignore.case = TRUE))
+})
+
+test_that("coding_manager_server initializes self-managed SQLite pools, empty catalogs, and error fallbacks cleanly", {
+  # Verifies:
+  # 1) Self-managed SQLite startup when CodingManageR.db_con is NULL (pool creation, table setup,
+  #    seed_empty = TRUE, and onSessionEnded pool teardown)
+  # 2) Empty scale_definitions catalog returning zero-length kategorie_spalten() & kategorien_liste()
+  # 3) Unauthenticated tutorial guards and dashboard subtab tutorial_nav_request routing
+  # 4) Direct db_con argument injection and scales_catalog() tryCatch error fallback when table is missing
+  tmp_sqlite <- tempfile(pattern = "cm_shell_self_", fileext = ".sqlite")
+  withr::defer(unlink(c(tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm")), force = TRUE))
+
+  withr::with_options(
+    list(
+      CodingManageR.db_con = NULL,
+      CodingManageR.db_config = NULL,
+      CodingManageR.sqlite_path = NULL,
+      CodingManageR.seed_empty = TRUE
+    ),
+    withr::with_envvar(
+      c(MYSQL_HOST = "", MYSQL_DB_HOST = "", MYSQL_USER = "", MYSQL_DB_USER = "", SQLITE_PATH = ""),
+      {
+        suppressMessages(
+          shiny::testServer(
+            coding_manager_server,
+            args = list(sqlite_path = tmp_sqlite, seed_empty = TRUE),
+            {
+              session$flushReact()
+              expect_true(owns_connection)
+              expect_true(file.exists(tmp_sqlite))
+
+              # Unauthenticated tutorial triggers return silently
+              session$setInputs(btn_start_tutorial = 1L, tutorial_nav_request = list(main_tab = "tab_dashboard"))
+              session$flushReact()
+              expect_false(tutorial_active())
+
+              # Empty seed creates 0 scales -> catalog reactives return character(0)
+              expect_length(kategorie_spalten(), 0L)
+              expect_length(kategorien_liste(), 0L)
+
+              # Sign in as seeded admin and test dashboard subtab tutorial routing + non-list guard
+              session$setInputs(login_username = "admin", login_token = "geheim123", btn_login = 1L)
+              session$flushReact()
+              expect_true(logged_in())
+
+              expect_no_error({
+                session$setInputs(tutorial_nav_request = "not_a_list")
+                session$flushReact()
+                session$setInputs(tutorial_nav_request = list(
+                  main_tab = "tab_dashboard",
+                  sub_tab_id = "mod_dashboard-dashboard_tabs",
+                  sub_tab = "tab_scales_overview",
+                  nonce = 2L
+                ))
+                session$flushReact()
+              })
+            }
+          )
+        )
+      }
+    )
+  )
+
+  # Direct db_con argument + missing scale_definitions table hits tryCatch error fallback
+  con_broken <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_broken))
+
+  shiny::testServer(
+    coding_manager_server,
+    args = list(db_con = con_broken),
+    {
+      session$flushReact()
+      expect_false(owns_connection)
+      cat_df <- scales_catalog()
+      expect_s3_class(cat_df, "data.frame")
+      expect_equal(nrow(cat_df), 0L)
+      expect_length(kategorie_spalten(), 0L)
+      expect_length(kategorien_liste(), 0L)
+    }
+  )
+})
+

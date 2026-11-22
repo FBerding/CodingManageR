@@ -265,4 +265,21 @@ test_that("get_coding_detail_db and update_coding_rating_value_db fetch full sca
   expect_equal(after$user_id[1], before$user_id[1])
   expect_equal(after$typ[1], before$typ[1])
   expect_equal(after$text_id[1], before$text_id[1])
+
+  # Empty ratings table & NULL search_query edge cases
+  db_empty <- local_test_db(seeded = TRUE, empty = TRUE)
+  expect_equal(nrow(search_case_codings_db(db_empty$con)), 0L)
+  expect_equal(nrow(search_case_codings_db(con, search_query = NULL)), 34L)
+
+  # Database write error fallback in update_coding_rating_value_db() via SQLite trigger
+  DBI::dbExecute(
+    con,
+    "CREATE TEMP TRIGGER fail_rating_upd BEFORE UPDATE ON user_ratings
+     BEGIN SELECT RAISE(ABORT, 'simulated read-only database'); END;"
+  )
+  fail_res <- update_coding_rating_value_db(con, 201L, 3L)
+  expect_false(fail_res$success)
+  expect_match(fail_res$message, "Database update failed")
+  DBI::dbExecute(con, "DROP TRIGGER fail_rating_upd;")
 })
+

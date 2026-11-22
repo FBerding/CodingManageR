@@ -201,3 +201,76 @@ test_that("dashboardServer scales overview supports search, reset, description t
     }
   )
 })
+
+test_that("dashboardServer handles scalar current_lang, NA training dates, empty scales, and DB query fallbacks", {
+  # Verifies remaining dashboardServer() edge cases:
+  # 1) Non-reactive scalar current_lang = "en" and NA datum rendering in training_performance_table
+  # 2) Empty scale_definitions catalog (0 rows -> empty kategorie_breakdown_table & empty cards alert)
+  # 3) Missing scale_definitions table triggering dashboard_scales_data() tryCatch fallback
+  db <- local_test_db(seeded = TRUE, empty = TRUE)
+  con <- db$con
+  admin_id <- get_user_info_db(con, "admin")$id
+
+  # Insert a training row with NULL datum to exercise NA date fallback
+  DBI::dbExecute(
+    con,
+    "INSERT INTO coding_training (user_id, kategorie, datum, anzahl_einheiten, accuracy, balanced_accuracy, iota_index, avg_iota2, cohens_kappa, alpha_nominal, gwet_ac1)
+     VALUES (?, '1', NULL, 5, 80.0, 78.0, 0.75, 0.76, 0.72, 0.71, 0.74)",
+    params = list(admin_id)
+  )
+
+  scales_rx <- make_scale_reactives(con)
+
+  shiny::testServer(
+    dashboardServer,
+    args = list(
+      db_con = con,
+      user_id_reactive = shiny::reactiveVal(admin_id),
+      username_reactive = shiny::reactiveVal("admin"),
+      trigger_reactive = shiny::reactiveVal(0L),
+      kategorie_spalten = scales_rx$kategorie_spalten,
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      session$setInputs(
+        dashboard_selected_kategorie = "1",
+        dashboard_plot_metric = "cohens_kappa",
+        dashboard_scale_search = ""
+      )
+      session$flushReact()
+
+      # NA datum renders em-dash cleanly in performance table
+      perf_html <- ui_to_html(output$training_performance_table)
+      expect_match(perf_html, "<table")
+      expect_match(perf_html, "\u2014")
+
+      # Empty scales table renders 0 count, empty alert, and empty breakdown table
+      expect_match(ui_to_html(output$dashboard_scales_count), "0")
+      expect_match(ui_to_html(output$dashboard_scales_cards), "alert-light")
+      expect_true(is.character(output$kategorie_breakdown_table))
+    }
+  )
+
+  # Missing scale_definitions table hits tryCatch error fallback in dashboard_scales_data()
+  con_no_scales <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_no_scales))
+  shiny::testServer(
+    dashboardServer,
+    args = list(
+      db_con = con_no_scales,
+      user_id_reactive = shiny::reactiveVal(1L),
+      username_reactive = shiny::reactiveVal("admin"),
+      trigger_reactive = shiny::reactiveVal(0L),
+      kategorie_spalten = shiny::reactiveVal(character(0)),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "de"
+    ),
+    {
+      session$setInputs(dashboard_scale_search = "")
+      session$flushReact()
+      expect_match(ui_to_html(output$dashboard_scales_cards), "alert-light")
+    }
+  )
+})
+

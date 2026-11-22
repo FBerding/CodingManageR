@@ -7,7 +7,9 @@
 run_app(sqlite_path = NULL, config = NULL, empty = TRUE, options = list(), ...)
 }
 \arguments{
-\item{sqlite_path}{Optional file path to a local SQLite database.}
+\item{sqlite_path}{Optional file path to a local SQLite database. Passing a
+different \code{.sqlite} path creates or reopens a separate, isolated project;
+the parent directory must already exist.}
 
 \item{config}{Optional named list of database configuration parameters passed
 to \code{\link[=get_db_pool]{get_db_pool()}}.}
@@ -28,8 +30,24 @@ or returned from \code{app.R}.
 Constructs and returns a \code{shiny.appobj} configured for either local
 single-user SQLite storage or pooled MySQL/MariaDB server deployments.
 }
+\details{
+To manage multiple independent local projects on one computer, supply a
+distinct \code{sqlite_path} file for each study (each \code{.sqlite} file stores its
+own scales, sources, case texts, user accounts, ratings, and training logs).
+Re-passing the same \code{sqlite_path} reopens that project. When \code{sqlite_path}
+is \code{NULL} (and no \code{SQLITE_PATH} or MySQL environment variables are set), a
+single default database is stored under
+\code{tools::R_user_dir("CodingManageR", which = "data")}. Always stop the
+running Shiny app before copying, renaming, moving, or archiving a \code{.sqlite}
+file so SQLite merges its Write-Ahead Log (\code{-wal}/\code{-shm}) cleanly.
+}
 \examples{
 \dontrun{
+# Launch separate local projects in isolated SQLite files
+run_app(sqlite_path = "study_a.sqlite", empty = TRUE)
+run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
+
+# Launch a temporary demo session with sample data
 app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
 app
 }

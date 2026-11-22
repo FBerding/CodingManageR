@@ -18,6 +18,7 @@ Key capabilities include:
 \item Stratified gold-standard training pools across all ordinal scale levels
 \item Live field coding with per-user source and scale permissions
 \item Consolidated master CSV exports and schema-validated CSV imports
+\item On-demand interactive Getting Started spotlight tutorial with role-aware tracks
 \item Bilingual (German/English) localization with automatic browser detection
 }
 }

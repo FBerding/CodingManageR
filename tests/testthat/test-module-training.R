@@ -201,3 +201,75 @@ test_that("schulungServer examples modal displays reference cases, handles empty
     }
   )
 })
+
+test_that("schulungServer handles rest-pool backfill, empty descriptions, scalar language, and non-gold source-free examples", {
+  # Verifies remaining schulungServer() edge cases:
+  # 1) Non-reactive scalar current_lang = "en"
+  # 2) Starting training with kodiereinheiten > max_value + 1 (e.g., 6 units on max_value = 3)
+  #    exercises the secondary rest_faelle backfill SQL query & rbind()
+  # 3) Scale with empty def_desc and empty def_n_0 triggers no-description fallbacks
+  # 4) Examples modal displaying a 'kodierung' (non-gold) rating linked to a text with source_id = NULL
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+  seed_full_gold_standards(con, scale_id = 2L, max_value = 3L)
+
+  # Scale #5 with empty def_desc / empty def_n_0 + one source-free text with a 'kodierung' rating
+  DBI::dbExecute(
+    con,
+    "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
+     VALUES (5, 'Bare', 'K5_BareScale', 1, '', '', 'Present')"
+  )
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (950, 'Source-free training example case.', NULL)")
+  DBI::dbExecute(
+    con,
+    "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id)
+     VALUES (1, 950, '5', 1, 'kodierung', NULL)"
+  )
+
+  scales_rx <- make_scale_reactives(con)
+
+  shiny::testServer(
+    schulungServer,
+    args = list(
+      db_con = con,
+      user_id_reactive = shiny::reactiveVal(1L),
+      username_reactive = shiny::reactiveVal("admin"),
+      kategorie_spalten = scales_rx$kategorie_spalten,
+      kategorien_liste = scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      # 1. Start session with 6 units on scale #2 (max_value = 3 -> 4 forced + 2 rest_faelle)
+      session$setInputs(gewaehlte_kategorie = "2", kodiereinheiten = 6L)
+      session$setInputs(start_schulung_btn = 1L)
+      session$flushReact()
+      expect_true(schulung_gestartet())
+      expect_equal(nrow(fall_pool()), 6L)
+
+      # Abort back to config
+      session$setInputs(back_to_config_btn = 1L)
+      session$flushReact()
+
+      # 2. Scale #5 has empty def_desc and empty def_n_0
+      session$setInputs(gewaehlte_kategorie = "5", kodiereinheiten = 2L)
+      session$setInputs(start_schulung_btn = 2L)
+      session$flushReact()
+      expect_true(schulung_gestartet())
+      expect_equal(beschreibung_text(), "")
+      session$setInputs(bewertung_slider = 0L)
+      session$flushReact()
+      expect_true(nzchar(output$wert_definition))
+
+      # 3. Examples modal for scale #5 level 1: 'kodierung' badge (bg-primary) + no_source_assigned
+      session$setInputs(modal_beispiel_kategorie = "5", modal_gewaehlte_stufe = "1")
+      session$flushReact()
+      ex_html <- ui_to_html(output$modal_beispiel_content)
+      expect_match(ex_html, "bg-primary")
+      expect_match(ex_html, "Source-free training example case")
+      expect_match(ex_html, "text-muted")
+    }
+  )
+})
+

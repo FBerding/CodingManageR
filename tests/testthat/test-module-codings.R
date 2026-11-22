@@ -198,3 +198,90 @@ test_that("kodierungenServer supports source-filtered coding, saves ratings to D
     }
   )
 })
+
+test_that("kodierungenServer handles restricted-source sessions, zero coding sources, empty descriptions, and source-free examples", {
+  # Verifies remaining kodierungenServer() edge cases:
+  # 1) Non-reactive scalar current_lang = "en"
+  # 2) Restricted coder ('user1', permitted text sources 1 & 2) starting a live coding session
+  #    exercises the IN (...) source-filter SQL branch inside ziehe_unbewerteten_fall()
+  # 3) Coder with text source permission but ZERO coding source permissions renders no_coding_sources_err
+  # 4) Scale with empty def_desc and empty def_n_0 exercises no-description fallbacks
+  # 5) Examples modal displaying a 'kodierung' (non-gold) rating on a text with source_id = NULL
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+  user1_id <- get_user_info_db(con, "user1")$id
+  eva_id   <- get_user_info_db(con, "eva_lindner")$id
+
+  # Grant eva_lindner text source #1 ONLY (keep user_coding_source_permissions empty!)
+  DBI::dbExecute(con, "INSERT INTO user_source_permissions (user_id, source_id) VALUES (?, 1)", params = list(eva_id))
+
+  # Add scale #5 with empty def_desc & empty def_n_0, plus a source-free text with a 'kodierung' rating
+  DBI::dbExecute(
+    con,
+    "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
+     VALUES (5, 'EmptyDesc', 'K5_EmptyDesc', 1, '', '', 'Defined')"
+  )
+  DBI::dbExecute(con, "INSERT INTO user_scale_permissions (user_id, scale_id) VALUES (?, 5)", params = list(user1_id))
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (960, 'Source-free live coding example.', NULL)")
+  DBI::dbExecute(
+    con,
+    "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id)
+     VALUES (1, 960, '5', 1, 'kodierung', NULL)"
+  )
+
+  scales_rx <- make_scale_reactives(con)
+  rx_uid    <- shiny::reactiveVal(user1_id)
+  rx_uname  <- shiny::reactiveVal("user1")
+
+  shiny::testServer(
+    kodierungenServer,
+    args = list(
+      db_con = con,
+      user_id_reactive = rx_uid,
+      username_reactive = rx_uname,
+      kategorie_spalten = scales_rx$kategorie_spalten,
+      kategorien_liste = scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      # 1. user1 starts live coding on scale #5 (restricted IN clause + empty def_desc/def_n_0)
+      session$setInputs(
+        gewaehlte_kategorie = "5",
+        fall_filter_modus = "alle",
+        gewaehlte_quelle = "1"
+      )
+      session$flushReact()
+      session$setInputs(start_kodierung_btn = 1L)
+      session$flushReact()
+      expect_true(modus_aktiv())
+      expect_true(aktueller_fall()$source_id[1] %in% c(1L, 2L))
+
+      session$setInputs(bewertung_slider = 0L)
+      session$flushReact()
+      expect_true(nzchar(output$wert_definition))
+      expect_true(nzchar(output$beschreibung_text_ui))
+
+      # 2. Examples modal on scale #5 level 1: 'kodierung' badge (bg-primary) & source_id = NULL
+      session$setInputs(modal_beispiel_kategorie = "5", modal_gewaehlte_stufe = "1")
+      session$flushReact()
+      ex_html <- ui_to_html(output$modal_beispiel_content)
+      expect_match(ex_html, "bg-primary")
+      expect_match(ex_html, "Source-free live coding example")
+      expect_match(ex_html, "text-muted")
+
+      # Return to config screen and switch to eva_lindner (has text source #1, 0 coding sources)
+      session$setInputs(back_to_select_btn = 1L)
+      rx_uid(eva_id)
+      rx_uname("eva_lindner")
+      session$setInputs(gewaehlte_kategorie = "1", gewaehlte_quelle = "")
+      session$flushReact()
+      cfg_html <- ui_to_html(output$kodier_bereich)
+      expect_match(cfg_html, "alert-danger")
+      expect_match(cfg_html, "alert-warning")
+      expect_match(ui_to_html(output$konfiguration_status_ui), "start_kodierung_disabled_btn")
+    }
+  )
+})
+

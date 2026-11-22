@@ -63,7 +63,17 @@ If your institution hosts CodingManageR on a web server, simply open the link pr
 > **Quick Tip — Want to Practice First?** If you would like to explore the portal with pre-loaded example scales, sample texts, and demo accounts before creating your own project, start a temporary demo session with:
 > `CodingManageR::run_app(sqlite_path = "demo_project.sqlite", empty = FALSE)`
 
+> **Working on Multiple Local Projects?** In Local Mode, every `.sqlite` file is a completely separate project. Pass a distinct file path per study (for example `CodingManageR::run_app(sqlite_path = "study_a.sqlite")` and `CodingManageR::run_app(sqlite_path = "study_b.sqlite")`) to keep scales, texts, users, and ratings isolated. Always stop the app before copying, renaming, or archiving a `.sqlite` file—see `vignette("CodingManageR", package = "CodingManageR")` for full folder and backup tips.
+
 On the sign-in screen (and later in the top-right header), you can switch the entire interface between **English** and **German** at any time without losing your work.
+
+### Built-In Interactive Walkthrough (`Getting Started`)
+
+You do not have to keep this guide open side-by-side while learning the interface. Once signed in, click the **Getting Started** (*Erste Schritte*) button in the top-right header to launch an interactive spotlight tutorial directly inside the app:
+
+- **Role-Aware Guided Tracks:** Administrators receive a complete **3-part, 12-step** walkthrough mirroring Parts 1, 2, and 3 of this guide; standard coders receive a focused **4-step** track covering **Part 2** (training, dashboard review, and live coding).
+- **Automatic Navigation:** Stepping forward or backward automatically highlights each control with an anchored tooltip and switches tabs and subtabs for you.
+- **Keyboard & Live Language Support:** Navigate with the **Left/Right Arrow** keys, press **Esc** to close at any time, or switch between English and German in the header while the tour is open to translate every tooltip live.
 
 ---
 
@@ -89,8 +99,8 @@ Before adding texts or starting live coding, register at least one **Text Source
 1. In **Admin Console**, open the **Sources Directory** subtab.
 2. Click the button to add a new source and fill in:
    - **Short Reference** (for example `StudyA_2026` or `Manual_v1`) — shown in compact dropdown menus and badges.
-   - **Full Citation** — the full bibliographic citation or project description.
-   - **License**, optional license notes, and **URL / DOI** — helpful for documenting data rights and open-science transparency.
+   - **Full Reference / Citation** — the complete bibliographic citation or project description.
+   - **License / Usage Rights** — select a predefined open or research license (such as `CC-BY 4.0`, `CC0`, or `GPL-3.0`) or choose a custom license entry to enter your own terms.
 3. Save the entry and repeat for each corpus or coding manual in your project.
 
 > **Have many sources in a spreadsheet?** You can also import them all at once using a CSV template (see Section 3.4).
@@ -117,8 +127,8 @@ Now load the actual case texts into the database and connect each text to its pr
 #### Adding Texts in Bulk via CSV (Recommended)
 
 1. Open **Admin Console -> Data & Import/Export**.
-2. In the upload area for **Case Texts (`texts`)**, click **Download CSV Template** to get an empty spreadsheet with the exact column headers (`text;source_id`).
-3. Paste your case texts into the `text` column and (optionally) enter the matching numeric `source_id` from **Sources Directory**.
+2. In the upload area for **Case Texts (`texts`)**, click **Download CSV Template** to get an empty spreadsheet with the exact column headers (`text_id;text;source_id`).
+3. Paste your case texts into the `text` column, enter the matching numeric `source_id` from **Sources Directory** (required—CodingManageR checks that every `source_id` exists in `sources` before importing), and optionally assign explicit `text_id` numbers.
 4. Save the file as **UTF-8 CSV with semicolon (`;`) separators** and upload it back into the same field.
 5. Review the automatic validation preview and confirm the import.
 
@@ -184,8 +194,8 @@ Before coding real research material, coders should practice in **1. Coding Trai
 6. For each case:
    - Read the case text carefully in the left panel.
    - Move the rating slider in the right panel to choose your score. As you move the slider, the definition box updates immediately to show the exact anchor for that number.
-   - Click **Next Case** (or **Finish Training & View Results** on the final text). If you need to stop early without saving a completed run, click **Abort Training**.
-7. At the end of the session, CodingManageR compares your ratings against the stored reference answers, displays your agreement and reliability metrics (plus a case-by-case comparison table you can download as CSV), and saves the run to your history.
+   - Click **Save & Next Case** (or **Finish Training & View Results** on the final text). If you need to stop early without saving a completed run, click **Abort Training**.
+7. At the end of the session, CodingManageR compares your ratings against the stored reference answers, displays your agreement and reliability metrics plus a case-by-case comparison table (**Download Training Results (.csv)**), saves the run to your history, and lets you click **Start New Training** for another round.
 
 #### Checking Personal Progress on the `Dashboard`
 
@@ -211,16 +221,14 @@ Once a coder is calibrated and has permissions unlocked, they are ready for empi
    - **Coding Dimension / Scale:** Choose one of the scales unlocked for your account.
    - **Case Selection Mode (Text Pool):** Choose whether to draw random uncoded cases across all of your unlocked text sources, or focus on texts from one specific source.
    - **Coding Source / Protocol:** Choose the coding source under which your ratings will be stored.
-3. Check the live counter showing how many uncoded cases remain in your chosen pool, then click **Start Coding**.
+3. Check the live counter showing how many uncoded cases remain in your chosen pool, then click **Start Coding / Load Case**.
 
 #### Rating Cases
 
 1. Read the case text carefully on the left and check the scale and source information in the banner above.
 2. Select the matching numeric score on the slider on the right. Use the live level definition box or click **Show Criteria & Examples** whenever you want to double-check a borderline case.
-3. Click **Save Rating & Next** to store your rating in the database and automatically load the next uncoded text.
-4. Need to skip a text for now or take a break?
-   - Click **Switch Random Case** to draw a different uncoded text from the same pool without saving.
-   - Click **Pause** to return to the workspace setup screen.
+3. Click **Save & Next Case** to store your rating in the database and automatically load the next uncoded text.
+4. Need to switch scales, change the text pool, or take a break? Click **Back to Configuration** to return to the workspace setup screen at any time.
 
 CodingManageR automatically excludes already-coded texts and gold-standard training items from your live queue. When no open cases remain in a pool, the app notifies you so you can select another scale or text source.
 
@@ -229,7 +237,7 @@ CodingManageR automatically excludes already-coded texts and gold-standard train
 - [ ] Coder account created with an access token in **User Management**.
 - [ ] Required **Scales**, **Text Sources**, and **Coding Sources** unlocked for the coder.
 - [ ] Coder completed at least one **Coding Training** session and reviewed feedback on the **Dashboard**.
-- [ ] Coder selects scale, text pool, and coding source in **2. Live Coding** and saves ratings with **Save Rating & Next**.
+- [ ] Coder selects scale, text pool, and coding source in **2. Live Coding** and saves ratings with **Save & Next Case**.
 
 ---
 
@@ -243,7 +251,7 @@ Use the **Reliability & Progress** subtab to keep track of coding activity and a
 
 - Review project-wide totals (all live codings, completed training sessions, and team averages).
 - Filter by **coder**, **scale**, and **reliability metric** to compare training calibration across raters in a bar chart and summary table.
-- Inspect individual training sessions to spot scales where coders may benefit from additional discussion or clearer anchor examples.
+- Click a coder's detail button in the summary table to open an interactive drilldown modal listing their complete training session history and recorded live codings, helping you spot scales where additional discussion or clearer anchor examples would help.
 
 ### 3.2 Find and Correct Stored Ratings (`Edit Codings`)
 
@@ -259,6 +267,7 @@ When you are ready to analyze your coded data in R, SPSS, Excel, or Python—or 
 
 - **Consolidated Master Dataset Export:** Combines ratings, full case texts, scale definitions, and complete bibliographic source citations into a single analysis-ready CSV file. Before downloading, you can filter by specific **Scales**, **Sources**, or **Users**.
 - **Raw Table Backups:** Download individual CSV snapshots of core tables (`scale_definitions`, `texts`, `sources`, `user_ratings`, and `coding_training`) whenever you want a clean project archive.
+- **Full Local Project Snapshot (SQLite Mode):** If you run CodingManageR locally, you can also back up or archive an entire project by stopping the app cleanly (so SQLite flushes its Write-Ahead Log) and copying your project's `.sqlite` file.
 
 ### 3.4 Bulk CSV Uploads with Built-In Validation (`Data & Import/Export`)
 
@@ -269,7 +278,7 @@ To ensure every upload works smoothly on the first try:
 1. Always click **Download CSV Template** next to the upload field so your column names match exactly.
 2. Save your spreadsheet as **UTF-8 CSV** using a **semicolon (`;`)** as the column delimiter (not a comma).
 3. Upload the file—CodingManageR automatically trims formatting quirks and validates every column before touching your database.
-4. In the two-step confirmation dialog, choose whether to **append** new rows or **replace** existing data. Every import runs inside a protected database transaction, so if anything fails, your existing data remains untouched.
+4. In the confirmation dialog, choose whether to **append** new rows or **replace** the entire table. If an appended file contains primary-key IDs that already exist in the database, CodingManageR alerts you and lets you choose between keeping existing records unchanged (skipping conflicts) or overwriting/updating matching records with the CSV values. Every import runs inside a protected database transaction, so if anything fails, your existing data remains untouched.
 
 ### 3.5 Check Database Health and Integrity (`DB Diagnosis`)
 

@@ -11,9 +11,9 @@ NULL
 #' Build the Root Shiny UI for CodingManageR
 #'
 #' Constructs the top-level Bootstrap 5 / `bslib` page shell for CodingManageR,
-#' including browser language auto-detection and the reactive `page_content`
-#' outlet that switches between the sign-in screen and the authenticated
-#' multi-tab workspace.
+#' including browser language auto-detection, interactive spotlight tutorial
+#' assets, and the reactive `page_content` outlet that switches between the
+#' sign-in screen and the authenticated multi-tab workspace.
 #'
 #' @param lang Default initial language code (`"de"` or `"en"`). Defaults to `"de"`.
 #'
@@ -32,6 +32,7 @@ coding_manager_ui <- function(lang = "de") {
     tags$head(
       tags$title("CodingManageR"),
       coding_manager_css(),
+      coding_manager_tutorial_assets(),
       tags$script(HTML("
         document.addEventListener('DOMContentLoaded', function() {
           if (window.Shiny) {
@@ -61,8 +62,9 @@ coding_manager_ui <- function(lang = "de") {
 #'
 #' Manages database connectivity, user authentication (including inactive
 #' account lockout), bilingual UI localization (`de`/`en`), reactive scale
-#' catalog synchronization, and routing to the Dashboard, Coding Training, Live
-#' Coding, and Admin Console Shiny modules.
+#' catalog synchronization, the on-demand role-aware Getting Started spotlight
+#' tutorial (including automatic tab/subtab switching), and routing to the
+#' Dashboard, Coding Training, Live Coding, and Admin Console Shiny modules.
 #'
 #' @param input Standard Shiny server `input` object.
 #' @param output Standard Shiny server `output` object.
@@ -149,9 +151,16 @@ coding_manager_server <- function(input, output, session,
   current_role    <- reactiveVal(NULL)
   login_error_key <- reactiveVal(NULL)
 
-  # Shared invalidation triggers
-  data_trigger   <- reactiveVal(0L)
-  scales_trigger <- reactiveVal(0L)
+  # Shared invalidation triggers & tutorial state
+  data_trigger    <- reactiveVal(0L)
+  scales_trigger  <- reactiveVal(0L)
+  tutorial_active <- reactiveVal(FALSE)
+
+  send_tutorial_msg <- function(type, message) {
+    if (!is.null(session) && is.function(session$sendCustomMessage)) {
+      tryCatch(session$sendCustomMessage(type, message), error = function(e) NULL)
+    }
+  }
 
   # Reactive coding scale catalog shared across Dashboard, Training, and Live Coding
   scales_catalog <- reactive({
@@ -236,6 +245,8 @@ coding_manager_server <- function(input, output, session,
   # Sign-out handler
   observeEvent(input$btn_logout, {
     lang <- current_lang()
+    tutorial_active(FALSE)
+    send_tutorial_msg("cm_close_tutorial", list(reason = "logout"))
     logged_in(FALSE)
     current_user(NULL)
     current_user_id(NULL)
@@ -243,6 +254,62 @@ coding_manager_server <- function(input, output, session,
     login_error_key(NULL)
     showNotification(tr("header.logout_notification", lang), type = "message")
   })
+
+  # On-demand Getting Started spotlight tutorial launch handler
+  observeEvent(input$btn_start_tutorial, {
+    if (!isTRUE(logged_in())) return()
+    tutorial_active(TRUE)
+    payload <- build_tutorial_payload(
+      role = current_role(),
+      lang = current_lang(),
+      preserve_step = FALSE
+    )
+    send_tutorial_msg("cm_start_tutorial", payload)
+  })
+
+  # Track tutorial close events from the browser overlay
+  observeEvent(input$tutorial_closed, {
+    tutorial_active(FALSE)
+  }, ignoreNULL = TRUE)
+
+  # Keep tutorial localized copy synced if user switches language while tour is open
+  observeEvent(current_lang(), {
+    if (isTRUE(logged_in()) && isTRUE(tutorial_active())) {
+      payload <- build_tutorial_payload(
+        role = current_role(),
+        lang = current_lang(),
+        preserve_step = TRUE
+      )
+      send_tutorial_msg("cm_start_tutorial", payload)
+    }
+  }, ignoreInit = TRUE)
+
+  # Sync Shiny tabsets when the spotlight tutorial steps across tabs (RBAC-enforced)
+  observeEvent(input$tutorial_nav_request, {
+    if (!isTRUE(logged_in())) return()
+    req_nav <- input$tutorial_nav_request
+    if (!is.list(req_nav)) return()
+
+    is_admin <- identical(current_role(), "admin")
+    allowed_main <- c("tab_dashboard", "tab_training", "tab_codings", if (is_admin) "tab_admin")
+    if (!is.null(req_nav$main_tab) && is.character(req_nav$main_tab) && req_nav$main_tab %in% allowed_main) {
+      updateTabsetPanel(session, "main_nav_tabs", selected = req_nav$main_tab)
+    }
+
+    if (!is.null(req_nav$sub_tab_id) && !is.null(req_nav$sub_tab) &&
+        is.character(req_nav$sub_tab_id) && is.character(req_nav$sub_tab)) {
+      allowed_dash <- c("tab_progress", "tab_scales_overview")
+      allowed_admin <- c(
+        "tab_users", "tab_texts", "tab_sources", "tab_scales",
+        "tab_reliability", "tab_coding_search", "tab_data", "tab_diagnose"
+      )
+      if (identical(req_nav$sub_tab_id, "mod_dashboard-dashboard_tabs") && req_nav$sub_tab %in% allowed_dash) {
+        updateTabsetPanel(session, "mod_dashboard-dashboard_tabs", selected = req_nav$sub_tab)
+      } else if (is_admin && identical(req_nav$sub_tab_id, "mod_admin-admin_subtabs") && req_nav$sub_tab %in% allowed_admin) {
+        updateTabsetPanel(session, "mod_admin-admin_subtabs", selected = req_nav$sub_tab)
+      }
+    }
+  }, ignoreNULL = TRUE)
 
   # Localized authentication error alert
   output$login_error_ui <- renderUI({
@@ -405,6 +472,13 @@ coding_manager_server <- function(input, output, session,
         div(
           class = "cm-header-actions",
           actionButton(
+            "btn_start_tutorial",
+            label = tr("header.tutorial_btn", lang),
+            icon = icon("compass"),
+            class = "btn btn-sm btn-outline-primary",
+            title = tr("header.tutorial_tooltip", lang)
+          ),
+          actionButton(
             "btn_refresh_view",
             label = tr("header.refresh_btn", lang),
             icon = icon("rotate"),
@@ -437,7 +511,19 @@ coding_manager_server <- function(input, output, session,
 #' Constructs and returns a `shiny.appobj` configured for either local
 #' single-user SQLite storage or pooled MySQL/MariaDB server deployments.
 #'
-#' @param sqlite_path Optional file path to a local SQLite database.
+#' To manage multiple independent local projects on one computer, supply a
+#' distinct `sqlite_path` file for each study (each `.sqlite` file stores its
+#' own scales, sources, case texts, user accounts, ratings, and training logs).
+#' Re-passing the same `sqlite_path` reopens that project. When `sqlite_path`
+#' is `NULL` (and no `SQLITE_PATH` or MySQL environment variables are set), a
+#' single default database is stored under
+#' `tools::R_user_dir("CodingManageR", which = "data")`. Always stop the
+#' running Shiny app before copying, renaming, moving, or archiving a `.sqlite`
+#' file so SQLite merges its Write-Ahead Log (`-wal`/`-shm`) cleanly.
+#'
+#' @param sqlite_path Optional file path to a local SQLite database. Passing a
+#'   different `.sqlite` path creates or reopens a separate, isolated project;
+#'   the parent directory must already exist.
 #' @param config Optional named list of database configuration parameters passed
 #'   to [get_db_pool()].
 #' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
@@ -450,6 +536,11 @@ coding_manager_server <- function(input, output, session,
 #'   or returned from `app.R`.
 #' @examples
 #' \dontrun{
+#' # Launch separate local projects in isolated SQLite files
+#' run_app(sqlite_path = "study_a.sqlite", empty = TRUE)
+#' run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
+#'
+#' # Launch a temporary demo session with sample data
 #' app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
 #' app
 #' }

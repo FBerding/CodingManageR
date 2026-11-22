@@ -141,11 +141,11 @@ test_that("metric choices, metadata lookup, license choices, and display formatt
   expect_true("CC-BY 4.0" %in% unname(lic))
 
   # Metric display formatting
-  expect_equal(format_metric_display(NULL), "—")
-  expect_equal(format_metric_display(NA), "—")
-  expect_equal(format_metric_display(""), "—")
-  expect_equal(format_metric_display("NA"), "—")
-  expect_equal(format_metric_display("not_num"), "—")
+  expect_equal(format_metric_display(NULL), "\u2014")
+  expect_equal(format_metric_display(NA), "\u2014")
+  expect_equal(format_metric_display(""), "\u2014")
+  expect_equal(format_metric_display("NA"), "\u2014")
+  expect_equal(format_metric_display("not_num"), "\u2014")
   expect_equal(format_metric_display(0.8126, is_percentage = FALSE, digits = 3), "0.813")
   expect_equal(format_metric_display(87.45, is_percentage = TRUE), "87.5 %")
 })
@@ -329,8 +329,8 @@ test_that("UI builders generate expected Bootstrap markup for KPI cards, badges,
   expect_match(kpi_nosub, "Empty Sub")
 
   # Metric status badges across NA, non-numeric, danger (<mid), warning (mid..high), success (>=high), and percentage mode
-  expect_match(ui_to_html(render_metric_badge_ui(NULL)), "—")
-  expect_match(ui_to_html(render_metric_badge_ui("invalid")), "—")
+  expect_match(ui_to_html(render_metric_badge_ui(NULL)), "\u2014")
+  expect_match(ui_to_html(render_metric_badge_ui("invalid")), "\u2014")
   expect_match(ui_to_html(render_metric_badge_ui(0.45)), "bg-danger")
   expect_match(ui_to_html(render_metric_badge_ui(0.70)), "bg-warning")
   expect_match(ui_to_html(render_metric_badge_ui(0.85)), "bg-success")
@@ -378,3 +378,102 @@ test_that("UI builders generate expected Bootstrap markup for KPI cards, badges,
   expect_equal(format_int_locale(1234567, "en"), "1,234,567")
   expect_equal(format_int_locale(1234567, "de"), "1.234.567")
 })
+
+test_that("UI builders, export, and stratified sampling handle custom thresholds, NA fields, all rating types, and DB errors", {
+  # Covers remaining non-MySQL branches across R/utils_ui.R, R/utils_export.R, and R/utils_reliability.R:
+  # 1) render_metric_badge_ui() with custom thresh_high/thresh_mid
+  # 2) build_scale_examples_modal() with NA metadata fields and missing bsp_* columns
+  # 3) build_edit_coding_value_modal() across kodierung, gold_standard, schulung, unknown typ,
+  #    NA timestamp/case_text/scale_max_value, missing def_n_*, and identical vs distinct short_label
+  # 4) build_coding_search_table_ui() with schulung, unknown typ, NA case_text/scale/username/timestamp,
+  #    short case text (<110 chars), and identical vs distinct short_label
+  # 5) fetch_consolidated_master_export() error fallback on broken DB
+  # 6) generate_stratified_training_pool() on legacy befund_text schema and empty-level pool
+  ns <- shiny::NS("mod_edge")
+
+  # 1. Custom thresholds on render_metric_badge_ui()
+  expect_match(ui_to_html(render_metric_badge_ui(0.75, thresh_high = 0.70, thresh_mid = 0.50)), "bg-success")
+  expect_match(ui_to_html(render_metric_badge_ui(0.55, thresh_high = 0.70, thresh_mid = 0.50)), "bg-warning")
+  expect_match(ui_to_html(render_metric_badge_ui(0.40, thresh_high = 0.70, thresh_mid = 0.50)), "bg-danger")
+
+  # 2. build_scale_examples_modal() with NA metadata and no bsp_* columns
+  sparse_scale <- data.frame(
+    name = NA_character_,
+    short_label = NA_character_,
+    def_desc = "",
+    max_value = NA_integer_,
+    stringsAsFactors = FALSE
+  )
+  sparse_ex_html <- ui_to_html(build_scale_examples_modal(sparse_scale, active_level = 1L, lang = "de"))
+  expect_match(sparse_ex_html, "Skala")
+  expect_match(sparse_ex_html, "bg-success")
+
+  # 3. build_edit_coding_value_modal() across all rating types & NA fallbacks
+  for (rtype in c("kodierung", "gold_standard", "schulung", "custom_type")) {
+    row_edge <- data.frame(
+      rating_id = 501L,
+      text_id = 101L,
+      kategorie = "1",
+      bewertung = 1L,
+      username = "coder_x",
+      typ = rtype,
+      zeitstempel = NA_character_,
+      case_text = NA_character_,
+      scale_name = if (rtype == "kodierung") "SameLabel" else NA_character_,
+      scale_short_label = if (rtype == "kodierung") "SameLabel" else "ShortDiff",
+      scale_def_desc = if (rtype == "gold_standard") "" else "Scale definition text",
+      scale_max_value = if (rtype == "schulung") -1L else 2L,
+      def_n_0 = "Zero desc",
+      def_n_1 = "",
+      def_n_2 = NA_character_,
+      stringsAsFactors = FALSE
+    )
+    ed_html <- ui_to_html(build_edit_coding_value_modal(ns, row_edge, lang = "en"))
+    expect_match(ed_html, "mod_edge-edit_coding_new_value")
+    expect_match(ed_html, "Rating #501")
+  }
+
+  # 4. build_coding_search_table_ui() with schulung, unknown typ, NA fields, short text, distinct & identical short_label
+  edge_tbl_df <- data.frame(
+    rating_id = c(1L, 2L, 3L),
+    text_id = c(10L, 11L, 12L),
+    kategorie = c("1", "2", "3"),
+    bewertung = c(1L, 2L, 0L),
+    typ = c("schulung", "custom_typ", "gold_standard"),
+    username = c("user1", NA_character_, "admin"),
+    zeitstempel = c("2026-11-10 10:00:00", NA_character_, "2026-11-11 08:30:00"),
+    case_text = c("Short clinical text", NA_character_, "Another short note"),
+    scale_name = c("K1_Empathie", NA_character_, "IdenticalName"),
+    scale_short_label = c("Empathie", NA_character_, "IdenticalName"),
+    scale_max_value = c(4L, NA_integer_, 2L),
+    stringsAsFactors = FALSE
+  )
+  edge_tbl_html <- ui_to_html(build_coding_search_table_ui(ns, edge_tbl_df, lang = "en"))
+  expect_match(edge_tbl_html, "bg-info")
+  expect_match(edge_tbl_html, "bg-secondary")
+  expect_match(edge_tbl_html, "bg-warning")
+  expect_match(edge_tbl_html, "Short clinical text")
+  expect_match(edge_tbl_html, "Empathie")
+
+  # 5. fetch_consolidated_master_export() error fallback on empty DB without tables
+  con_empty_no_tbl <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_empty_no_tbl))
+  expect_message(
+    err_export <- fetch_consolidated_master_export(con_empty_no_tbl),
+    regexp = "Error executing master export"
+  )
+  expect_equal(nrow(err_export), 0L)
+
+  # 6. generate_stratified_training_pool() on legacy befund_text table & out-of-range scores (empty selected_pool)
+  con_leg <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_leg))
+  DBI::dbExecute(con_leg, "CREATE TABLE texts (text_id INT, text TEXT, befund_text TEXT, source_id INT);")
+  DBI::dbExecute(con_leg, "CREATE TABLE user_ratings (rating_id INT, user_id INT, text_id INT, kategorie TEXT, bewertung INT, typ TEXT);")
+  DBI::dbExecute(con_leg, "INSERT INTO texts VALUES (1, NULL, 'Legacy Befund Case', 1);")
+  DBI::dbExecute(con_leg, "INSERT INTO user_ratings VALUES (1, 1, 1, '1', 9, 'gold_standard');")
+
+  pool_out_range <- generate_stratified_training_pool(con_leg, "1", target_count = 2L, max_scale_value = 2L)
+  expect_equal(nrow(pool_out_range), 1L)
+  expect_equal(pool_out_range$case_text[1], "Legacy Befund Case")
+})
+
