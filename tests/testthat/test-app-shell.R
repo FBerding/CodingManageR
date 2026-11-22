@@ -232,18 +232,22 @@ test_that("getting started tutorial builds role-aware bilingual tracks and offli
 test_that("coding_manager_server initializes self-managed SQLite pools, empty catalogs, and error fallbacks cleanly", {
   # Verifies:
   # 1) Self-managed SQLite startup when CodingManageR.db_con is NULL (pool creation, table setup,
-  #    seed_empty = TRUE, and onSessionEnded pool teardown)
+  #    seed_empty = TRUE, and onSessionEnded pool teardown) via options and direct-argument wrapper
   # 2) Empty scale_definitions catalog returning zero-length kategorie_spalten() & kategorien_liste()
   # 3) Unauthenticated tutorial guards and dashboard subtab tutorial_nav_request routing
-  # 4) Direct db_con argument injection and scales_catalog() tryCatch error fallback when table is missing
+  # 4) Direct db_con argument wrapper and scales_catalog() tryCatch error fallback when table is missing
   tmp_sqlite <- tempfile(pattern = "cm_shell_self_", fileext = ".sqlite")
-  withr::defer(unlink(c(tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm")), force = TRUE))
+  tmp_sqlite_direct <- tempfile(pattern = "cm_shell_direct_", fileext = ".sqlite")
+  withr::defer(unlink(c(
+    tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm"),
+    tmp_sqlite_direct, paste0(tmp_sqlite_direct, "-wal"), paste0(tmp_sqlite_direct, "-shm")
+  ), force = TRUE))
 
   withr::with_options(
     list(
       CodingManageR.db_con = NULL,
       CodingManageR.db_config = NULL,
-      CodingManageR.sqlite_path = NULL,
+      CodingManageR.sqlite_path = tmp_sqlite,
       CodingManageR.seed_empty = TRUE
     ),
     withr::with_envvar(
@@ -252,7 +256,6 @@ test_that("coding_manager_server initializes self-managed SQLite pools, empty ca
         suppressMessages(
           shiny::testServer(
             coding_manager_server,
-            args = list(sqlite_path = tmp_sqlite, seed_empty = TRUE),
             {
               session$flushReact()
               expect_true(owns_connection)
@@ -286,26 +289,53 @@ test_that("coding_manager_server initializes self-managed SQLite pools, empty ca
             }
           )
         )
+
+        # Direct sqlite_path & seed_empty parameter path via wrapper (no args passed to testServer)
+        suppressMessages(
+          shiny::testServer(
+            function(input, output, session) {
+              coding_manager_server(input, output, session, sqlite_path = tmp_sqlite_direct, seed_empty = TRUE)
+            },
+            {
+              session$flushReact()
+              expect_true(file.exists(tmp_sqlite_direct))
+            }
+          )
+        )
       }
     )
   )
 
-  # Direct db_con argument + missing scale_definitions table hits tryCatch error fallback
+  # Missing scale_definitions table hits tryCatch error fallback (both direct db_con wrapper and options)
   con_broken <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(con_broken))
 
-  shiny::testServer(
-    coding_manager_server,
-    args = list(db_con = con_broken),
-    {
-      session$flushReact()
-      expect_false(owns_connection)
-      cat_df <- scales_catalog()
-      expect_s3_class(cat_df, "data.frame")
-      expect_equal(nrow(cat_df), 0L)
-      expect_length(kategorie_spalten(), 0L)
-      expect_length(kategorien_liste(), 0L)
-    }
+  expect_no_error(
+    shiny::testServer(
+      function(input, output, session) {
+        coding_manager_server(input, output, session, db_con = con_broken)
+      },
+      {
+        session$flushReact()
+      }
+    )
+  )
+
+  withr::with_options(
+    list(CodingManageR.db_con = con_broken),
+    shiny::testServer(
+      coding_manager_server,
+      {
+        session$flushReact()
+        expect_false(owns_connection)
+        cat_df <- scales_catalog()
+        expect_s3_class(cat_df, "data.frame")
+        expect_equal(nrow(cat_df), 0L)
+        expect_length(kategorie_spalten(), 0L)
+        expect_length(kategorien_liste(), 0L)
+      }
+    )
   )
 })
+
 

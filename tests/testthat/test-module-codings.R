@@ -206,7 +206,8 @@ test_that("kodierungenServer handles restricted-source sessions, zero coding sou
   #    exercises the IN (...) source-filter SQL branch inside ziehe_unbewerteten_fall()
   # 3) Coder with text source permission but ZERO coding source permissions renders no_coding_sources_err
   # 4) Scale with empty def_desc and empty def_n_0 exercises no-description fallbacks
-  # 5) Examples modal displaying a 'kodierung' (non-gold) rating on a text with source_id = NULL
+  # 5) Examples modal displaying a 'kodierung' (non-gold) rating on canonical DB (source_id = 1)
+  #    and a source-free text (source_id = NULL) in an isolated legacy SQLite DB
   db <- local_test_db(seeded = TRUE, empty = FALSE)
   con <- db$con
   user1_id <- get_user_info_db(con, "user1")$id
@@ -215,18 +216,18 @@ test_that("kodierungenServer handles restricted-source sessions, zero coding sou
   # Grant eva_lindner text source #1 ONLY (keep user_coding_source_permissions empty!)
   DBI::dbExecute(con, "INSERT INTO user_source_permissions (user_id, source_id) VALUES (?, 1)", params = list(eva_id))
 
-  # Add scale #5 with empty def_desc & empty def_n_0, plus a source-free text with a 'kodierung' rating
+  # Add scale #5 with empty def_desc & empty def_n_0, plus a canonical text (source_id = 1) with 'kodierung' rating
   DBI::dbExecute(
     con,
     "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
      VALUES (5, 'EmptyDesc', 'K5_EmptyDesc', 1, '', '', 'Defined')"
   )
   DBI::dbExecute(con, "INSERT INTO user_scale_permissions (user_id, scale_id) VALUES (?, 5)", params = list(user1_id))
-  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (960, 'Source-free live coding example.', NULL)")
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (960, 'Live coding example case.', 1)")
   DBI::dbExecute(
     con,
     "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id)
-     VALUES (1, 960, '5', 1, 'kodierung', NULL)"
+     VALUES (1, 960, '5', 1, 'kodierung', 1)"
   )
 
   scales_rx <- make_scale_reactives(con)
@@ -263,13 +264,13 @@ test_that("kodierungenServer handles restricted-source sessions, zero coding sou
       expect_true(nzchar(output$wert_definition))
       expect_true(nzchar(output$beschreibung_text_ui))
 
-      # 2. Examples modal on scale #5 level 1: 'kodierung' badge (bg-primary) & source_id = NULL
+      # 2. Examples modal on scale #5 level 1: 'kodierung' badge (bg-primary) with assigned source
       session$setInputs(modal_beispiel_kategorie = "5", modal_gewaehlte_stufe = "1")
       session$flushReact()
       ex_html <- ui_to_html(output$modal_beispiel_content)
       expect_match(ex_html, "bg-primary")
-      expect_match(ex_html, "Source-free live coding example")
-      expect_match(ex_html, "text-muted")
+      expect_match(ex_html, "Live coding example case")
+      expect_match(ex_html, "text-primary")
 
       # Return to config screen and switch to eva_lindner (has text source #1, 0 coding sources)
       session$setInputs(back_to_select_btn = 1L)
@@ -283,5 +284,42 @@ test_that("kodierungenServer handles restricted-source sessions, zero coding sou
       expect_match(ui_to_html(output$konfiguration_status_ui), "start_kodierung_disabled_btn")
     }
   )
+
+  # 3. Isolated legacy SQLite DB (nullable texts.source_id) -> covers no_source_assigned fallback
+  con_legacy <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_legacy))
+  DBI::dbExecute(con_legacy, "CREATE TABLE user_tokens (user_id INT, username TEXT, token TEXT, permissions TEXT, is_active INT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE sources (source_id INT, Kurzreferenz TEXT, Referenz TEXT, Lizenz TEXT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE texts (text_id INT, text TEXT, source_id INT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE scale_definitions (scale_id INT, short_label TEXT, name TEXT, max_value INT, def_desc TEXT, def_n_0 TEXT, def_n_1 TEXT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE user_ratings (rating_id INT, user_id INT, text_id INT, kategorie TEXT, bewertung INT, typ TEXT, source_id INT);")
+  DBI::dbExecute(con_legacy, "INSERT INTO user_tokens VALUES (1, 'admin', 'pw', 'admin', 1);")
+  DBI::dbExecute(con_legacy, "INSERT INTO scale_definitions VALUES (1, 'Leg', 'K1_Legacy', 1, '', '', 'Defined');")
+  DBI::dbExecute(con_legacy, "INSERT INTO texts VALUES (961, 'Source-free live coding example.', NULL);")
+  DBI::dbExecute(con_legacy, "INSERT INTO user_ratings VALUES (1, 1, 961, '1', 1, 'kodierung', NULL);")
+
+  leg_scales_rx <- make_scale_reactives(con_legacy)
+  shiny::testServer(
+    kodierungenServer,
+    args = list(
+      db_con = con_legacy,
+      user_id_reactive = shiny::reactiveVal(1L),
+      username_reactive = shiny::reactiveVal("admin"),
+      kategorie_spalten = leg_scales_rx$kategorie_spalten,
+      kategorien_liste = leg_scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      session$setInputs(modal_beispiel_kategorie = "1", modal_gewaehlte_stufe = "1")
+      session$flushReact()
+      leg_ex_html <- ui_to_html(output$modal_beispiel_content)
+      expect_match(leg_ex_html, "bg-primary")
+      expect_match(leg_ex_html, "Source-free live coding example")
+      expect_match(leg_ex_html, "text-muted")
+    }
+  )
 })
+
 

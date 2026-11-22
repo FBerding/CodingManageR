@@ -208,22 +208,23 @@ test_that("schulungServer handles rest-pool backfill, empty descriptions, scalar
   # 2) Starting training with kodiereinheiten > max_value + 1 (e.g., 6 units on max_value = 3)
   #    exercises the secondary rest_faelle backfill SQL query & rbind()
   # 3) Scale with empty def_desc and empty def_n_0 triggers no-description fallbacks
-  # 4) Examples modal displaying a 'kodierung' (non-gold) rating linked to a text with source_id = NULL
+  # 4) Examples modal displaying a 'kodierung' (non-gold) rating on canonical DB (source_id = 1)
+  #    and a source-free text (source_id = NULL) in an isolated legacy SQLite DB
   db <- local_test_db(seeded = TRUE, empty = FALSE)
   con <- db$con
   seed_full_gold_standards(con, scale_id = 2L, max_value = 3L)
 
-  # Scale #5 with empty def_desc / empty def_n_0 + one source-free text with a 'kodierung' rating
+  # Scale #5 with empty def_desc / empty def_n_0 + a canonical text (source_id = 1) with 'kodierung' rating
   DBI::dbExecute(
     con,
     "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
      VALUES (5, 'Bare', 'K5_BareScale', 1, '', '', 'Present')"
   )
-  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (950, 'Source-free training example case.', NULL)")
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (950, 'Training kodierung example case.', 1)")
   DBI::dbExecute(
     con,
     "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id)
-     VALUES (1, 950, '5', 1, 'kodierung', NULL)"
+     VALUES (1, 950, '5', 1, 'kodierung', 1)"
   )
 
   scales_rx <- make_scale_reactives(con)
@@ -258,18 +259,56 @@ test_that("schulungServer handles rest-pool backfill, empty descriptions, scalar
       session$flushReact()
       expect_true(schulung_gestartet())
       expect_equal(beschreibung_text(), "")
+      expect_match(ui_to_html(output$schulungs_bereich), "cm-case-text")
       session$setInputs(bewertung_slider = 0L)
       session$flushReact()
       expect_true(nzchar(output$wert_definition))
 
-      # 3. Examples modal for scale #5 level 1: 'kodierung' badge (bg-primary) + no_source_assigned
+      # 3. Examples modal for scale #5 level 1: 'kodierung' badge (bg-primary) with assigned source
       session$setInputs(modal_beispiel_kategorie = "5", modal_gewaehlte_stufe = "1")
       session$flushReact()
       ex_html <- ui_to_html(output$modal_beispiel_content)
       expect_match(ex_html, "bg-primary")
-      expect_match(ex_html, "Source-free training example case")
-      expect_match(ex_html, "text-muted")
+      expect_match(ex_html, "Training kodierung example case")
+      expect_match(ex_html, "text-primary")
+    }
+  )
+
+  # 4. Isolated legacy SQLite DB (nullable texts.source_id) -> covers no_source_assigned fallback
+  con_legacy <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_legacy))
+  DBI::dbExecute(con_legacy, "CREATE TABLE user_tokens (user_id INT, username TEXT, token TEXT, permissions TEXT, is_active INT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE sources (source_id INT, Kurzreferenz TEXT, Referenz TEXT, Lizenz TEXT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE texts (text_id INT, text TEXT, source_id INT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE scale_definitions (scale_id INT, short_label TEXT, name TEXT, max_value INT, def_desc TEXT, def_n_0 TEXT, def_n_1 TEXT);")
+  DBI::dbExecute(con_legacy, "CREATE TABLE user_ratings (rating_id INT, user_id INT, text_id INT, kategorie TEXT, bewertung INT, typ TEXT, source_id INT);")
+  DBI::dbExecute(con_legacy, "INSERT INTO user_tokens VALUES (1, 'admin', 'pw', 'admin', 1);")
+  DBI::dbExecute(con_legacy, "INSERT INTO scale_definitions VALUES (1, 'Leg', 'K1_Legacy', 1, '', '', 'Present');")
+  DBI::dbExecute(con_legacy, "INSERT INTO texts VALUES (951, 'Source-free training example case.', NULL);")
+  DBI::dbExecute(con_legacy, "INSERT INTO user_ratings VALUES (1, 1, 951, '1', 1, 'kodierung', NULL);")
+
+  leg_scales_rx <- make_scale_reactives(con_legacy)
+  shiny::testServer(
+    schulungServer,
+    args = list(
+      db_con = con_legacy,
+      user_id_reactive = shiny::reactiveVal(1L),
+      username_reactive = shiny::reactiveVal("admin"),
+      kategorie_spalten = leg_scales_rx$kategorie_spalten,
+      kategorien_liste = leg_scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = "en"
+    ),
+    {
+      session$setInputs(modal_beispiel_kategorie = "1", modal_gewaehlte_stufe = "1")
+      session$flushReact()
+      leg_ex_html <- ui_to_html(output$modal_beispiel_content)
+      expect_match(leg_ex_html, "bg-primary")
+      expect_match(leg_ex_html, "Source-free training example case")
+      expect_match(leg_ex_html, "text-muted")
     }
   )
 })
+
 

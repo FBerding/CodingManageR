@@ -17,44 +17,44 @@ knitr::opts_chunk$set(
 
 ## Welcome
 
-**CodingManageR** is an interactive web application built in R for qualitative text coding and coder training. You do not need to write code to use the portal—once it is installed and launched, everything works through a clean point-and-click interface in your browser.
+**CodingManageR** is a web app for qualitative text coding and coder training. You do not need to write code to use it. After you start the app, you work with simple menus and buttons in your web browser.
 
-This guide shows you:
+This guide shows you three things:
 
 1. How to install **CodingManageR** from **CRAN** or **GitHub**.
-2. How to launch the app on your own computer in under a minute.
-3. *(Optional, for IT administrators)* How to host the app on a Linux web server for an entire team.
+2. How to start the app on your own computer in under one minute.
+3. *(Optional, for IT administrators)* How to run the app on a Linux server for a team.
 
 ### Which Setup Do You Need?
 
 | Your situation | Recommended setup | Section to follow |
 | :--- | :--- | :--- |
-| You are working alone or testing the app on your own laptop/PC | **Local Mode (SQLite)** — zero database setup required | Sections 1 and 2 |
-| Several coders should sign in at the same time via a web link | **Multi-User Server Mode (Shiny Server + MariaDB)** | Sections 1 and 3 |
+| You work alone or test the app on your laptop or PC | **Local Mode (SQLite)** — no database server needed | Sections 1 and 2 |
+| Several coders sign in at the same time via a web link | **Multi-User Server Mode (Shiny Server + MariaDB)** | Sections 1 and 3 |
 
 ### Before You Start
 
-Make sure **R (version 4.1.0 or newer)** is installed on your computer. If you are new to R, we also recommend installing **RStudio Desktop** (free), which gives you an easy console window where you can paste the commands below and press **Enter**.
+Install **R (version 4.1.0 or newer)** on your computer first. If you are new to R, also install **RStudio Desktop** (free). RStudio gives you a simple console window. You can paste the commands below into that window and press **Enter**.
 
 ---
 
 ## 1. Installing CodingManageR
 
-Open R or RStudio and choose **one** of the two installation methods below. You only need to do this once on each computer.
+Open R or RStudio. Choose **one** of the two methods below. You only need to install the package once per computer.
 
 ### Option 1: Install from CRAN (Recommended)
 
-For most users, installing the official stable version from CRAN is the simplest and safest option:
+CRAN offers the official stable version. This is the easiest and safest choice for most users:
 
 ```{r}
 install.packages("CodingManageR")
 ```
 
-R will automatically download and install all required helper packages. Depending on your internet connection, this may take a few minutes the first time.
+R downloads and installs all helper packages for you. The first install can take a few minutes.
 
 ### Option 2: Install the Development Version from GitHub
 
-If you want the newest features before the next CRAN release, install directly from GitHub using either `pak` (recommended) or `remotes`:
+Want the newest features before the next CRAN release? Install the app from GitHub using `pak` (recommended) or `remotes`:
 
 ```{r}
 # Method A: using pak (recommended)
@@ -66,25 +66,25 @@ install.packages("remotes")
 remotes::install_github("FBerding/CodingManageR")
 ```
 
-> **Tip for R beginners:** If R asks whether to update already installed packages, pressing **Enter** (or choosing `"All"`) is usually safe.
+> **Tip for R beginners:** R may ask if you want to update older packages. Pressing **Enter** or choosing `"All"` is usually safe.
 
 ---
 
 ## 2. Launching on Your Own Computer (Local Mode)
 
-Local Mode stores your entire project (scales, texts, sources, users, and ratings) inside a single local **SQLite** database file on your computer. No separate database server is needed.
+In Local Mode, the app uses **SQLite**. SQLite is a simple database saved as a single file on your computer. It holds all your scales, texts, sources, users, and ratings. You do not need a separate database server.
 
 ### Step 1: Start a Clean Project
 
-Paste the following command into the R console and press **Enter**:
+Paste this command into the R console and press **Enter**:
 
 ```{r}
 CodingManageR::run_app()
 ```
 
-Your web browser (or RStudio viewer window) will open automatically and display the **CodingManageR** sign-in screen.
+Your browser or RStudio viewer opens automatically. You will see the **CodingManageR** sign-in screen.
 
-If you prefer to save your project database in a specific folder or file name (for example, inside your project folder), pass `sqlite_path` (or set the `SQLITE_PATH` environment variable):
+You can also choose a specific file name or folder for your project. Pass the path with `sqlite_path`, or set the `SQLITE_PATH` environment variable:
 
 ```{r}
 CodingManageR::run_app(sqlite_path = "my_coding_project.sqlite")
@@ -92,76 +92,76 @@ CodingManageR::run_app(sqlite_path = "my_coding_project.sqlite")
 
 ### Step 2: Optional — Try the App with Built-In Sample Data
 
-If you are using **CodingManageR** for the very first time and want to click around before setting up your own project, launch a temporary demo database with sample scales, example texts, and pre-built demo accounts:
+Are you using **CodingManageR** for the first time? You can try a demo database before you build your own project. Demo mode adds sample scales, example texts, and test accounts:
 
 ```{r}
 CodingManageR::run_app(sqlite_path = "coding_demo.sqlite", empty = FALSE)
 ```
 
-- Clean project start (`empty = TRUE`, default): creates all database tables and only the initial administrator account.
-- Sample demo start (`empty = FALSE`): also adds example scales, case texts, sources, gold-standard reference ratings, and a sample coder account (`user1` / `token2026`).
+- Clean project start (`empty = TRUE`, default): creates empty tables and only the first administrator account.
+- Sample demo start (`empty = FALSE`): also adds example scales, texts, sources, reference ratings, and a sample coder (`user1` / `token2026`).
 
 ### Step 3: Sign In and Change the Default Password
 
-On the very first launch of a new database, CodingManageR automatically creates an administrator account:
+When you start a new database for the first time, the app creates one administrator account:
 
 - **Username:** `admin`
 - **Access Token:** `geheim123`
 
-Sign in with these credentials, open **Admin Console -> User Management**, and change the `admin` access token right away.
+Sign in with this account. Then open **Admin Console -> User Management** and change the `admin` access token right away.
 
-> **New to CodingManageR?** Once signed in, click the **Getting Started** (*Erste Schritte*) button in the top-right header to launch an interactive spotlight walkthrough directly inside the interface.
+> **New to CodingManageR?** Click **Getting Started** (*Erste Schritte*) in the top-right header after you sign in. It starts an interactive step-by-step tour right inside the app.
 
 ### Step 4: Managing Multiple Local Projects
 
-In Local Mode, **one `.sqlite` file equals one completely independent project** with its own scales, sources, case texts, user accounts, ratings, and training history.
+In Local Mode, **one `.sqlite` file is one separate project**. Each file keeps its own scales, sources, case texts, user accounts, ratings, and training history.
 
-If you omit `sqlite_path` (`CodingManageR::run_app()`), CodingManageR always reopens the single default database in your R user data directory. To keep multiple studies, courses, or coding campaigns strictly separate, simply pass a different `sqlite_path` for each project:
+If you run `CodingManageR::run_app()` without `sqlite_path`, the app always opens the same default file in your R user folder. To keep different studies or courses separate, use a different `sqlite_path` for each project:
 
 ```{r}
-# Project A: creates (or reopens) "study_a.sqlite" in your working directory
+# Project A: creates (or opens) "study_a.sqlite" in your working folder
 CodingManageR::run_app(sqlite_path = "study_a.sqlite")
 
-# Project B: creates (or reopens) a completely separate database
+# Project B: creates (or opens) a second, separate database
 CodingManageR::run_app(sqlite_path = "study_b.sqlite")
 ```
 
-To organize each project in its own subfolder, create the folder first (SQLite creates new database files automatically only inside existing directories):
+Want to store a project in its own subfolder? Create the folder first. SQLite only creates new database files inside folders that already exist:
 
 ```{r}
 dir.create("projects/study_2026", recursive = TRUE, showWarnings = FALSE)
 CodingManageR::run_app(sqlite_path = "projects/study_2026/study_2026.sqlite")
 ```
 
-Passing the same `sqlite_path` again later reopens that exact project with all previously saved scales, texts, and ratings intact.
+To open the same project again later, run the command with the same `sqlite_path`. All saved scales, texts, and ratings will be there.
 
 #### Backing Up, Renaming, Moving, and Archiving Projects
 
-Because each project lives in a single `.sqlite` file, managing backups is straightforward—just follow one important rule:
+Each project lives in one `.sqlite` file, so backups are easy. Follow one important rule first:
 
-1. **Always stop the Shiny app first** (click the red Stop button in RStudio or press `Esc` / `Ctrl+C` in R). CodingManageR uses SQLite Write-Ahead Logging (`WAL`), which stores temporary sidecar files (`-wal` and `-shm`) while the app is open and merges them cleanly back into the `.sqlite` file when the app closes.
-2. **Back up or archive a snapshot:** Copy the `.sqlite` file to a backup drive or dated copy (for example `study_a_backup_2026-11-22.sqlite`).
-3. **Rename or move a project:** Rename the `.sqlite` file or move it into another folder in your file explorer, then launch it with the updated path: `CodingManageR::run_app(sqlite_path = "new_folder/renamed_project.sqlite")`.
-4. **Long-term research archiving:** Alongside your `.sqlite` snapshot, export your consolidated master CSV dataset and raw table CSVs in **Admin Console -> Data & Import/Export** so your coded data stays readable in any spreadsheet or statistics tool.
+1. **Always stop the app first.** Click the red Stop button in RStudio, or press `Esc` or `Ctrl+C` in R. While the app runs, SQLite uses **Write-Ahead Logging (WAL)**. WAL keeps recent changes in temporary helper files (`-wal` and `-shm`). Stopping the app saves those helper files cleanly back into your main `.sqlite` file.
+2. **Back up or archive a copy:** Copy the `.sqlite` file to a backup drive or save a dated copy (for example `study_a_backup_2026-11-22.sqlite`).
+3. **Rename or move a project:** Rename or move the `.sqlite` file in your file explorer. Then open it with the new path: `CodingManageR::run_app(sqlite_path = "new_folder/renamed_project.sqlite")`.
+4. **Long-term research archiving:** Also export your data as **CSV** files (simple table files for Excel, R, or SPSS). You can download them in **Admin Console -> Data & Import/Export**.
 
-> **Important:** Local SQLite files are intended for single-user desktop sessions. Do not share a single SQLite file simultaneously across multiple concurrent users on a network drive or web server—use the server setup below instead.
+> **Important:** Local SQLite files are only for one person on one computer. Do not share one `.sqlite` file with several users at the same time on a network drive. Use the server setup below for teams.
 
 ---
 
 ## 3. Optional: Multi-User Server Setup (For IT Administrators)
 
-> **Note:** Skip this entire section if you only run CodingManageR locally on your own computer. This section is intended for university IT staff or project administrators hosting CodingManageR for multiple simultaneous coders on an **Ubuntu** or **Debian** Linux server with **Shiny Server Open Source** and **MariaDB/MySQL**.
+> **Note:** Skip this section if you only use CodingManageR on your own computer. This section is for IT staff or project admins who host the app on an **Ubuntu** or **Debian** Linux server. It uses **Shiny Server Open Source** (the web server) and **MariaDB/MySQL** (the shared database).
 
 ### Step 1: Install System Packages and MariaDB
 
-Run the following commands on the server as a user with `sudo` privileges:
+Run these commands on the server with `sudo` rights:
 
 ```{bash}
 sudo apt update
 sudo apt install -y r-base r-base-dev libmariadb-dev libcurl4-openssl-dev libssl-dev libxml2-dev mariadb-server gdebi-core wget
 ```
 
-Enable and secure the MariaDB database service:
+Start MariaDB, enable it at boot, and run its security setup:
 
 ```{bash}
 sudo systemctl start mariadb
@@ -171,7 +171,7 @@ sudo mariadb-secure-installation
 
 ### Step 2: Install CodingManageR and RMariaDB System-Wide
 
-Install the packages into the system library so the `shiny` service user can load them.
+Install both packages into the system library. This lets the `shiny` service user load them.
 
 To install the stable release from **CRAN**:
 
@@ -179,7 +179,7 @@ To install the stable release from **CRAN**:
 sudo R -e 'install.packages(c("CodingManageR", "RMariaDB"), repos = "https://cloud.r-project.org")'
 ```
 
-Alternatively, to install the development version from **GitHub**:
+Or install the development version from **GitHub**:
 
 ```{bash}
 sudo R -e 'install.packages(c("remotes", "RMariaDB"), repos = "https://cloud.r-project.org"); remotes::install_github("FBerding/CodingManageR")'
@@ -187,13 +187,13 @@ sudo R -e 'install.packages(c("remotes", "RMariaDB"), repos = "https://cloud.r-p
 
 ### Step 3: Create the Database and Database User
 
-Open the MariaDB shell:
+Open the MariaDB command line:
 
 ```{bash}
 sudo mariadb
 ```
 
-Create the database and a dedicated database account. Replace `ChooseAStrongPassword` with a strong password of your choice:
+Create the database and a database user. Replace `ChooseAStrongPassword` with your own strong password:
 
 ```{sql}
 CREATE DATABASE IF NOT EXISTS kodierer_portal
@@ -208,7 +208,7 @@ EXIT;
 
 ### Step 4: Install Shiny Server Open Source
 
-Download and install Shiny Server (check the Posit website for the newest release number if desired):
+Download and install Shiny Server. You can check the Posit website for a newer version number if needed:
 
 ```{bash}
 wget https://download3.rstudio.org/ubuntu-20.04/x86_64/shiny-server-1.5.22.1017-amd64.deb
@@ -217,7 +217,7 @@ sudo gdebi shiny-server-1.5.22.1017-amd64.deb
 
 ### Step 5: Deploy the Application Entrypoint
 
-Create an application folder inside `/srv/shiny-server/` and copy the ready-to-use `app.R` launcher bundled inside **CodingManageR**:
+Create a folder inside `/srv/shiny-server/`. Copy the ready-to-use `app.R` launcher from **CodingManageR** into that folder:
 
 ```{bash}
 sudo mkdir -p /srv/shiny-server/codingmanager
@@ -227,13 +227,13 @@ sudo chown -R shiny:shiny /srv/shiny-server/codingmanager
 
 ### Step 6: Configure Database Credentials and Restart
 
-Create an `.Renviron` file inside the application folder so CodingManageR connects automatically to MariaDB instead of SQLite:
+Create an `.Renviron` file inside the app folder. This tells CodingManageR to connect to MariaDB instead of SQLite:
 
 ```{bash}
 sudo nano /srv/shiny-server/codingmanager/.Renviron
 ```
 
-Paste these lines using the password chosen in Step 3:
+Paste these lines and enter the password from Step 3:
 
 ```ini
 MYSQL_HOST=127.0.0.1
@@ -243,7 +243,7 @@ MYSQL_PASSWORD=ChooseAStrongPassword
 MYSQL_DBNAME=kodierer_portal
 ```
 
-Restrict file permissions so only the `shiny` service account can read the password, then restart Shiny Server:
+Lock the file permissions so only the `shiny` user can read the password. Then restart Shiny Server:
 
 ```{bash}
 sudo chown shiny:shiny /srv/shiny-server/codingmanager/.Renviron
@@ -251,13 +251,13 @@ sudo chmod 600 /srv/shiny-server/codingmanager/.Renviron
 sudo systemctl restart shiny-server
 ```
 
-Open `http://<server-ip>:3838/codingmanager/` in your browser. On the very first launch, CodingManageR automatically creates all 9 relational tables in MariaDB and sets up the initial `admin` account (access token `geheim123`). Sign in and change this default token immediately.
+Open `http://<server-ip>:3838/codingmanager/` in a web browser. On the first visit, CodingManageR creates all 9 database tables in MariaDB automatically. It also creates the `admin` account with token `geheim123`. Sign in and change that password right away.
 
 ---
 
 ## Next Steps
 
-Once CodingManageR is running, open the step-by-step workflow guide to set up your scales, case texts, sources, coders, training runs, and exports:
+Now that CodingManageR is running, open the step-by-step workflow guide. It shows how to set up scales, texts, sources, coders, training sessions, and exports:
 
 ```{r}
 vignette("introduction", package = "CodingManageR")
