@@ -1000,8 +1000,15 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
       if (is.null(sel_scales) || length(sel_scales) == 0 ||
           is.null(sel_sources) || length(sel_sources) == 0 ||
           is.null(sel_users) || length(sel_users) == 0) {
-        showNotification(tr("admin.export_err_missing_group", lang), type = "warning")
-        return(NULL)
+        notice_msg <- tr("admin.export_err_missing_group", lang)
+        showNotification(notice_msg, type = "warning")
+        write.csv2(
+          data.frame(notice = notice_msg, stringsAsFactors = FALSE),
+          file,
+          row.names = FALSE,
+          fileEncoding = "UTF-8"
+        )
+        return(invisible(NULL))
       }
 
       # 1. Query case texts with their assigned text source

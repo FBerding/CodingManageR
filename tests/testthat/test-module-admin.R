@@ -736,7 +736,7 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$setInputs(texts_search_query = "zzz_no_matching_text_999")
       session$flushReact()
       expect_match(ui_to_html(output$texts_management_table_container), "alert-warning")
-      expect_null(output$texts_pagination_controls)
+      expect_equal(ui_to_html(output$texts_pagination_controls), "")
       session$setInputs(texts_search_query = "")
       session$flushReact()
 
@@ -919,7 +919,13 @@ test_that("adminServer covers export filter modal searches, zero-selection warni
       expect_match(ui_to_html(output$export_sources_status_badge), "bg-warning")
       expect_match(ui_to_html(output$export_users_status_badge), "bg-warning")
       expect_match(ui_to_html(output$export_filter_summary_badge), "bg-warning")
-      expect_no_error(invisible(output$download_master_dataset_btn))
+      missing_csv <- output$download_master_dataset_btn
+      expect_true(file.exists(missing_csv))
+      expect_match(
+        paste(readLines(missing_csv, warn = FALSE, encoding = "UTF-8"), collapse = "\n"),
+        tr("admin.export_err_missing_group", "en"),
+        fixed = TRUE
+      )
 
       # 3. Upload error paths: missing source_id column & transaction failure on duplicate PK
       session$setInputs(upload_texts_file = list(datapath = csv_texts_no_src, name = "no_src.csv"))

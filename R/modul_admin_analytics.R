@@ -181,23 +181,23 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
       res <- merge(res, training_all, by = "user_id", all.x = TRUE)
     } else {
       res$n_sessions <- 0
-      res$avg_kappa_all <- NA
-      res$avg_alpha_all <- NA
-      res$avg_alpha_ord_all <- NA
-      res$avg_fleiss_all <- NA
-      res$avg_kappa_lin_all <- NA
-      res$avg_kappa_sq_all <- NA
-      res$avg_gwet_all <- NA
-      res$avg_gwet2_all <- NA
-      res$avg_kendall_all <- NA
-      res$avg_iota_all <- NA
-      res$avg_iota_idx_all <- NA
-      res$avg_accuracy_all <- NA
-      res$avg_bal_acc_all <- NA
-      res$avg_f1_all <- NA
-      res$avg_prec_all <- NA
-      res$avg_rec_all <- NA
-      res$letztes_training <- NA
+      res$avg_kappa_all <- NA_real_
+      res$avg_alpha_all <- NA_real_
+      res$avg_alpha_ord_all <- NA_real_
+      res$avg_fleiss_all <- NA_real_
+      res$avg_kappa_lin_all <- NA_real_
+      res$avg_kappa_sq_all <- NA_real_
+      res$avg_gwet_all <- NA_real_
+      res$avg_gwet2_all <- NA_real_
+      res$avg_kendall_all <- NA_real_
+      res$avg_iota_all <- NA_real_
+      res$avg_iota_idx_all <- NA_real_
+      res$avg_accuracy_all <- NA_real_
+      res$avg_bal_acc_all <- NA_real_
+      res$avg_f1_all <- NA_real_
+      res$avg_prec_all <- NA_real_
+      res$avg_rec_all <- NA_real_
+      res$letztes_training <- NA_character_
     }
     res$n_sessions[is.na(res$n_sessions)] <- 0
 
@@ -205,23 +205,23 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
       res <- merge(res, training_scale, by = "user_id", all.x = TRUE)
     } else if (kat_sel != "all") {
       res$n_scale_sessions <- 0
-      res$avg_kappa <- NA
-      res$avg_alpha <- NA
-      res$avg_alpha_ord <- NA
-      res$avg_fleiss <- NA
-      res$avg_kappa_lin <- NA
-      res$avg_kappa_sq <- NA
-      res$avg_gwet <- NA
-      res$avg_gwet2 <- NA
-      res$avg_kendall <- NA
-      res$avg_iota <- NA
-      res$avg_iota_idx <- NA
-      res$avg_accuracy <- NA
-      res$avg_bal_acc <- NA
-      res$avg_f1 <- NA
-      res$avg_prec <- NA
-      res$avg_rec <- NA
-      res$letztes_training_scale <- NA
+      res$avg_kappa <- NA_real_
+      res$avg_alpha <- NA_real_
+      res$avg_alpha_ord <- NA_real_
+      res$avg_fleiss <- NA_real_
+      res$avg_kappa_lin <- NA_real_
+      res$avg_kappa_sq <- NA_real_
+      res$avg_gwet <- NA_real_
+      res$avg_gwet2 <- NA_real_
+      res$avg_kendall <- NA_real_
+      res$avg_iota <- NA_real_
+      res$avg_iota_idx <- NA_real_
+      res$avg_accuracy <- NA_real_
+      res$avg_bal_acc <- NA_real_
+      res$avg_f1 <- NA_real_
+      res$avg_prec <- NA_real_
+      res$avg_rec <- NA_real_
+      res$letztes_training_scale <- NA_character_
     } else {
       res$n_scale_sessions <- res$n_sessions
       res$avg_kappa <- res$avg_kappa_all

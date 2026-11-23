@@ -77,9 +77,11 @@ jobs:
           SUBLOG_DIR="$STAGE_DIR/logs"
           LOG_FILE="$STAGE_DIR/covr-diagnostics.log"
           SUMMARY_TSV="$STAGE_DIR/summary_rows.tsv"
+          FAILED_SHARDS_TSV="$STAGE_DIR/failed_shards.tsv"
           rm -rf "$STAGE_DIR"
           mkdir -p "$SHARD_DIR" "$SUBLOG_DIR"
           : > "$SUMMARY_TSV"
+          : > "$FAILED_SHARDS_TSV"
 
           log_msg() {
             local ts
@@ -288,6 +290,9 @@ jobs:
           mapfile -t TEST_FILES < <(find tests/testthat -maxdepth 1 -type f -name 'test-*.R' ! -name 'test-shinytest2-e2e.R' | sort)
           log_msg "Discovered ${#TEST_FILES[@]} non-E2E test files for isolated covr execution."
 
+          FAILED_COUNT=0
+          FIRST_FAIL_RC=0
+
           for tf in "${TEST_FILES[@]}"; do
             base="$(basename "$tf")"
             stem="${base#test-}"
@@ -301,18 +306,22 @@ jobs:
             t_end="$(date +%s)"
             wall_s=$((t_end - t_start))
             if [ "$rc" -ne 0 ]; then
+              FAILED_COUNT=$((FAILED_COUNT + 1))
+              if [ "$FIRST_FAIL_RC" -eq 0 ]; then
+                FIRST_FAIL_RC="$rc"
+              fi
               log_msg "!!! FAILURE: ${base} exited with code ${rc} after ${wall_s}s"
               printf '%s\tFAIL (exit %s)\t%ss\t-\t-\n' "$base" "$rc" "$wall_s" >> "$SUMMARY_TSV"
-              printf '%s\t%s\n' "$base" "$rc" > "$STAGE_DIR/failure_meta.tsv"
+              printf '%s\t%s\t%s\n' "$base" "$rc" "$stem" >> "$FAILED_SHARDS_TSV"
               start_ln="$(awk '/Failed tests|Failure|Error|Backtrace:|FAIL [0-9]+/ { print NR; exit }' "$sublog" || true)"
               if [ -n "$start_ln" ]; then
-                tail -n +"$start_ln" "$sublog" | tail -n 80 > "$STAGE_DIR/failure_excerpt.txt" || true
+                tail -n +"$start_ln" "$sublog" | tail -n 80 > "$STAGE_DIR/failure_excerpt_${stem}.txt" || true
               else
-                tail -n 80 "$sublog" > "$STAGE_DIR/failure_excerpt.txt" || true
+                tail -n 80 "$sublog" > "$STAGE_DIR/failure_excerpt_${stem}.txt" || true
               fi
               printf '::error file=tests/testthat/%s,title=test-coverage failed in %s::Subprocess exited with code %s after %ss. See Job Summary for extracted testthat failure details.\n' "$base" "$base" "$rc" "$wall_s"
               free -m | tee -a "$LOG_FILE"
-              exit "$rc"
+              continue
             fi
             if [ -f "$metrics_file" ]; then
               IFS=$'\t' read -r m_elapsed m_rss m_cov < "$metrics_file"
@@ -324,6 +333,11 @@ jobs:
             log_msg "<<< Subprocess for ${base} exited cleanly (available runner RAM: ${avail_mb} MB)"
           done
 
+          if [ "$FAILED_COUNT" -gt 0 ]; then
+            log_msg "=== Completed all ${#TEST_FILES[@]} test shards with ${FAILED_COUNT} failure(s); skipping coverage merge ==="
+            exit "${FIRST_FAIL_RC:-1}"
+          fi
+
           log_msg ">>> Merging all per-file coverage shards into ./cobertura.xml"
           Rscript "$STAGE_DIR/merge_covr.R" "$STAGE_DIR" 2>&1 | tee -a "$LOG_FILE"
           log_msg "=== Per-file covr coverage run completed successfully ==="
@@ -334,12 +348,14 @@ jobs:
         run: |
           STAGE_DIR="${COVR_STAGE_DIR:-/tmp/covr-ci}"
           SUMMARY_TSV="$STAGE_DIR/summary_rows.tsv"
+          FAILED_SHARDS_TSV="$STAGE_DIR/failed_shards.tsv"
           {
             echo "## CodingManageR Test Coverage Summary"
             echo ""
-            if [ -f "$STAGE_DIR/failure_meta.tsv" ]; then
-              IFS=$'\t' read -r fail_file fail_rc < "$STAGE_DIR/failure_meta.tsv"
-              echo "> **Status:** Failed in \`tests/testthat/${fail_file}\` (exit code \`${fail_rc}\`)"
+            if [ -s "$FAILED_SHARDS_TSV" ]; then
+              fail_n="$(wc -l < "$FAILED_SHARDS_TSV" | tr -d ' ')"
+              fail_list="$(awk -F'\t' '{ printf "%s`tests/testthat/%s` (exit `%s`)", (NR>1 ? ", " : ""), $1, $2 }' "$FAILED_SHARDS_TSV")"
+              echo "> **Status:** Failed in ${fail_n} shard(s): ${fail_list}"
             elif [ -f "$STAGE_DIR/combined_summary.md" ]; then
               echo "> **Status:** Passed (all isolated test shards completed and merged)"
             else
@@ -356,14 +372,20 @@ jobs:
               done < "$SUMMARY_TSV"
               echo ""
             fi
-            if [ -f "$STAGE_DIR/failure_excerpt.txt" ]; then
-              IFS=$'\t' read -r fail_file fail_rc < "$STAGE_DIR/failure_meta.tsv"
-              echo "### Failure Details (\`tests/testthat/${fail_file}\`)"
-              echo ""
-              echo '```text'
-              cat "$STAGE_DIR/failure_excerpt.txt"
-              echo '```'
-              echo ""
+            if [ -s "$FAILED_SHARDS_TSV" ]; then
+              while IFS=$'\t' read -r fail_file fail_rc fail_stem; do
+                excerpt_file="$STAGE_DIR/failure_excerpt_${fail_stem}.txt"
+                echo "### Failure Details (\`tests/testthat/${fail_file}\`, exit code \`${fail_rc}\`)"
+                echo ""
+                if [ -f "$excerpt_file" ]; then
+                  echo '```text'
+                  cat "$excerpt_file"
+                  echo '```'
+                else
+                  echo "_No failure excerpt captured._"
+                fi
+                echo ""
+              done < "$FAILED_SHARDS_TSV"
             fi
             if [ -f "$STAGE_DIR/combined_summary.md" ]; then
               cat "$STAGE_DIR/combined_summary.md"
