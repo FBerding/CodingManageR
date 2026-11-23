@@ -644,7 +644,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
 
       if (length(ergebnis_liste) == 0) return(data.frame())
       do.call(rbind, ergebnis_liste)
-    }, width = "100%", stripes = TRUE, spacing = "m", align = "lcccc")
+    }, width = "100%", striped = TRUE, spacing = "m", align = "lcccc")
 
     # --------------------------------------------------------------------------
     # TAB 2: SCALE OVERVIEW & REQUIREMENTS (CARD VIEW & DETAILS)

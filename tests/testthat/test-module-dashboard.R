@@ -248,7 +248,7 @@ test_that("dashboardServer handles scalar current_lang, NA training dates, empty
       # Empty scales table renders 0 count, empty alert, and empty breakdown table
       expect_match(ui_to_html(output$dashboard_scales_count), "0")
       expect_match(ui_to_html(output$dashboard_scales_cards), "alert-light")
-      expect_true(is.character(output$kategorie_breakdown_table))
+      expect_null(output$kategorie_breakdown_table)
     }
   )
 
