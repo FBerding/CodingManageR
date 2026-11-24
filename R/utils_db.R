@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Database operations and permission utilities for CodingManageR
 # DBI is imported via NAMESPACE
 

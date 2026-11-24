@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # DATABASE CONNECTION AND POOL CONFIGURATION (db_connection.R)
 # ==============================================================================

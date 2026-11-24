@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Data export, schema validation, and CSV download utilities
 # DBI is imported via NAMESPACE
 

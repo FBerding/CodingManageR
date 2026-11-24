@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # ADMIN MODULE FOR R SHINY (HORIZONTAL TABS WITH 25-ITEM PAGINATION)
 # ==============================================================================

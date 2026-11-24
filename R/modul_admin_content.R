@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # ADMIN MODULE SERVER HELPERS: TEXTS, SOURCES & SCALES (TABS 2-4)
 # ==============================================================================

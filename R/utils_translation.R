@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Internationalization (i18n) and translation utilities
 
 #' Internal Cache Environment for Parsed Translations

@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # CODING MODULE FOR R SHINY (FLEXIBLE CASE SELECTION: RANDOM VS. TEXT SOURCE)
 # ==============================================================================

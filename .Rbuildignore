@@ -14,3 +14,4 @@
 ^cobertura\.xml$
 ^\.aistudio$
 ^tools$
+^public$

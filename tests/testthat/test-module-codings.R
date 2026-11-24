@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Module Server & UI Tests: Live Case Coding Module
 # Covers: R/modul_codings.R (kodierungenUI and kodierungenServer)

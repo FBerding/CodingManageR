@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 #' CodingManageR Shiny Application Entrypoint
 #'
 #' Provides CRAN-compliant exported functions [coding_manager_ui()],
@@ -25,12 +27,14 @@ NULL
 #' @export
 coding_manager_ui <- function(lang = "de") {
   init_lang <- detect_browser_language(lang, fallback = "de")
+  coding_manager_register_assets()
 
   fluidPage(
     theme = coding_manager_theme(),
     title = "CodingManageR",
     tags$head(
       tags$title("CodingManageR"),
+      tags$link(rel = "icon", type = "image/png", href = "cm-assets/favicon.png"),
       coding_manager_css(),
       coding_manager_tutorial_assets(),
       tags$script(HTML("
@@ -406,7 +410,15 @@ coding_manager_server <- function(input, output, session,
             class = "cm-login-card",
             div(
               class = "cm-login-header",
-              tags$span(class = "cm-brand", "CodingManageR"),
+              div(
+                class = "cm-brand-wrap",
+                tags$img(
+                  src = "cm-assets/logo.png",
+                  class = "cm-brand-logo cm-brand-logo--login",
+                  alt = "CodingManageR logo"
+                ),
+                tags$span(class = "cm-brand", "CodingManageR")
+              ),
               language_selector_ui("login_language", current_lang = lang)
             ),
             div(
@@ -480,7 +492,15 @@ coding_manager_server <- function(input, output, session,
         class = "cm-header",
         div(
           class = "cm-header-left",
-          tags$span(class = "cm-brand", "CodingManageR"),
+          div(
+            class = "cm-brand-wrap",
+            tags$img(
+              src = "cm-assets/logo.png",
+              class = "cm-brand-logo",
+              alt = "CodingManageR logo"
+            ),
+            tags$span(class = "cm-brand", "CodingManageR")
+          ),
           div(
             class = "cm-header-meta",
             tags$span(class = "font-monospace", tr("header.user_badge", lang, u_name, as.character(u_id))),

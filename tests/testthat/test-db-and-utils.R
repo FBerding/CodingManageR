@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Unit & Integration Tests: Database Helper Utilities
 # Covers: R/utils_db.R
@@ -180,7 +182,7 @@ test_that("search_case_codings_db filters by scale, type, and multi-field search
   expect_gt(nrow(by_scale_id), 0L)
   expect_true(all(by_scale_id$resolved_scale_id == 2L))
 
-  by_scale_name <- search_case_codings_db(con, scale_filter = "K2_Struktur")
+  by_scale_name <- search_case_codings_db(con, scale_filter = "S2_Instructional_Structure")
   expect_equal(nrow(by_scale_name), nrow(by_scale_id))
 
   # Filter by rating type
@@ -196,7 +198,7 @@ test_that("search_case_codings_db filters by scale, type, and multi-field search
   expect_equal(nrow(by_user), 5L)
   expect_true(all(by_user$username == "eva_lindner"))
 
-  by_text <- search_case_codings_db(con, search_query = "Cephalgie")
+  by_text <- search_case_codings_db(con, search_query = "photosynthesis")
   expect_gt(nrow(by_text), 0L)
   expect_true(all(by_text$text_id == 102L))
 

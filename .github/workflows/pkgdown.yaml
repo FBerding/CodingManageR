@@ -73,21 +73,26 @@ jobs:
             pkgdown::build_site(devel = FALSE, install = FALSE, preview = FALSE)
           '
 
-      - name: Verify pkgdown articles and figure assets in docs/
+      - name: Verify pkgdown articles, logo, favicons, and EN/DE figure assets in docs/
         shell: bash
         run: |
           set -euo pipefail
           test -f docs/index.html
+          test -f docs/logo.png
+          test -f docs/favicon.ico
+          test -f docs/favicon-32x32.png
           test -f docs/articles/CodingManageR.html
           test -f docs/articles/introduction.html
+          test -f docs/articles/CodingManageR-de.html
+          test -f docs/articles/introduction-de.html
 
           shopt -s nullglob
-          src_pngs=(vignettes/figures/*.png)
-          if [ "${#src_pngs[@]}" -gt 0 ]; then
-            for png in "${src_pngs[@]}"; do
+          src_en_pngs=(vignettes/figures/*.png)
+          if [ "${#src_en_pngs[@]}" -gt 0 ]; then
+            for png in "${src_en_pngs[@]}"; do
               base="$(basename "$png")"
               if [ ! -f "docs/articles/figures/${base}" ]; then
-                echo "Missing figure asset in pkgdown output: docs/articles/figures/${base}" >&2
+                echo "Missing EN figure asset in pkgdown output: docs/articles/figures/${base}" >&2
                 exit 1
               fi
             done
@@ -96,7 +101,23 @@ jobs:
             grep -q "Figure 1:" docs/articles/introduction.html
             grep -q "Figure 12:" docs/articles/introduction.html
           fi
-          echo "Verified pkgdown build in docs/ (${#src_pngs[@]} vignette figure asset(s))."
+
+          src_de_pngs=(vignettes/figures-de/*.png)
+          if [ "${#src_de_pngs[@]}" -gt 0 ]; then
+            for png in "${src_de_pngs[@]}"; do
+              base="$(basename "$png")"
+              if [ ! -f "docs/articles/figures-de/${base}" ]; then
+                echo "Missing DE figure asset in pkgdown output: docs/articles/figures-de/${base}" >&2
+                exit 1
+              fi
+            done
+            grep -q "Abbildung 1:" docs/articles/CodingManageR-de.html
+            grep -q "Abbildung 2:" docs/articles/CodingManageR-de.html
+            grep -q "Abbildung 1:" docs/articles/introduction-de.html
+            grep -q "Abbildung 12:" docs/articles/introduction-de.html
+          fi
+
+          echo "Verified pkgdown build in docs/ (logo, favicons, ${#src_en_pngs[@]} EN and ${#src_de_pngs[@]} DE vignette figure assets)."
 
       - name: Commit and push updated docs/ to branch
         shell: bash

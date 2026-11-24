@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 #' Compute Inter-Rater Reliability Metrics via `aifeducation`
 #'
 #' Computes 16 inter-rater reliability, agreement, and classification metrics

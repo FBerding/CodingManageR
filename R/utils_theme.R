@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # DETERMINISTIC UNIVERSITY PLATFORM THEME & STYLESHEET HELPERS
 # ==============================================================================
@@ -6,10 +8,34 @@
 # web deployments without any external font or CDN dependencies.
 # ==============================================================================
 
+#' Resolve and Register Bundled Shiny Static Assets
+#'
+#' Registers the package `inst/www` directory under the `"cm-assets"` Shiny
+#' resource prefix so the bundled hex logo and favicon load deterministically
+#' offline in both installed package and development (`pkgload::load_all()`)
+#' sessions.
+#'
+#' @return Character string resource prefix (`"cm-assets"`), invisibly.
+#' @keywords internal
+#' @noRd
+coding_manager_register_assets <- function() {
+  asset_dir <- system.file("www", package = "CodingManageR")
+  if (!nzchar(asset_dir) || !dir.exists(asset_dir)) {
+    dev_dir <- file.path("inst", "www")
+    if (dir.exists(dev_dir)) {
+      asset_dir <- normalizePath(dev_dir, winslash = "/", mustWork = FALSE)
+    }
+  }
+  if (nzchar(asset_dir) && dir.exists(asset_dir)) {
+    shiny::addResourcePath("cm-assets", asset_dir)
+  }
+  invisible("cm-assets")
+}
+
 #' Build Explicit Bootstrap 5 University Platform Theme
 #'
-#' Constructs a deterministic `bslib::bs_theme()` pinned to Classic University
-#' Navy (`#1B365D`) and Cool Slate (`#F6F8FA` / `#FFFFFF`) tokens using an
+#' Constructs a deterministic `bslib::bs_theme()` pinned to Scholarly Indigo
+#' (`#33418F`) and Cool Indigo Slate (`#F6F7FB` / `#FFFFFF`) tokens using an
 #' offline cross-platform system font stack and `bootswatch = NULL` so local
 #' and web deployments render identically.
 #'
@@ -23,16 +49,16 @@ coding_manager_theme <- function() {
   bslib::bs_theme(
     version = 5,
     bootswatch = NULL,
-    bg = "#F6F8FA",
+    bg = "#F6F7FB",
     fg = "#1F2937",
-    primary = "#1B365D",
-    secondary = "#526071",
+    primary = "#33418F",
+    secondary = "#525B70",
     success = "#166534",
-    info = "#1E40AF",
+    info = "#3730A3",
     warning = "#92400E",
     danger = "#991B1B",
-    light = "#EEF2F6",
-    dark = "#1B365D",
+    light = "#EEF0F6",
+    dark = "#33418F",
     base_font = sans_stack,
     heading_font = sans_stack,
     code_font = mono_stack,
@@ -42,15 +68,15 @@ coding_manager_theme <- function() {
     "border-radius-sm" = "0.25rem",
     "border-radius-lg" = "0.5rem",
     "card-bg" = "#FFFFFF",
-    "card-border-color" = "#D8E0EA",
+    "card-border-color" = "#D9DDEA",
     "input-bg" = "#FFFFFF",
-    "input-border-color" = "#C2CDD9",
-    "input-focus-border-color" = "#1B365D",
-    "table-border-color" = "#E2E8F0",
-    "link-color" = "#1B365D",
-    "link-hover-color" = "#142947",
+    "input-border-color" = "#C2C8DC",
+    "input-focus-border-color" = "#33418F",
+    "table-border-color" = "#E2E5F0",
+    "link-color" = "#33418F",
+    "link-hover-color" = "#26316E",
     "headings-font-weight" = "600",
-    "headings-color" = "#16243A"
+    "headings-color" = "#1C234A"
   )
 }
 
@@ -67,18 +93,21 @@ coding_manager_theme <- function() {
 coding_manager_css <- function() {
   shiny::tags$style(shiny::HTML("
     :root {
-      --cm-bg-canvas: #F6F8FA;
+      --cm-bg-canvas: #F6F7FB;
       --cm-bg-surface: #FFFFFF;
-      --cm-bg-subtle: #EEF2F6;
-      --cm-bg-reading: #F8FAFC;
-      --cm-border: #D8E0EA;
-      --cm-border-strong: #C2CDD9;
+      --cm-bg-subtle: #EEF0F6;
+      --cm-bg-reading: #F8F9FC;
+      --cm-border: #D9DDEA;
+      --cm-border-strong: #C2C8DC;
       --cm-ink: #1F2937;
-      --cm-ink-heading: #16243A;
-      --cm-ink-muted: #526071;
-      --cm-navy: #1B365D;
-      --cm-navy-hover: #142947;
-      --cm-navy-soft: #EBF0F7;
+      --cm-ink-heading: #1C234A;
+      --cm-ink-muted: #525B70;
+      --cm-indigo: #33418F;
+      --cm-indigo-hover: #26316E;
+      --cm-indigo-soft: #EEF0FA;
+      --cm-navy: #33418F;
+      --cm-navy-hover: #26316E;
+      --cm-navy-soft: #EEF0FA;
       --cm-success: #166534;
       --cm-success-bg: #ECFDF3;
       --cm-success-border: #BBF7D0;
@@ -88,12 +117,12 @@ coding_manager_css <- function() {
       --cm-danger: #991B1B;
       --cm-danger-bg: #FEF2F2;
       --cm-danger-border: #FECACA;
-      --cm-info: #1E40AF;
-      --cm-info-bg: #EFF6FF;
-      --cm-info-border: #BFDBFE;
+      --cm-info: #3730A3;
+      --cm-info-bg: #EEF2FF;
+      --cm-info-border: #C7D2FE;
       --cm-radius: 6px;
       --cm-radius-sm: 4px;
-      --cm-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --cm-shadow-xs: 0 1px 2px rgba(28, 35, 74, 0.04);
       --cm-max-width: 1280px;
       --cm-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Liberation Sans', 'Helvetica Neue', Arial, sans-serif;
       --cm-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -230,15 +259,33 @@ coding_manager_css <- function() {
     .cm-header-left {
       display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
       min-width: 0;
+    }
+
+    .cm-brand-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .cm-brand-logo {
+      height: 34px;
+      width: auto;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .cm-brand-logo--login {
+      height: 38px;
     }
 
     .cm-brand {
       font-size: 1.125rem;
       font-weight: 700;
-      color: var(--cm-navy);
+      color: var(--cm-indigo);
       letter-spacing: -0.015em;
       white-space: nowrap;
       flex-shrink: 0;
@@ -311,9 +358,9 @@ coding_manager_css <- function() {
 
     .cm-main-nav > .tabbable > .nav-tabs > .nav-item > .nav-link:hover,
     .cm-module-section .nav-tabs > .nav-item > .nav-link:hover {
-      color: var(--cm-navy);
+      color: var(--cm-indigo);
       border-bottom-color: var(--cm-border-strong);
-      background-color: rgba(27, 54, 93, 0.03);
+      background-color: rgba(51, 65, 143, 0.04);
     }
 
     .cm-main-nav > .tabbable > .nav-tabs > .nav-item > .nav-link.active,
@@ -484,7 +531,7 @@ coding_manager_css <- function() {
     }
 
     .cm-app .table-hover > tbody > tr:hover > * {
-      background-color: #F8FAFC;
+      background-color: #F8F9FC;
     }
 
     /* Restrained Badges & Semantic Alerts */
@@ -497,9 +544,9 @@ coding_manager_css <- function() {
 
     .cm-app .badge.bg-primary,
     .cm-app .badge.bg-dark {
-      background-color: var(--cm-navy-soft) !important;
-      color: var(--cm-navy) !important;
-      border: 1px solid #C8D6E8;
+      background-color: var(--cm-indigo-soft) !important;
+      color: var(--cm-indigo) !important;
+      border: 1px solid #C7CEE8;
     }
 
     .cm-app .badge.bg-secondary {
@@ -606,9 +653,9 @@ coding_manager_css <- function() {
     .cm-app .form-control:focus,
     .cm-app .form-select:focus,
     .cm-app select:focus-visible {
-      outline: 2px solid var(--cm-navy);
+      outline: 2px solid var(--cm-indigo);
       outline-offset: 1px;
-      box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.16);
+      box-shadow: 0 0 0 3px rgba(51, 65, 143, 0.18);
     }
 
     .cm-pagination-bar {
@@ -622,7 +669,7 @@ coding_manager_css <- function() {
     .modal-content {
       border: 1px solid var(--cm-border);
       border-radius: var(--cm-radius);
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+      box-shadow: 0 12px 32px rgba(28, 35, 74, 0.14);
     }
 
     .modal-header {

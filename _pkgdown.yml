@@ -1,6 +1,21 @@
 url: https://fberding.github.io/CodingManageR/
 template:
   bootstrap: 5
+  bslib:
+    bg: "#FFFFFF"
+    fg: "#1F2937"
+    primary: "#33418F"
+    secondary: "#525B70"
+    link-color: "#33418F"
+    link-hover-color: "#26316E"
+    headings-color: "#1C234A"
+    code-color: "#33418F"
+    navbar-bg: "#FFFFFF"
+    navbar-light-brand-color: "#33418F"
+    navbar-light-brand-hover-color: "#26316E"
+    navbar-light-color: "#525B70"
+    navbar-light-hover-color: "#33418F"
+    navbar-light-active-color: "#33418F"
 
 home:
   title: "CodingManageR: Multi-User Qualitative Coding Portal & Training Manager"
@@ -11,6 +26,7 @@ home:
     tutorial overlay.
 
 navbar:
+  bg: light
   structure:
     left: [intro, articles, reference]
     right: [search, github]
@@ -21,17 +37,29 @@ navbar:
     articles:
       text: Guides
       menu:
+        - text: "English"
         - text: Installing and Launching CodingManageR
           href: articles/CodingManageR.html
         - text: Introduction to CodingManageR (3-Part Workflow)
           href: articles/introduction.html
+        - text: -------
+        - text: "Deutsch"
+        - text: "Installation und Start von CodingManageR (Deutsch)"
+          href: articles/CodingManageR-de.html
+        - text: "Einführung in CodingManageR (Deutsch)"
+          href: articles/introduction-de.html
 
 articles:
-  - title: User Guides
+  - title: User Guides (English)
     navbar: ~
     contents:
       - CodingManageR
       - introduction
+  - title: Benutzerhandbücher (Deutsch)
+    navbar: ~
+    contents:
+      - CodingManageR-de
+      - introduction-de
 
 reference:
   - title: Launching the Application

@@ -1,14 +1,23 @@
 # Automated vignette screenshot generation and pkgdown site update workflow
-# Manually triggered via workflow_dispatch:
+# Manually triggered via workflow_dispatch with selectable language scope (all / en / de):
 #   1) Launches CodingManageR in headless Chrome via shinytest2/chromote
-#   2) Captures 12 English-language screenshots (4 core views + all 8 Admin subtabs)
+#   2) Captures 12 English PNGs (vignettes/figures/) and/or 12 German PNGs (vignettes/figures-de/)
 #   3) Optimizes PNG file sizes with pngquant + optipng to stay well below CRAN's 5 MB limit
-#   4) Verifies both vignettes render cleanly with the new screenshots
-#   5) Rebuilds the pkgdown GitHub Pages site in docs/ and verifies figure assets
+#   4) Verifies all four vignettes (2 EN + 2 DE) render cleanly with embedded screenshots
+#   5) Rebuilds the pkgdown GitHub Pages site in docs/ and verifies EN + DE assets
 #   6) Uploads all PNGs as a downloadable artifact and commits screenshots + docs/ atomically
 on:
   workflow_dispatch:
     inputs:
+      languages:
+        description: "Languages to capture screenshots for (all = EN + DE, en = English only, de = German only)"
+        required: true
+        type: choice
+        default: "all"
+        options:
+          - all
+          - en
+          - de
       commit_changes:
         description: "Commit and push generated screenshots (and pkgdown docs/) directly to this branch"
         required: true
@@ -41,9 +50,9 @@ concurrency:
 
 jobs:
   generate-screenshots:
-    name: Generate screenshots and update pkgdown site
+    name: Generate EN/DE screenshots and update pkgdown site
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -94,6 +103,7 @@ jobs:
         run: R CMD INSTALL --no-multiarch --with-keep.source .
 
       - name: Generate 12 English-language app screenshots
+        if: ${{ inputs.languages == 'all' || inputs.languages == 'en' }}
         env:
           CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
@@ -103,48 +113,96 @@ jobs:
             --height "${{ inputs.viewport_height }}" \
             --lang en
 
+      - name: Generate 12 German-language app screenshots
+        if: ${{ inputs.languages == 'all' || inputs.languages == 'de' }}
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          Rscript tools/generate_vignette_screenshots.R \
+            --output-dir vignettes/figures-de \
+            --width "${{ inputs.viewport_width }}" \
+            --height "${{ inputs.viewport_height }}" \
+            --lang de
+
       - name: Optimize PNG sizes for CRAN tarball budget
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
-          files=(vignettes/figures/*.png)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No PNG files found in vignettes/figures/" >&2
-            exit 1
-          fi
 
           mkdir -p /tmp/screenshot-report
           : > /tmp/screenshot-report/sizes.tsv
 
+          langs="${{ inputs.languages }}"
+          dirs=()
+          if [ "$langs" = "all" ] || [ "$langs" = "en" ]; then
+            dirs+=("en:vignettes/figures")
+          fi
+          if [ "$langs" = "all" ] || [ "$langs" = "de" ]; then
+            dirs+=("de:vignettes/figures-de")
+          fi
+
           total_before=0
           total_after=0
-          for f in "${files[@]}"; do
-            before_bytes="$(stat -c%s "$f")"
-            total_before=$((total_before + before_bytes))
+          total_count=0
 
-            # Lossy palette quantization (high visual fidelity) skipping if larger
-            pngquant --quality=72-90 --speed 1 --strip --skip-if-larger --force --output "$f" "$f" || true
-            # Lossless deflate optimization
-            optipng -o2 -strip all -quiet "$f" || true
+          for entry in "${dirs[@]}"; do
+            lang_code="${entry%%:*}"
+            dir_path="${entry#*:}"
+            files=("${dir_path}"/*.png)
+            if [ "${#files[@]}" -eq 0 ]; then
+              echo "No PNG files found in ${dir_path}/" >&2
+              exit 1
+            fi
 
-            after_bytes="$(stat -c%s "$f")"
-            total_after=$((total_after + after_bytes))
-            printf '%s\t%d\t%d\n' "$(basename "$f")" "$before_bytes" "$after_bytes" >> /tmp/screenshot-report/sizes.tsv
+            for f in "${files[@]}"; do
+              before_bytes="$(stat -c%s "$f")"
+              total_before=$((total_before + before_bytes))
+
+              # Lossy palette quantization (high visual fidelity) skipping if larger
+              pngquant --quality=72-90 --speed 1 --strip --skip-if-larger --force --output "$f" "$f" || true
+              # Lossless deflate optimization
+              optipng -o2 -strip all -quiet "$f" || true
+
+              after_bytes="$(stat -c%s "$f")"
+              total_after=$((total_after + after_bytes))
+              total_count=$((total_count + 1))
+              printf '%s\t%s\t%d\t%d\n' "$lang_code" "$(basename "$f")" "$before_bytes" "$after_bytes" >> /tmp/screenshot-report/sizes.tsv
+            done
           done
 
-          printf 'TOTAL\t%d\t%d\n' "$total_before" "$total_after" > /tmp/screenshot-report/total.tsv
+          # Compute combined footprint across both vignette figure directories
+          combined_bytes=0
+          combined_count=0
+          for d in vignettes/figures vignettes/figures-de; do
+            for f in "${d}"/*.png; do
+              [ -f "$f" ] || continue
+              b="$(stat -c%s "$f")"
+              combined_bytes=$((combined_bytes + b))
+              combined_count=$((combined_count + 1))
+            done
+          done
 
-      - name: Verify vignettes render cleanly with embedded screenshots
+          printf 'TOTAL\t%d\t%d\t%d\t%d\t%d\n' \
+            "$total_count" "$total_before" "$total_after" "$combined_count" "$combined_bytes" \
+            > /tmp/screenshot-report/total.tsv
+
+      - name: Verify all four vignettes render cleanly with embedded screenshots
         run: |
           mkdir -p /tmp/vignette-preview
           Rscript -e '
-            rmarkdown::render("vignettes/CodingManageR.Rmd", output_dir = "/tmp/vignette-preview", quiet = TRUE)
-            rmarkdown::render("vignettes/introduction.Rmd", output_dir = "/tmp/vignette-preview", quiet = TRUE)
-            for (h in c("CodingManageR.html", "introduction.html")) {
+            vignettes <- c(
+              "vignettes/CodingManageR.Rmd",
+              "vignettes/introduction.Rmd",
+              "vignettes/CodingManageR-de.Rmd",
+              "vignettes/introduction-de.Rmd"
+            )
+            for (v in vignettes) {
+              rmarkdown::render(v, output_dir = "/tmp/vignette-preview", quiet = TRUE)
+              h <- sub("\\.Rmd$", ".html", basename(v))
               p <- file.path("/tmp/vignette-preview", h)
               if (!file.exists(p)) stop("Rendered vignette missing: ", p)
-              cat(sprintf("Rendered %-22s : %6.1f KB\n", h, file.info(p)$size / 1024))
+              cat(sprintf("Rendered %-26s : %6.1f KB\n", h, file.info(p)$size / 1024))
             }
           '
 
@@ -155,19 +213,32 @@ jobs:
             pkgdown::build_site(devel = FALSE, install = FALSE, preview = FALSE)
           '
 
-      - name: Verify pkgdown articles and figure assets in docs/
+      - name: Verify pkgdown articles, logo, favicons, and EN/DE figure assets in docs/
         if: ${{ inputs.update_pkgdown }}
         shell: bash
         run: |
           set -euo pipefail
           test -f docs/index.html
+          test -f docs/logo.png
+          test -f docs/favicon.ico
+          test -f docs/favicon-32x32.png
           test -f docs/articles/CodingManageR.html
           test -f docs/articles/introduction.html
+          test -f docs/articles/CodingManageR-de.html
+          test -f docs/articles/introduction-de.html
 
           for png in vignettes/figures/*.png; do
             base="$(basename "$png")"
             if [ ! -f "docs/articles/figures/${base}" ]; then
-              echo "Missing figure asset in pkgdown output: docs/articles/figures/${base}" >&2
+              echo "Missing EN figure asset in pkgdown output: docs/articles/figures/${base}" >&2
+              exit 1
+            fi
+          done
+
+          for png in vignettes/figures-de/*.png; do
+            base="$(basename "$png")"
+            if [ ! -f "docs/articles/figures-de/${base}" ]; then
+              echo "Missing DE figure asset in pkgdown output: docs/articles/figures-de/${base}" >&2
               exit 1
             fi
           done
@@ -178,7 +249,14 @@ jobs:
           grep -q "Figure 12:" docs/articles/introduction.html
           grep -q "figures/01-login.png" docs/articles/CodingManageR.html
           grep -q "figures/12-admin-db-diagnosis.png" docs/articles/introduction.html
-          echo "Verified pkgdown site in docs/ with all 12 numbered figure assets."
+
+          grep -q "Abbildung 1:" docs/articles/CodingManageR-de.html
+          grep -q "Abbildung 2:" docs/articles/CodingManageR-de.html
+          grep -q "Abbildung 1:" docs/articles/introduction-de.html
+          grep -q "Abbildung 12:" docs/articles/introduction-de.html
+          grep -q "figures-de/01-login.png" docs/articles/CodingManageR-de.html
+          grep -q "figures-de/12-admin-db-diagnosis.png" docs/articles/introduction-de.html
+          echo "Verified pkgdown site in docs/ with all EN + DE articles and 24 figure assets."
 
       - name: Write screenshot and pkgdown summary to GitHub Job Summary
         if: always()
@@ -187,24 +265,30 @@ jobs:
           {
             echo "## CodingManageR Vignette Screenshots & pkgdown Summary"
             echo ""
+            echo "- Selected languages: \`${{ inputs.languages }}\`"
+            echo "- Viewport: \`${{ inputs.viewport_width }}x${{ inputs.viewport_height }}\`"
+            echo ""
             if [ -f /tmp/screenshot-report/sizes.tsv ]; then
-              echo "| File | Raw Size | Optimized Size | Savings |"
-              echo "| :--- | ---: | ---: | ---: |"
-              while IFS=$'\t' read -r fname b_raw b_opt; do
+              echo "| Language | File | Raw Size | Optimized Size | Savings |"
+              echo "| :---: | :--- | ---: | ---: | ---: |"
+              while IFS=$'\t' read -r lang_code fname b_raw b_opt; do
                 kb_raw="$(awk -v b="$b_raw" 'BEGIN { printf "%.1f KB", b/1024 }')"
                 kb_opt="$(awk -v b="$b_opt" 'BEGIN { printf "%.1f KB", b/1024 }')"
                 pct="$(awk -v r="$b_raw" -v o="$b_opt" 'BEGIN { if (r > 0) printf "%.0f%%", (1 - o/r) * 100; else print "0%" }')"
-                printf '| `%s` | %s | %s | %s |\n' "$fname" "$kb_raw" "$kb_opt" "$pct"
+                printf '| `%s` | `%s` | %s | %s | %s |\n' "$lang_code" "$fname" "$kb_raw" "$kb_opt" "$pct"
               done < /tmp/screenshot-report/sizes.tsv
               if [ -f /tmp/screenshot-report/total.tsv ]; then
-                IFS=$'\t' read -r _ tot_raw tot_opt < /tmp/screenshot-report/total.tsv
+                IFS=$'\t' read -r _ tot_n tot_raw tot_opt comb_n comb_bytes < /tmp/screenshot-report/total.tsv
                 tot_raw_kb="$(awk -v b="$tot_raw" 'BEGIN { printf "%.1f KB", b/1024 }')"
                 tot_opt_kb="$(awk -v b="$tot_opt" 'BEGIN { printf "%.1f KB", b/1024 }')"
                 tot_pct="$(awk -v r="$tot_raw" -v o="$tot_opt" 'BEGIN { if (r > 0) printf "%.0f%%", (1 - o/r) * 100; else print "0%" }')"
-                printf '| **Total (12 PNGs)** | **%s** | **%s** | **%s** |\n' "$tot_raw_kb" "$tot_opt_kb" "$tot_pct"
-                if [ "$tot_opt" -gt 2621440 ]; then
+                comb_mb="$(awk -v b="$comb_bytes" 'BEGIN { printf "%.2f MB", b/1048576 }')"
+                printf '| **Run Total** | **%s PNGs** | **%s** | **%s** | **%s** |\n' "$tot_n" "$tot_raw_kb" "$tot_opt_kb" "$tot_pct"
+                echo ""
+                echo "- Combined footprint across \`vignettes/figures/\` + \`vignettes/figures-de/\` (${comb_n} PNGs): **${comb_mb}** (CRAN 5 MB budget)."
+                if [ "$comb_bytes" -gt 3145728 ]; then
                   echo ""
-                  echo "> **Warning:** Optimized PNG directory exceeds 2.5 MB; review CRAN tarball size before release."
+                  echo "> **Warning:** Combined optimized PNG directories exceed 3.0 MB; review CRAN tarball size before release."
                 fi
               fi
               echo ""
@@ -222,16 +306,19 @@ jobs:
             if [ "${{ inputs.update_pkgdown }}" = "true" ] && [ -f docs/pkgdown.yml ]; then
               echo "### pkgdown GitHub Pages Build (\`docs/\`)"
               echo ""
-              n_figs="$(find docs/articles/figures -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
-              echo "- Rebuilt \`docs/\` successfully with **${n_figs}** figure PNGs in \`docs/articles/figures/\`."
+              n_en="$(find docs/articles/figures -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
+              n_de="$(find docs/articles/figures-de -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
+              echo "- Rebuilt \`docs/\` successfully with **${n_en}** EN PNGs (\`docs/articles/figures/\`) and **${n_de}** DE PNGs (\`docs/articles/figures-de/\`)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload generated screenshots as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: vignette-screenshots
-          path: vignettes/figures/*.png
+          name: vignette-screenshots-${{ inputs.languages }}
+          path: |
+            vignettes/figures/*.png
+            vignettes/figures-de/*.png
           retention-days: 14
           if-no-files-found: error
 
@@ -243,19 +330,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add vignettes/figures/*.png
+          langs="${{ inputs.languages }}"
+          if [ "$langs" = "all" ] || [ "$langs" = "en" ]; then
+            git add vignettes/figures/*.png
+          fi
+          if [ "$langs" = "all" ] || [ "$langs" = "de" ]; then
+            git add vignettes/figures-de/*.png
+          fi
           if [ "${{ inputs.update_pkgdown }}" = "true" ]; then
             git add -A docs
           fi
 
           if git diff --cached --quiet; then
-            echo "No changes in vignettes/figures/ or docs/ — skipping commit."
+            echo "No changes in vignette figures or docs/ — skipping commit."
             exit 0
           fi
 
           if [ "${{ inputs.update_pkgdown }}" = "true" ]; then
-            git commit -m "docs(vignettes): update automated app screenshots and pkgdown site"
+            git commit -m "docs(vignettes): update ${langs} app screenshots and pkgdown site"
           else
-            git commit -m "docs(vignettes): update automated app screenshots"
+            git commit -m "docs(vignettes): update ${langs} app screenshots"
           fi
           git push origin "HEAD:${{ github.ref_name }}"

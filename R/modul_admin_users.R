@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # ADMIN MODULE SERVER HELPERS: USER MANAGEMENT & PERMISSIONS (TAB 1)
 # ==============================================================================

@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # End-to-End Headless Browser Tests via shinytest2::AppDriver
 # Strategy: Deterministic programmatic state, DOM, and SQLite post-condition
@@ -164,7 +166,7 @@ test_that("E2E-2: Restricted coder permissions, Dashboard rendering, and Live Co
 })
 
 test_that("E2E-3: Full stratified Coding Training session completes and persists reliability metrics to SQLite", {
-  # Verifies complete browser training flow on K2_Struktur (max_value = 3, 4 stratified cases):
+  # Verifies complete browser training flow on S2_Instructional_Structure (max_value = 3, 4 stratified cases):
   # 1) Logs in as 'user1', navigates to Training tab, selects scale 2 with 4 units
   # 2) Starts training, rates all 4 cases through naechster_fall_btn
   # 3) Asserts the completion summary and aifeducation metrics panel render in the DOM

@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Unit & Integration Tests: Database Connection Pool & Schema Lifecycle
 # Covers: R/db_connection.R and R/utils_table_definitions.R

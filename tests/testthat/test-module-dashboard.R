@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Module Server & UI Tests: Personal Dashboard Module
 # Covers: R/modul_dashboard.R (dashboardUI and dashboardServer)
@@ -107,9 +109,9 @@ test_that("dashboardServer renders KPI cards, reliability summary, plots, histor
       expect_match(hist_html, "badge")
 
       breakdown_html <- output$kategorie_breakdown_table
-      expect_match(breakdown_html, "Empathie \\[#1\\]")
-      expect_match(breakdown_html, "Struktur \\[#2\\]")
-      expect_match(breakdown_html, "Fachkompetenz \\[#3\\]")
+      expect_match(breakdown_html, "CogAct \\[#1\\]")
+      expect_match(breakdown_html, "Structure \\[#2\\]")
+      expect_match(breakdown_html, "Feedback \\[#3\\]")
 
       # 7. Empty training history state (user with 0 sessions on selected scale)
       markus_id <- get_user_info_db(con, "markus_meier")$id
@@ -142,7 +144,7 @@ test_that("dashboardServer scales overview supports search, reset, description t
     con,
     "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
      VALUES (4, 'LongDesc', 'K4_LongDescription', 1, ?, 'Step 0 text', '')",
-    params = list(paste(rep("Detailed clinical coding guideline sentence. ", 5), collapse = ""))
+    params = list(paste(rep("Detailed educational coding guideline sentence. ", 5), collapse = ""))
   )
   DBI::dbExecute(
     con,
@@ -168,7 +170,7 @@ test_that("dashboardServer scales overview supports search, reset, description t
       session$flushReact()
       expect_match(ui_to_html(output$dashboard_scales_count), "5")
       cards_all <- ui_to_html(output$dashboard_scales_cards)
-      expect_match(cards_all, "K1_Empathie")
+      expect_match(cards_all, "S1_Cognitive_Activation")
       expect_match(cards_all, "K4_LongDescription")
       expect_match(cards_all, "\\.\\.\\.")
       expect_match(cards_all, "K5_NoDescription")
@@ -178,8 +180,8 @@ test_that("dashboardServer scales overview supports search, reset, description t
       session$flushReact()
       expect_match(ui_to_html(output$dashboard_scales_count), "1")
       cards_id2 <- ui_to_html(output$dashboard_scales_cards)
-      expect_match(cards_id2, "K2_Struktur")
-      expect_false(grepl("K1_Empathie", cards_id2))
+      expect_match(cards_id2, "S2_Instructional_Structure")
+      expect_false(grepl("S1_Cognitive_Activation", cards_id2))
 
       # Filter by non-matching term -> empty state
       session$setInputs(dashboard_scale_search = "no_such_scale_xyz")

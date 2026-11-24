@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # TABLE DEFINITIONS AND SCHEMA MANAGEMENT (utils_table_definitions.R)
 # ==============================================================================
@@ -368,7 +370,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   }
 
   # ----------------------------------------------------------------------------
-  # 2. scale_definitions (coding scale catalog - 3 scales K1, K2, K3)
+  # 2. scale_definitions (coding scale catalog - 3 scales S1, S2, S3)
   # ----------------------------------------------------------------------------
   tbl <- "scale_definitions"
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM scale_definitions")[1, 1])
@@ -379,42 +381,42 @@ seed_initial_data <- function(con, empty = TRUE) {
       scales <- list(
         list(
           id = 1,
-          name = "K1_Empathie",
-          short = "Empathie",
+          name = "S1_Cognitive_Activation",
+          short = "CogAct",
           max = 4,
-          desc = "Grad des empathischen Eingehens auf die emotionale Verfassung des Patienten.",
-          def_0 = "Keine emotionale Resonanz erkennbar.",
-          def_1 = "Minimale Best\u00e4tigung ohne vertiefende Anteilnahme.",
-          def_2 = "Erkennung von Emotionen, jedoch funktionale oder distanzierte Reaktion.",
-          def_3 = "Explizite Validierung von Sorgen und emotionale Entlastung.",
-          def_4 = "Hervorragende Empathie, tiefes Eingehen auf emotionale Zwischent\u00f6ne und proaktive Entlastung.",
+          desc = "Degree to which instruction stimulates deep conceptual processing, prior-knowledge activation, open inquiry, and metacognitive reflection during teaching and learning. [Note: AI-generated demonstration scale.]",
+          def_0 = "Pure rote recall or mechanical procedure with no conceptual prompts or reasoning demands.",
+          def_1 = "Isolated comprehension questions requiring brief factual answers without probing student reasoning.",
+          def_2 = "Occasional open questions inviting explanation, though classroom discourse remains largely teacher-directed.",
+          def_3 = "Sustained conceptual challenges prompting learners to compare solution strategies, justify reasoning, and connect prior knowledge.",
+          def_4 = "Rich, adaptive cognitive activation where learners co-construct conceptual models, evaluate competing arguments, and reflect on their own learning strategies.",
           def_5 = NA_character_
         ),
         list(
           id = 2,
-          name = "K2_Struktur",
-          short = "Struktur",
+          name = "S2_Instructional_Structure",
+          short = "Structure",
           max = 3,
-          desc = "Klarheit des Aufbaus, rote Faden und Strukturierung des Arzt-Patienten-Gespr\u00e4chs.",
-          def_0 = "Unstrukturiert, sprunghaft ohne erkennbaren roten Faden.",
-          def_1 = "Ans\u00e4tze von Struktur erkennbar, jedoch h\u00e4ufige Unterbrechungen des Gespr\u00e4chsflusses.",
-          def_2 = "Geordneter Ablauf der Anamnesephasen mit klarer Orientierung f\u00fcr den Patienten.",
-          def_3 = "Vorbildliche Gespr\u00e4chsf\u00fchrung mit expliziter Phasentransparenz und Zusammenfassungen.",
+          desc = "Clarity of lesson organization, goal transparency, sequencing of learning phases, and coherence of classroom discourse. [Note: AI-generated demonstration scale.]",
+          def_0 = "Disorganized lesson sequence with unclear objectives, abrupt topic shifts, and no recognizable red thread.",
+          def_1 = "Basic instructional phases are recognizable, yet transitions between tasks and learning goals remain vague or fragmented.",
+          def_2 = "Clear and coherent lesson progression with stated objectives, logical task sequencing, and a structured wrap-up.",
+          def_3 = "Exemplary instructional scaffolding featuring explicit advance organizers, seamless phase transitions, interim summaries, and check-for-understanding consolidation.",
           def_4 = NA_character_,
           def_5 = NA_character_
         ),
         list(
           id = 3,
-          name = "K3_Fachkompetenz",
-          short = "Fachkompetenz",
+          name = "S3_Formative_Feedback",
+          short = "Feedback",
           max = 5,
-          desc = "Pr\u00e4zision der medizinischen Einordnung, zielgerichtete Exploration und diagnostische Stringenz.",
-          def_0 = "Keine nachvollziehbare medizinische Exploration erkennbar.",
-          def_1 = "Unvollst\u00e4ndige oder l\u00fcckenhafte anamnestische Erhebung wesentlicher Leitsymptome.",
-          def_2 = "Solide Basiserhebung typischer Leitsymptome ohne differenzierte Tiefenexploration.",
-          def_3 = "Strukturierte Differenzialdiagnostik und pr\u00e4zise Erfassung relevanter Begleitsymptome.",
-          def_4 = "Umfassende und differenzierte Exploration inklusive relevanter Red Flags und Risikofaktoren.",
-          def_5 = "Exzellente differentialdiagnostische Abw\u00e4gung mit feinsinniger Priorisierung und Stringenz."
+          desc = "Quality of diagnostic, process-oriented, and self-regulation feedback provided to learners to clarify misconceptions and guide next learning steps. [Note: AI-generated demonstration scale.]",
+          def_0 = "No substantive feedback or purely dismissive/uninformative remarks with no learning value.",
+          def_1 = "Simple correctness verification ('right' or 'wrong') without explanation or guidance for improvement.",
+          def_2 = "Task-level feedback identifying specific strengths or errors in the product, but lacking strategic guidance.",
+          def_3 = "Process-oriented feedback explaining underlying misconceptions and modeling effective learning or problem-solving strategies.",
+          def_4 = "Adaptive, criterion-referenced feedback linking current performance to explicit learning goals and actionable next steps.",
+          def_5 = "Dialogic, metacognitive feedback that diagnoses reasoning patterns, fosters learner self-assessment, and co-plans targeted transfer strategies."
         )
       )
 
@@ -452,29 +454,29 @@ seed_initial_data <- function(con, empty = TRUE) {
       sources_data <- list(
         list(
           id = 1,
-          kurz = "Mueller2024",
-          ref = "M\u00fcller, T., Becker, S. & Hoffmann, K. (2024). Validierung klinischer Sprachdaten und strukturierte Anamnesef\u00fchrung. Springer Medizin Verlag. https://doi.org/10.1007/s00103-024-03810-1",
+          kurz = "Klieme2024",
+          ref = "Klieme, E., Praetorius, A.-K., & Herbert, B. (2024). Dimensions of Teaching Quality in Classroom Observation Studies. Educational Research Press. https://doi.org/10.1007/s11618-024-01234-5 [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "CC-BY 4.0",
           erfasst = "2026-10-15 09:30:00"
         ),
         list(
           id = 2,
-          kurz = "ICD-10-GM-2025",
-          ref = "BfArM - Bundesinstitut f\u00fcr Arzneimittel und Medizinprodukte (2025). Internationale statistische Klassifikation der Krankheiten und verwandter Gesundheitsprobleme, 10. Revision, German Modification.",
+          kurz = "HattieTimperley2025",
+          ref = "Hattie, J., & Timperley, H. (2025). Formative Feedback in Teaching and Learning: Coding Frameworks for Classroom Discourse. International Journal of Educational Assessment. [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "ODC-By",
           erfasst = "2026-10-16 11:20:00"
         ),
         list(
           id = 3,
-          kurz = "KlinikKorpus_Intern",
-          ref = "Universit\u00e4tsklinikum Verbund (2025). Anonymisierte Anamnesetexte aus der inneren Medizin zur Schulung von Kodierfachkr\u00e4ften.",
-          lizenz = "Instituts-Intern",
+          kurz = "ClassroomCorpus_2025",
+          ref = "Center for Research on Teaching and Learning (2025). Anonymized Classroom Transcripts and Instructional Vignettes for Qualitative Coder Training. [Note: Fictional demonstration source generated with the assistance of AI.]",
+          lizenz = "Institutional Internal",
           erfasst = "2026-10-18 14:15:00"
         ),
         list(
           id = 4,
           kurz = "AIF-Edu-Report",
-          ref = "Berding, F. et al. (2023). aifeducation: Artificial Intelligence for Education and Rater Reliability. Comprehensive R Archive Network.",
+          ref = "Berding, F., Pargmann, J., & Riebenbauer, E. (2023). aifeducation: Artificial Intelligence for Education and Rater Reliability. Comprehensive R Archive Network. [Note: Demonstration source entry generated with the assistance of AI.]",
           lizenz = "GPL-3.0",
           erfasst = "2026-10-22 16:45:00"
         )
@@ -595,8 +597,8 @@ seed_initial_data <- function(con, empty = TRUE) {
       uid_eva <- u_ids$user_id[u_ids$username == "eva_lindner"]
       if (length(uid_eva) == 0 || is.na(uid_eva)) uid_eva <- 3
 
-      # user1 is permitted to code scale 1 (Empathy) and scale 2 (Structure)
-      # eva_lindner is permitted to code scale 1 (Empathy)
+      # user1 is permitted to code scale 1 (CogAct) and scale 2 (Structure)
+      # eva_lindner is permitted to code scale 1 (CogAct)
       dbExecute(con, "
         INSERT INTO user_scale_permissions (user_id, scale_id) VALUES
         (?, 1),
@@ -632,64 +634,67 @@ seed_initial_data <- function(con, empty = TRUE) {
         text_id = c(
           # Baseline cases (101 - 104)
           101, 102, 103, 104,
-          # K1_Empathie: levels 0 to 4 (2 cases each = IDs 201 to 210)
+          # S1_Cognitive_Activation: levels 0 to 4 (2 cases each = IDs 201 to 210)
           201, 202, 203, 204, 205, 206, 207, 208, 209, 210,
-          # K2_Struktur: levels 0 to 3 (2 cases each = IDs 211 to 218)
+          # S2_Instructional_Structure: levels 0 to 3 (2 cases each = IDs 211 to 218)
           211, 212, 213, 214, 215, 216, 217, 218,
-          # K3_Fachkompetenz: levels 0 to 5 (2 cases each = IDs 219 to 230)
+          # S3_Formative_Feedback: levels 0 to 5 (2 cases each = IDs 219 to 230)
           219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230
         ),
-        text = c(
-          # 101-104: Baseline texts
-          "Pat. 54 J., berichtet \u00fcber seit 3 Monaten progrediente morgendliche Gelenksteife (>60 Min) beider MCP- und PIP-Gelenke. Im Gespr\u00e4ch zeigt sich deutliche Verunsicherung bez\u00fcglich der Arbeitsf\u00e4higkeit. Arzt geht behutsam auf Sorgen ein, erkl\u00e4rt die Verdachtsdiagnose Rheumatoide Arthritis und vereinbart zeitnahes Labor inklusive CCP-Ak.",
-          "Pat. 29 J., klagt \u00fcber akute Cephalgie seit gestern Abend. Begleitend Photophobie und Nausea, kein Fieber, kein Meningismus. Typische Migr\u00e4neanamnese in der Familie. Strukturierte Erfassung von Schmerzcharakter und Triggern sowie Vereinbarung eines Akutmedikationsplans.",
-          "Pat. 68 J., Z.n. Myokardinfarkt vor 4 Jahren, stellt sich zur Routinekontrolle vor. Berichtet \u00fcber gelegentlichen Schwindel bei schnellem Aufstehen. RR 110/70 mmHg, Puls 64/min rhythmisch. Arzt bespricht Dosisanpassung des Antihypertensivums und beruhigt den Patienten.",
-          "Pat. 42 J., rezidivierende epigastrische Schmerzen, verst\u00e4rkt nach Mahlzeiten. Keine B-Symptomatik. Arzt erl\u00e4utert Befundkonstellation verst\u00e4ndlich, initiiert PPI-Therapieversuch und plant Abdomensonographie.",
+        text = paste(
+          c(
+            # 101-104: Baseline multi-dimensional classroom vignettes
+            "Grade 9 mathematics lesson on linear functions. The teacher opens with an everyday energy-tariff comparison and asks pairs to compare two solution paths and justify why both yield the same break-even point. Lesson goals and sequence are clearly communicated. When reviewing group posters, the teacher links each draft directly to the rubric criteria and specifies one concrete step to refine the algebraic justification.",
+            "Grade 8 biology lesson on photosynthesis. The teacher displays an explicit three-part agenda at the start, summarizes key takeaways after each phase, and checks understanding with mini-whiteboards before transitioning. Students answer several open 'why' questions during teacher-led discussion. When a group confuses respiration with photosynthesis, the teacher diagnoses the misconception and models how to trace energy flow step by step.",
+            "Undergraduate seminar on research methods. Students design competing hypotheses for an unexpected survey pattern, debate validity threats in small groups, and reflect aloud on how their initial assumptions shifted. The session follows a clear inquiry sequence from launch to plenary synthesis. During debriefing, the instructor highlights two specific strengths and one sampling error per group without elaborating broader revision strategies.",
+            "Grade 10 history lesson on primary source analysis. The instructor introduces clear learning objectives and transparent signposting across source reading, partner comparison, and plenary synthesis. Learners connect the documents to prior knowledge on industrialization and defend competing interpretations with textual evidence. After reviewing student essays, the teacher explains how to distinguish correlation from causation and demonstrates a paragraph revision strategy.",
 
-          # 201-210: K1_Empathie (levels 0 to 4)
-          "Stufe 0 Fall A: Arzt tippt ununterbrochen in den Monitor und unterbricht den weinenden Patienten br\u00fcsk: 'Bitte nur pr\u00e4zise auf meine Fragen antworten, wir haben wenig Zeit.'",
-          "Stufe 0 Fall B: Patient \u00e4u\u00dfert Panik vor der anstehenden Koloskopie. Arzt kommentiert kurz: 'Das ist Routine, stellen Sie sich nicht so an' und wechselt direkt zum Aufkl\u00e4rungsbogen.",
-          "Stufe 1 Fall A: Patient erw\u00e4hnt besorgt den k\u00fcrzlichen Schlaganfall des Bruders. Arzt nickt kurz stumm, geht jedoch nicht weiter darauf ein und misst wortlos den Blutdruck.",
-          "Stufe 1 Fall B: Patientin zeigt sich niedergeschlagen wegen chronischer R\u00fcckenschmerzen. Arzt: 'Ja, Schmerzen sind unangenehm' und tippt sofort die Verordnung f\u00fcr Physiotherapie ein.",
-          "Stufe 2 Fall A: Patient sorgt sich um die Nebenwirkungen des neuen Medikaments. Arzt registriert die Sorge: 'Ich verstehe das, aber die Statistik zeigt geringe Risiken' und h\u00e4ndigt sachlich die Packungsbeilage aus.",
-          "Stufe 2 Fall B: Patientin schildert Belastung durch Pflege der Mutter. Arzt: 'Das ist eine schwierige Situation', verweist aber unverz\u00fcglich und sachlich auf den Sozialdienst.",
-          "Stufe 3 Fall A: Patient schildert starke Angst vor der Narkose. Arzt legt Stift beiseite, wendet sich ganz dem Patienten zu: 'Ich kann gut nachvollziehen, dass Ihnen das Angst macht. Lassen Sie uns Schritt f\u00fcr Schritt durchsprechen, wie die An\u00e4sthesie Sie \u00fcberwacht.'",
-          "Stufe 3 Fall B: Patientin sorgt sich um den Erhalt des Arbeitsplatzes bei Bandscheibenvorfall. Arzt validiert: 'Es ist v\u00f6llig verst\u00e4ndlich, dass diese Unsicherheit sehr belastend ist. Wir erarbeiten gemeinsam einen Stufenplan zur Wiedereingliederung.'",
-          "Stufe 4 Fall A: Patientin stockt, Augen f\u00fcllen sich mit Tr\u00e4nen beim Thema famili\u00e4re Belastung. Arzt nimmt behutsam das nonverbale Signal auf: 'Ich sehe, wie schwer Ihnen das f\u00e4llt. Nehmen Sie sich alle Zeit. Wir sind hier in einem gesch\u00fctzten Raum.'",
-          "Stufe 4 Fall B: Hochgradig verunsicherter Patient nach Malignom-Verdacht. Arzt erfasst feinste Nuancen der Verzweiflung, bietet emotionalen Halt, fasst Gef\u00fchle empathisch in Worte und stellt verbindliche Erreichbarkeit sicher.",
+            # 201-210: S1_Cognitive_Activation (levels 0 to 4)
+            "Level 0 Case A: The teacher dictates textbook definitions of geometric terms word for word while students copy them silently into notebooks without any questions or discussion.",
+            "Level 0 Case B: Students spend 25 minutes completing repetitive multiplication drills from a worksheet; the teacher reads out final answers rapidly with no conceptual reflection.",
+            "Level 1 Case A: After a short presentation on the water cycle, the teacher asks three closed recall questions ('What is evaporation?') and immediately moves on once a student gives the keyword.",
+            "Level 1 Case B: While reading a short story, the instructor checks plot comprehension ('Where did the protagonist travel?') without asking learners to interpret motives or justify claims.",
+            "Level 2 Case A: The teacher poses an open question about why urban temperatures differ from rural areas, listens to two student ideas, and then delivers the canonical textbook explanation.",
+            "Level 2 Case B: Students predict the outcome of a pendulum experiment in pairs before the teacher demonstrates the result and explains the underlying physics directly from the board.",
+            "Level 3 Case A: Learners compare three conflicting student solutions to a fraction problem, identify where each assumption holds or breaks down, and connect the reasoning to visual area models from last week.",
+            "Level 3 Case B: In a civics seminar, the instructor challenges students to construct evidence-based counterarguments to a policy proposal and justify which criteria carry the greatest weight.",
+            "Level 4 Case A: Students collaboratively build and iteratively revise an explanatory model of ecosystem feedback loops, test rival hypotheses against empirical classroom data, and evaluate which metacognitive heuristics helped resolve contradictions.",
+            "Level 4 Case B: In a teacher-education workshop, participants analyze contrasting lesson transcripts, co-develop theoretical criteria for instructional quality, critique each other's interpretations, and reflect on how to transfer the framework to their own teaching.",
 
-          # 211-218: K2_Struktur (levels 0 to 3)
-          "Stufe 0 Fall A: Gespr\u00e4ch verl\u00e4uft chaotisch; Arzt springt von Familienanamnese zur Medikation, fragt nach Allergien, kehrt zur Kindheit zur\u00fcck und vergisst die aktuellen Leitsymptome.",
-          "Stufe 0 Fall B: Keinerlei Gespr\u00e4chsphasen erkennbar; Patient erz\u00e4hlt ungef\u00fchrt 15 Minuten lang Anekdoten, Arzt unterbricht planlos und verliert v\u00f6llig den \u00dcberblick.",
-          "Stufe 1 Fall A: Grundlegende Anamneseschritte sind vorhanden, aber der Arzt springt unvermittelt zwischen offener Exploration und apparativer Diagnostik hin und her.",
-          "Stufe 1 Fall B: Roter Faden ansatzweise vorhanden, wird jedoch mehrfach durch sprunghafte Zwischenfragen zu Vorbefunden ohne Vorank\u00fcndigung unterbrochen.",
-          "Stufe 2 Fall A: Klar gegliedertes Gespr\u00e4ch: Nach offener Schilderung folgt gezielte Systemanamnese, anschlie\u00dfend Erl\u00e4uterung des weiteren diagnostischen Vorgehens.",
-          "Stufe 2 Fall B: Geordneter Ablauf der Anamnese: Einleitung, Schmerzerfassung, vegetative Anamnese und strukturierter Abschluss mit transparentem Zeitplan.",
-          "Stufe 3 Fall A: Exzellent moderiertes Gespr\u00e4ch mit Agenda-Setting zu Beginn: 'Heute besprechen wir zun\u00e4chst Ihre Symptome, dann kl\u00e4ren wir offene Fragen und vereinbaren die Diagnostik.' Transparente \u00dcberleitungen zwischen allen Phasen.",
-          "Stufe 3 Fall B: Musterg\u00fcltige Strukturierung mit regelm\u00e4\u00dfigen Zwischenzusammenfassungen, Phasentransparenz und partizipativer Festlegung der n\u00e4chsten Schritte ('Teach-Back').",
+            # 211-218: S2_Instructional_Structure (levels 0 to 3)
+            "Level 0 Case A: The lesson unfolds chaotically; the instructor jumps from homework logistics to an unrelated anecdote, introduces a worksheet without instructions, and runs out of time before stating the topic.",
+            "Level 0 Case B: No recognizable lesson phases appear; students ask confused questions about what they are supposed to do while the teacher repeatedly changes task formats mid-activity.",
+            "Level 1 Case A: A warm-up and a group task are identifiable, yet the teacher switches abruptly between slides and exercises without clarifying how the activities relate to the learning objective.",
+            "Level 1 Case B: An overall topic thread exists, but frequent unplanned digressions and missing time cues interrupt the workflow and leave the closing phase rushed.",
+            "Level 2 Case A: Well-organized lesson progression: the teacher states the learning goal at the outset, sequences guided practice before independent work, and concludes with a brief review of key points.",
+            "Level 2 Case B: Clear instructional sequence covering activation, structured partner inquiry, and plenary consolidation with visible task instructions and consistent pacing.",
+            "Level 3 Case A: Exemplarily structured lesson opening with an explicit advance organizer ('First we test our predictions, next we compare models, and finally we check transfer'). Smooth signposted transitions connect every phase.",
+            "Level 3 Case B: Model instructional scaffolding featuring clear visual goal tracking, periodic interim summaries linking tasks back to core concepts, and a structured exit-ticket check for understanding.",
 
-          # 219-230: K3_Fachkompetenz (levels 0 to 5)
-          "Stufe 0 Fall A: Arzt fragt bei akutem Vernichtungsschmerz im Thorax lediglich nach Ern\u00e4hrungsgewohnheiten und schlie\u00dft lebensbedrohliche Ursachen nicht aus.",
-          "Stufe 0 Fall B: V\u00f6llig inad\u00e4quate Begriffsverwendung, relevante Differenzialdiagnosen werden ignoriert, keine fachliche Einordnung der Beschwerden.",
-          "Stufe 1 Fall A: Bei Verdacht auf Appendizitis wird nur unvollst\u00e4ndig palpiert; McBurney- und Lanz-Punkte werden verwechselt, Laboranforderung bleibt rudiment\u00e4r.",
-          "Stufe 1 Fall B: L\u00fcckenhafte Exploration eines neu aufgetretenen Diabetes mellitus; Blutzuckerwerte werden erfragt, HbA1c, Ketoazidose-Zeichen und Folgesch\u00e4den jedoch ausgelassen.",
-          "Stufe 2 Fall A: Korrekte Erhebung der Standard-Leitsymptome bei unkomplizierter Zystitis, ad\u00e4quate Urinstix-Indikation, jedoch keine Vertiefung zu atypischen Erregern.",
-          "Stufe 2 Fall B: Solide Erfassung der Symptomatik einer arteriellen Hypertonie inklusive Standardlabor, ohne jedoch sekund\u00e4re Ursachen differenzierter zu pr\u00fcfen.",
-          "Stufe 3 Fall A: Strukturierte differenzialdiagnostische Abkl\u00e4rung einer Belastungsdyspnoe: Systematische Abgrenzung kardialer (z.B. Herzinsuffizienz) vs. pulmonaler Ursachen (z.B. COPD).",
-          "Stufe 3 Fall B: Pr\u00e4zise Erfassung von Begleitsymptomen bei Synkope: Orthostase, prodromale Aura, Miktionssynkope und kardiale Arrhythmien werden systematisch abgegrenzt.",
-          "Stufe 4 Fall A: Umfassende Exploration bei V.a. Polymyalgia rheumatica: Gezieltes Screening nach Red Flags wie Riesenzellarteriitis (Sehst\u00f6rungen, Kauschmerz, Schl\u00e4fenschmerz).",
-          "Stufe 4 Fall B: Hochgradig differenzierte Abkl\u00e4rung einer unklaren B-Symptomatik: Systematische Einordnung infekti\u00f6ser, maligner und autoimmuner \u00c4tiologien mit priorisierter Stufendiagnostik.",
-          "Stufe 5 Fall A: Brillante klinische Urteilsbildung: Erkennung eines atypisch pr\u00e4sentierten Ph\u00e4ochromozytoms durch vernetzte Verkn\u00fcpfung von paroxysmalem RR-Anstieg, Schwitzen und Tremor; pr\u00e4zise Indikationsstellung f\u00fcr fraktionierte Metanephrine.",
-          "Stufe 5 Fall B: Meisterhafte differentialdiagnostische Synthese bei komplexem Multimorbidit\u00e4tsfall: Priorisierung lebensbedrohlicher Ursachen, zielsichere Rationale f\u00fcr weiterf\u00fchrende Diagnostik und stringente Therapieentscheidung."
+            # 219-230: S3_Formative_Feedback (levels 0 to 5)
+            "Level 0 Case A: A student submits an incomplete lab report; the teacher writes only 'Unsatisfactory - try harder' in the margin and returns the paper without comment.",
+            "Level 0 Case B: During a class presentation, the instructor interrupts impatiently ('That makes no sense, sit down') and calls on the next group without explaining what was missing.",
+            "Level 1 Case A: The teacher marks each quiz item with a checkmark or cross and announces '14 out of 20 correct' without reviewing any errors or suggesting next steps.",
+            "Level 1 Case B: After a student solves an equation on the board, the instructor says 'Incorrect, the answer is 12' and immediately erases the work to move to the next problem.",
+            "Level 2 Case A: On an argumentative essay, the teacher notes 'Clear thesis statement in paragraph one, but paragraph three lacks a supporting citation' without explaining how to integrate evidence.",
+            "Level 2 Case B: Reviewing a lab graph, the instructor points out two mislabeled axes and one strong trend description, leaving the student to figure out how to improve data interpretation.",
+            "Level 3 Case A: Noticing a recurring sign error in algebraic factoring, the teacher explains why distributing the negative term fails and demonstrates a two-step verification strategy.",
+            "Level 3 Case B: In a writing conference, the instructor diagnoses why the student's transitions feel abrupt and models how topic sentences link claims across consecutive paragraphs.",
+            "Level 4 Case A: Using the analytic rubric, the teacher shows how the student's experimental design already meets the control-variable criterion and specifies two concrete adjustments needed to reach the mastery level on data justification.",
+            "Level 4 Case B: After a micro-teaching simulation, the mentor maps observed questioning patterns against the seminar's discourse criteria and outlines an actionable wait-time protocol for the next practice round.",
+            "Level 5 Case A: Through a structured feedback dialogue, the instructor probes how the learner chose an ineffective study strategy, guides the student to self-assess the draft against quality criteria, and co-designs a transfer plan for upcoming complex problems.",
+            "Level 5 Case B: During a capstone thesis supervision, the advisor diagnoses deeper conceptual gaps in the theoretical framing, prompts reflective self-evaluation of analytical choices, and collaboratively establishes self-monitoring checkpoints for independent revision."
+          ),
+          "[Note: Fictional, AI-generated demonstration text.]"
         ),
         source_id = c(
           # 101-104: Baseline cases
           1, 1, 2, 2,
-          # 201-210: K1_Empathie (sources 1 and 3)
+          # 201-210: S1_Cognitive_Activation (sources 1 and 3)
           1, 1, 1, 1, 3, 3, 3, 3, 3, 3,
-          # 211-218: K2_Struktur (sources 2 and 3)
+          # 211-218: S2_Instructional_Structure (sources 2 and 3)
           2, 2, 2, 2, 3, 3, 3, 3,
-          # 219-230: K3_Fachkompetenz (sources 1, 2, and 3)
+          # 219-230: S3_Formative_Feedback (sources 1, 2, and 3)
           1, 1, 2, 2, 2, 2, 1, 1, 3, 3, 3, 3
         ),
         stringsAsFactors = FALSE

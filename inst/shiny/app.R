@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Shiny Server Open Source / Deployment Entrypoint for CodingManageR
 if (requireNamespace("CodingManageR", quietly = TRUE)) {
   CodingManageR::run_app(

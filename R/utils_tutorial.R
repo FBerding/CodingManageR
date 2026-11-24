@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # IN-APP GETTING STARTED SPOTLIGHT TUTORIAL ENGINE (INTERNAL HELPERS)
 # ==============================================================================
@@ -213,9 +215,9 @@ coding_manager_tutorial_assets <- function() {
         position: fixed;
         z-index: 2045;
         border-radius: 6px;
-        border: 2px solid var(--cm-navy, #1B365D);
+        border: 2px solid var(--cm-indigo, #33418F);
         box-shadow:
-          0 0 0 4px rgba(27, 54, 93, 0.18),
+          0 0 0 4px rgba(51, 65, 143, 0.20),
           0 0 0 9999px rgba(15, 23, 42, 0.48);
         pointer-events: none;
         transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -228,10 +230,10 @@ coding_manager_tutorial_assets <- function() {
         max-width: calc(100vw - 24px);
         background-color: var(--cm-bg-surface, #FFFFFF);
         color: var(--cm-ink, #1F2937);
-        border: 1px solid var(--cm-border, #D8E0EA);
-        border-top: 3px solid var(--cm-navy, #1B365D);
+        border: 1px solid var(--cm-border, #D9DDEA);
+        border-top: 3px solid var(--cm-indigo, #33418F);
         border-radius: var(--cm-radius, 6px);
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+        box-shadow: 0 12px 32px rgba(28, 35, 74, 0.18);
         padding: 18px 20px 16px 20px;
         font-family: var(--cm-font-sans, sans-serif);
         opacity: 0;
@@ -250,8 +252,8 @@ coding_manager_tutorial_assets <- function() {
         width: 10px;
         height: 10px;
         background-color: var(--cm-bg-surface, #FFFFFF);
-        border-left: 1px solid var(--cm-border, #D8E0EA);
-        border-top: 1px solid var(--cm-border, #D8E0EA);
+        border-left: 1px solid var(--cm-border, #D9DDEA);
+        border-top: 1px solid var(--cm-border, #D9DDEA);
         transform: rotate(45deg);
         display: none;
       }
@@ -259,8 +261,8 @@ coding_manager_tutorial_assets <- function() {
       .cm-tour-tooltip[data-placement='bottom'] .cm-tour-arrow {
         display: block;
         top: -6px;
-        background-color: var(--cm-navy, #1B365D);
-        border-color: var(--cm-navy, #1B365D);
+        background-color: var(--cm-indigo, #33418F);
+        border-color: var(--cm-indigo, #33418F);
       }
 
       .cm-tour-tooltip[data-placement='top'] .cm-tour-arrow {
@@ -287,8 +289,8 @@ coding_manager_tutorial_assets <- function() {
         gap: 4px;
         padding: 3px;
         margin-bottom: 12px;
-        background-color: var(--cm-bg-subtle, #EEF2F6);
-        border: 1px solid var(--cm-border, #D8E0EA);
+        background-color: var(--cm-bg-subtle, #EEF0F6);
+        border: 1px solid var(--cm-border, #D9DDEA);
         border-radius: var(--cm-radius-sm, 4px);
       }
 
@@ -297,7 +299,7 @@ coding_manager_tutorial_assets <- function() {
         appearance: none;
         border: 1px solid transparent;
         background: transparent;
-        color: var(--cm-ink-muted, #526071);
+        color: var(--cm-ink-muted, #525B70);
         font-size: 0.74rem;
         font-weight: 500;
         line-height: 1.25;
@@ -311,20 +313,20 @@ coding_manager_tutorial_assets <- function() {
       }
 
       .cm-tour-part-btn:hover {
-        color: var(--cm-ink-heading, #16243A);
+        color: var(--cm-ink-heading, #1C234A);
       }
 
       .cm-tour-part-btn--active {
         background-color: var(--cm-bg-surface, #FFFFFF);
-        color: var(--cm-navy, #1B365D);
-        border-color: var(--cm-border, #D8E0EA);
+        color: var(--cm-indigo, #33418F);
+        border-color: var(--cm-border, #D9DDEA);
         font-weight: 600;
       }
 
       .cm-tour-part-btn:focus-visible,
       .cm-tour-close:focus-visible,
       .cm-tour-btn:focus-visible {
-        outline: 2px solid var(--cm-navy, #1B365D);
+        outline: 2px solid var(--cm-indigo, #33418F);
         outline-offset: 2px;
       }
 
@@ -338,7 +340,7 @@ coding_manager_tutorial_assets <- function() {
 
       .cm-tour-meta {
         font-size: 0.78rem;
-        color: var(--cm-ink-muted, #526071);
+        color: var(--cm-ink-muted, #525B70);
         font-variant-numeric: tabular-nums;
         display: flex;
         align-items: center;
@@ -349,7 +351,7 @@ coding_manager_tutorial_assets <- function() {
         appearance: none;
         border: 1px solid transparent;
         background: transparent;
-        color: var(--cm-ink-muted, #526071);
+        color: var(--cm-ink-muted, #525B70);
         width: 28px;
         height: 28px;
         border-radius: var(--cm-radius-sm, 4px);
@@ -363,8 +365,8 @@ coding_manager_tutorial_assets <- function() {
       }
 
       .cm-tour-close:hover {
-        background-color: var(--cm-bg-subtle, #EEF2F6);
-        color: var(--cm-ink-heading, #16243A);
+        background-color: var(--cm-bg-subtle, #EEF0F6);
+        color: var(--cm-ink-heading, #1C234A);
       }
 
       .cm-tour-title {
@@ -372,7 +374,7 @@ coding_manager_tutorial_assets <- function() {
         font-size: 1.02rem;
         font-weight: 600;
         line-height: 1.35;
-        color: var(--cm-ink-heading, #16243A);
+        color: var(--cm-ink-heading, #1C234A);
       }
 
       .cm-tour-body {
@@ -385,21 +387,21 @@ coding_manager_tutorial_assets <- function() {
       .cm-tour-tip {
         margin-top: 12px;
         padding-top: 10px;
-        border-top: 1px solid var(--cm-border, #D8E0EA);
+        border-top: 1px solid var(--cm-border, #D9DDEA);
         font-size: 0.82rem;
         line-height: 1.45;
-        color: var(--cm-ink-muted, #526071);
+        color: var(--cm-ink-muted, #525B70);
       }
 
       .cm-tour-tip strong {
-        color: var(--cm-ink-heading, #16243A);
+        color: var(--cm-ink-heading, #1C234A);
         font-weight: 600;
       }
 
       .cm-tour-footer {
         margin-top: 14px;
         padding-top: 12px;
-        border-top: 1px solid var(--cm-border, #D8E0EA);
+        border-top: 1px solid var(--cm-border, #D9DDEA);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -408,7 +410,7 @@ coding_manager_tutorial_assets <- function() {
 
       .cm-tour-kbd-hint {
         font-size: 0.74rem;
-        color: var(--cm-ink-muted, #526071);
+        color: var(--cm-ink-muted, #525B70);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -436,11 +438,11 @@ coding_manager_tutorial_assets <- function() {
       .cm-tour-btn--secondary {
         background-color: var(--cm-bg-surface, #FFFFFF);
         color: var(--cm-ink, #1F2937);
-        border: 1px solid var(--cm-border-strong, #C2CDD9);
+        border: 1px solid var(--cm-border-strong, #C2C8DC);
       }
 
       .cm-tour-btn--secondary:hover:not(:disabled) {
-        background-color: var(--cm-bg-subtle, #EEF2F6);
+        background-color: var(--cm-bg-subtle, #EEF0F6);
       }
 
       .cm-tour-btn--secondary:disabled {
@@ -449,14 +451,14 @@ coding_manager_tutorial_assets <- function() {
       }
 
       .cm-tour-btn--primary {
-        background-color: var(--cm-navy, #1B365D);
+        background-color: var(--cm-indigo, #33418F);
         color: #FFFFFF;
-        border: 1px solid var(--cm-navy, #1B365D);
+        border: 1px solid var(--cm-indigo, #33418F);
       }
 
       .cm-tour-btn--primary:hover {
-        background-color: var(--cm-navy-hover, #142947);
-        border-color: var(--cm-navy-hover, #142947);
+        background-color: var(--cm-indigo-hover, #26316E);
+        border-color: var(--cm-indigo-hover, #26316E);
       }
 
       @media (max-width: 576px) {

@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Dependencies (shiny, DBI) are imported via NAMESPACE
 
 # ==============================================================================

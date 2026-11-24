@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Unit & Integration Tests: Translation, Reliability, Performance, Export & UI
 # Covers: R/utils_translation.R, R/utils_reliability.R, R/utils_performance.R,
@@ -257,7 +259,7 @@ test_that("export helpers sanitize BOM columns, map all 9 PKs, validate schemas,
 
   csv_sources <- export_table_to_csv(db$con, "sources")
   expect_match(csv_sources, "Kurzreferenz")
-  expect_match(csv_sources, "Mueller2024")
+  expect_match(csv_sources, "Klieme2024")
 
   db_empty <- local_test_db(seeded = TRUE, empty = TRUE)
   csv_empty_sources <- export_table_to_csv(db_empty$con, "sources")
@@ -288,7 +290,7 @@ test_that("fetch_consolidated_master_export consolidates ratings with optional s
   filtered <- fetch_consolidated_master_export(con, scale_ids = c("1"), source_ids = c(1L), user_ids = c(user1_id))
   expect_gt(nrow(filtered), 0L)
   expect_true(all(filtered$username == "user1"))
-  expect_true(all(filtered$skala_kuerzel == "Empathie"))
+  expect_true(all(filtered$skala_kuerzel == "CogAct"))
 
   # Verify legacy Vollstaendiges_Zitat column detection branch
   con_leg <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
@@ -340,12 +342,12 @@ test_that("UI builders generate expected Bootstrap markup for KPI cards, badges,
   # Scale examples modal (empty and populated with highlighted active_level)
   expect_match(ui_to_html(build_scale_examples_modal(NULL, lang = "en")), "modal")
   scale_row <- data.frame(
-    name = "K1_Empathie", short_label = "Empathie", def_desc = "Desc",
+    name = "S1_Cognitive_Activation", short_label = "CogAct", def_desc = "Desc",
     max_value = 2L, bsp_0 = "Example 0", bsp_1 = "", bsp_2 = "Example 2",
     stringsAsFactors = FALSE
   )
   ex_html <- ui_to_html(build_scale_examples_modal(scale_row, active_level = 2L, lang = "en"))
-  expect_match(ex_html, "K1_Empathie")
+  expect_match(ex_html, "S1_Cognitive_Activation")
   expect_match(ex_html, "Example 2")
   expect_match(ex_html, "bg-success")
 
@@ -360,7 +362,7 @@ test_that("UI builders generate expected Bootstrap markup for KPI cards, badges,
   # Coding search table UI (empty and populated with long text truncation & all rating type badges)
   expect_match(ui_to_html(build_coding_search_table_ui(ns, data.frame(), lang = "en")), "alert-info")
   page_df <- search_case_codings_db(db$con)
-  page_df$case_text[1] <- paste(rep("Long clinical narrative ", 10), collapse = "")
+  page_df$case_text[1] <- paste(rep("Long classroom observation narrative ", 10), collapse = "")
   tbl_html <- ui_to_html(build_coding_search_table_ui(ns, page_df[1:5, ], lang = "en"))
   expect_match(tbl_html, "mod_test-trigger_edit_coding_rating")
   expect_match(tbl_html, "\\.\\.\\.")
@@ -442,9 +444,9 @@ test_that("UI builders, export, and stratified sampling handle custom thresholds
     typ = c("schulung", "custom_typ", "gold_standard"),
     username = c("user1", NA_character_, "admin"),
     zeitstempel = c("2026-11-10 10:00:00", NA_character_, "2026-11-11 08:30:00"),
-    case_text = c("Short clinical text", NA_character_, "Another short note"),
-    scale_name = c("K1_Empathie", NA_character_, "IdenticalName"),
-    scale_short_label = c("Empathie", NA_character_, "IdenticalName"),
+    case_text = c("Short classroom text", NA_character_, "Another short note"),
+    scale_name = c("S1_Cognitive_Activation", NA_character_, "IdenticalName"),
+    scale_short_label = c("CogAct", NA_character_, "IdenticalName"),
     scale_max_value = c(4L, NA_integer_, 2L),
     stringsAsFactors = FALSE
   )
@@ -452,8 +454,8 @@ test_that("UI builders, export, and stratified sampling handle custom thresholds
   expect_match(edge_tbl_html, "bg-info")
   expect_match(edge_tbl_html, "bg-secondary")
   expect_match(edge_tbl_html, "bg-warning")
-  expect_match(edge_tbl_html, "Short clinical text")
-  expect_match(edge_tbl_html, "Empathie")
+  expect_match(edge_tbl_html, "Short classroom text")
+  expect_match(edge_tbl_html, "CogAct")
 
   # 5. fetch_consolidated_master_export() error fallback on empty DB without tables
   con_empty_no_tbl <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")

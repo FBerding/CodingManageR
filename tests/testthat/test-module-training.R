@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Module Server & UI Tests: Coding Training & Calibration Module
 # Covers: R/modul_training.R (schulungUI and schulungServer)
@@ -13,7 +15,7 @@ test_that("schulungServer runs complete stratified training workflow, persists m
   # End-to-end server test of schulungServer() covering:
   # 1) Initial configuration screen & dynamic minimum units calculation (max_value + 1)
   # 2) Error path when starting training on a scale with 0 gold-standard cases
-  # 3) Starting a stratified training session on K2_Struktur (max_value = 3, 4 units)
+  # 3) Starting a stratified training session on S2_Instructional_Structure (max_value = 3, 4 units)
   # 4) Inspecting active case text, stage definition (wert_definition), and abort flow (back_to_config_btn)
   # 5) Completing all 4 training items via naechster_fall_btn, verifying:
   #    - 4 'schulung' rows written to user_ratings
@@ -186,7 +188,7 @@ test_that("schulungServer examples modal displays reference cases, handles empty
       session$flushReact()
       ex_ok <- ui_to_html(output$modal_beispiel_content)
       expect_match(ex_ok, "bg-warning|bg-primary")
-      expect_match(ex_ok, "Mueller2024|ICD-10-GM-2025")
+      expect_match(ex_ok, "Klieme2024|HattieTimperley2025")
 
       # Empty level (level 0 on scale 1 has no gold_standard/kodierung ratings)
       session$setInputs(modal_gewaehlte_stufe = "0")

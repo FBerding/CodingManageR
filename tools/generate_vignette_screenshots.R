@@ -1,14 +1,17 @@
 #!/usr/bin/env Rscript
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Automated Vignette Screenshot Generator for CodingManageR
 # ==============================================================================
-# Captures 12 consistent, reproducible English-language PNG screenshots of the
-# running CodingManageR Shiny application (4 core views + all 8 Admin Console
-# subtabs) via shinytest2::AppDriver and headless Chrome (chromote).
+# Captures 12 consistent, reproducible PNG screenshots of the running
+# CodingManageR Shiny application (4 core views + all 8 Admin Console subtabs)
+# in English (--lang en) or German (--lang de) via shinytest2::AppDriver and
+# headless Chrome (chromote).
 #
 # Usage (from repository root):
-#   Rscript tools/generate_vignette_screenshots.R
-#   Rscript tools/generate_vignette_screenshots.R --output-dir vignettes/figures --width 1280 --height 860 --lang en
+#   Rscript tools/generate_vignette_screenshots.R --output-dir vignettes/figures --lang en
+#   Rscript tools/generate_vignette_screenshots.R --output-dir vignettes/figures-de --lang de
 # ==============================================================================
 
 parse_cli_args <- function(args) {
@@ -62,8 +65,8 @@ build_demo_sqlite <- function() {
   CodingManageR::create_all_tables(con, verbose = FALSE)
   suppressMessages(CodingManageR::seed_initial_data(con, empty = FALSE))
 
-  # Ensure complete 0..4 gold-standard coverage for scale 1 (K1_Empathie) so
-  # 1. Coding Training starts deterministically with authentic clinical cases.
+  # Ensure complete 0..4 gold-standard coverage for scale 1 (S1_Cognitive_Activation) so
+  # 1. Coding Training starts deterministically with authentic classroom observation cases.
   gold_uid <- DBI::dbGetQuery(
     con,
     "SELECT user_id FROM user_tokens WHERE username = 'gold_standard' LIMIT 1"
@@ -158,13 +161,30 @@ capture_view <- function(app, out_dir, filename, delay_s = 0.4) {
   invisible(dest)
 }
 
-set_ui_language <- function(app, lang = "en") {
+set_ui_language <- function(app, lang = "en", timeout_s = 15, poll_s = 0.2) {
   js_cmd <- sprintf(
     "Shiny.setInputValue('selected_ui_lang', %s, {priority: 'event'});",
     jsonlite::toJSON(lang, auto_unbox = TRUE)
   )
   app$run_js(js_cmd)
   app$wait_for_idle(duration = 400, timeout = 30000)
+
+  # Confirm that the active language selector reflects the requested locale
+  js_check <- sprintf(
+    "(function() {
+      var sel = document.querySelector('select[data-lang-selector]');
+      return !sel || sel.value === %s;
+    })()",
+    jsonlite::toJSON(lang, auto_unbox = TRUE)
+  )
+  deadline <- Sys.time() + timeout_s
+  repeat {
+    matched <- tryCatch(isTRUE(app$get_js(js_check)), error = function(e) FALSE)
+    if (matched) break
+    if (Sys.time() >= deadline) break
+    Sys.sleep(poll_s)
+  }
+  app$wait_for_idle(duration = 300, timeout = 30000)
 }
 
 sign_in_as <- function(app, username, token, wait_selector) {

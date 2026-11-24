@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Dependencies (shiny, DBI, ggplot2) are imported via NAMESPACE
 
 # ==============================================================================
@@ -408,7 +410,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         plot_df <- plot_df[!is.na(plot_df$value), ]
 
         color_palette <- setNames(
-          c("#1B365D", "#166534", "#475569", "#B45309"),
+          c("#33418F", "#166534", "#475569", "#B45309"),
           c(lbl_kappa, lbl_alpha, lbl_gwet, lbl_iota)
         )
 
@@ -490,16 +492,16 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         scale_x_continuous(breaks = x_breaks, labels = x_labels, limits = c(0.5, max(1.5, n_sitzungen + 0.5))) +
         theme_minimal(base_size = 12) +
         theme(
-          plot.title = element_text(face = "bold", size = 13, color = "#16243A", margin = margin(b = 4)),
-          plot.subtitle = element_text(size = 10.5, color = "#526071", margin = margin(b = 10)),
+          plot.title = element_text(face = "bold", size = 13, color = "#1C234A", margin = margin(b = 4)),
+          plot.subtitle = element_text(size = 10.5, color = "#525B70", margin = margin(b = 10)),
           axis.title.x = element_text(face = "bold", margin = margin(t = 10), color = "#334155"),
           axis.title.y = element_text(face = "bold", margin = margin(r = 10), color = "#334155"),
-          axis.text = element_text(color = "#526071"),
+          axis.text = element_text(color = "#525B70"),
           axis.text.x = element_text(angle = if (n_sitzungen > 8) 35 else 0, hjust = if (n_sitzungen > 8) 1 else 0.5),
-          panel.grid.major = element_line(color = "#E2E8F0", linewidth = 0.4),
+          panel.grid.major = element_line(color = "#E2E5F0", linewidth = 0.4),
           panel.grid.minor = element_blank(),
           legend.position = "top",
-          legend.title = element_text(face = "bold", color = "#16243A")
+          legend.title = element_text(face = "bold", color = "#1C234A")
         )
 
       return(p)

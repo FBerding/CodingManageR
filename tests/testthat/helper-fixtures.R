@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Shared Test Fixtures and Helpers for CodingManageR Test Suite
 # ==============================================================================
@@ -112,7 +114,7 @@ seed_bulk_records <- function(con,
       DBI::dbExecute(
         con,
         "INSERT INTO texts (text_id, text, source_id) VALUES (?, ?, 1)",
-        params = list(tid, sprintf("Bulk clinical narrative case #%03d for pagination verification.", tid))
+        params = list(tid, sprintf("Bulk classroom observation case #%03d for pagination verification.", tid))
       )
     }
   }
@@ -174,7 +176,7 @@ seed_bulk_records <- function(con,
 #' Seed full gold-standard coverage (0..max_value) for a given scale so stratified training pools work
 #'
 #' @param con Active DBI or Pool connection.
-#' @param scale_id Integer scale ID (e.g. 1L for K1_Empathie, max_value = 4).
+#' @param scale_id Integer scale ID (e.g. 1L for S1_Cognitive_Activation, max_value = 4).
 #' @param max_value Integer maximum level of the scale.
 seed_full_gold_standards <- function(con, scale_id = 1L, max_value = 4L) {
   gs_uid <- DBI::dbGetQuery(con, "SELECT user_id FROM user_tokens WHERE username = 'gold_standard' LIMIT 1")$user_id[1]

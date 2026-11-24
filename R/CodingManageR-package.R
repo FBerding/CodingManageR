@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 #' CodingManageR: Multi-User Qualitative Coding Portal and Training Manager
 #'
 #' Provides a multi-user R Shiny web application and coder training portal for

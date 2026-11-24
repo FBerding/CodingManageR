@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # Module Server & UI Tests: Administration Console (All 8 Subtabs)
 # Covers: R/modul_admin.R (adminUI and adminServer)
@@ -226,7 +228,7 @@ test_that("adminServer Subtabs 2, 3, and 4 (Texts, Sources, Scales): CRUD, pagin
       expect_equal(current_page_texts(), 2L)
 
       # Search and source reassignment modal
-      session$setInputs(texts_search_query = "Cephalgie")
+      session$setInputs(texts_search_query = "photosynthesis")
       session$flushReact()
       expect_match(ui_to_html(output$texts_management_table_container), "102")
 
@@ -240,7 +242,7 @@ test_that("adminServer Subtabs 2, 3, and 4 (Texts, Sources, Scales): CRUD, pagin
       session$setInputs(source_search_query = "")
       session$flushReact()
       expect_match(ui_to_html(output$sources_counter_text), "4")
-      expect_match(ui_to_html(output$sources_table_container), "Mueller2024")
+      expect_match(ui_to_html(output$sources_table_container), "Klieme2024")
 
       session$setInputs(btn_open_add_source = 1L, new_lizenz_select = "__custom__")
       session$flushReact()
@@ -294,7 +296,7 @@ test_that("adminServer Subtabs 2, 3, and 4 (Texts, Sources, Scales): CRUD, pagin
       session$setInputs(scale_search_query = "")
       session$flushReact()
       expect_match(ui_to_html(output$scales_counter_text), "13")
-      expect_match(ui_to_html(output$scales_table_container), "K1_Empathie")
+      expect_match(ui_to_html(output$scales_table_container), "S1_Cognitive_Activation")
 
       session$setInputs(btn_scales_next_page = 1L)
       session$flushReact()
@@ -313,7 +315,7 @@ test_that("adminServer Subtabs 2, 3, and 4 (Texts, Sources, Scales): CRUD, pagin
         new_scale_short_label = "Klarheit",
         new_scale_name = "K99_Klarheit",
         new_scale_max_value = 3L,
-        new_scale_def_desc = "Clarity of medical explanation",
+        new_scale_def_desc = "Clarity of instructional explanation",
         new_scale_def_n_0 = "Unclear",
         new_scale_def_n_1 = "Basic",
         new_scale_def_n_2 = "Clear",
@@ -464,8 +466,8 @@ test_that("adminServer Subtabs 7 & 8 (Import/Export Modals, CSV Downloads/Upload
   # Prepare valid CSV upload files matching exact SQLite table schemas
   csv_scales_valid <- write_temp_csv(data.frame(
     scale_id = c(1L, 10L),
-    short_label = c("EmpathieUpd", "NewScale10"),
-    name = c("K1_Empathie", "K10_Uploaded"),
+    short_label = c("CogActUpd", "NewScale10"),
+    name = c("S1_Cognitive_Activation", "K10_Uploaded"),
     max_value = c(4L, 2L),
     def_desc = c("Updated desc", "Uploaded desc"),
     def_n_0 = c("d0", "u0"), def_n_1 = c("d1", "u1"), def_n_2 = c("d2", "u2"),
@@ -615,7 +617,7 @@ test_that("adminServer Subtabs 7 & 8 (Import/Export Modals, CSV Downloads/Upload
       session$setInputs(conflict_resolution_mode = "skip", btn_confirm_append_table = 1L)
       session$flushReact()
       expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM scale_definitions WHERE scale_id = 10")$n[1], 1L)
-      expect_equal(DBI::dbGetQuery(con, "SELECT short_label FROM scale_definitions WHERE scale_id = 1")$short_label[1], "Empathie")
+      expect_equal(DBI::dbGetQuery(con, "SELECT short_label FROM scale_definitions WHERE scale_id = 1")$short_label[1], "CogAct")
 
       # Sources upload with PK conflict on source_id=4 -> resolve via 'overwrite' + auto-fill erfasst_am
       session$setInputs(upload_sources_file = list(datapath = csv_sources_valid, name = "sources.csv"))
@@ -766,9 +768,9 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$flushReact()
 
       # --- SOURCES SEARCH, VALIDATION ERRORS & BLOCKED DELETE CONFIRMATION ---
-      session$setInputs(source_search_query = "Mueller2024")
+      session$setInputs(source_search_query = "Klieme2024")
       session$flushReact()
-      expect_match(ui_to_html(output$sources_table_container), "Mueller2024")
+      expect_match(ui_to_html(output$sources_table_container), "Klieme2024")
 
       session$setInputs(source_search_query = "zzz_no_source_999")
       session$flushReact()
@@ -784,18 +786,18 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$flushReact()
       expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
 
-      session$setInputs(new_kurzreferenz = "Mueller2024", new_referenz = "Full valid citation 2026", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 3L)
+      session$setInputs(new_kurzreferenz = "Klieme2024", new_referenz = "Full valid citation 2026", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 3L)
       session$flushReact()
       expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
 
-      # Edit source #2: short ref too short & duplicate of #1 ('Mueller2024')
+      # Edit source #2: short ref too short & duplicate of #1 ('Klieme2024')
       session$setInputs(trigger_edit_source = 2L)
       session$flushReact()
       session$setInputs(edit_kurzreferenz = "x", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 1L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
 
-      session$setInputs(edit_kurzreferenz = "Mueller2024", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 2L)
+      session$setInputs(edit_kurzreferenz = "Klieme2024", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 2L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
 
@@ -807,10 +809,10 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM sources WHERE source_id = 1")$n[1], 1L)
 
       # --- SCALES SEARCH, EMPTY RESULT, PAGE CLAMPING & ADD/EDIT VALIDATIONS ---
-      session$setInputs(scale_search_query = "Empathie")
+      session$setInputs(scale_search_query = "CogAct")
       session$flushReact()
       expect_match(ui_to_html(output$scales_counter_text), "1")
-      expect_match(ui_to_html(output$scales_table_container), "K1_Empathie")
+      expect_match(ui_to_html(output$scales_table_container), "S1_Cognitive_Activation")
 
       session$setInputs(scale_search_query = "zzz_no_scale_999")
       session$flushReact()
@@ -827,22 +829,22 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$flushReact()
       expect_match(ui_to_html(output$add_scale_feedback), "alert-danger")
 
-      session$setInputs(new_scale_short_label = "Ok", new_scale_name = "K1_Empathie", new_scale_max_value = 3L, btn_save_new_scale = 3L)
+      session$setInputs(new_scale_short_label = "Ok", new_scale_name = "S1_Cognitive_Activation", new_scale_max_value = 3L, btn_save_new_scale = 3L)
       session$flushReact()
       expect_match(ui_to_html(output$add_scale_feedback), "alert-danger")
 
-      # Edit scale #2 validation: empty short_label, short name, duplicate name 'K1_Empathie'
+      # Edit scale #2 validation: empty short_label, short name, duplicate name 'S1_Cognitive_Activation'
       session$setInputs(trigger_edit_scale = 2L)
       session$flushReact()
-      session$setInputs(edit_scale_short_label = "", edit_scale_name = "K2_Struktur", btn_save_edit_scale = 1L)
+      session$setInputs(edit_scale_short_label = "", edit_scale_name = "S2_Instructional_Structure", btn_save_edit_scale = 1L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
 
-      session$setInputs(edit_scale_short_label = "Struk", edit_scale_name = "x", btn_save_edit_scale = 2L)
+      session$setInputs(edit_scale_short_label = "Struct", edit_scale_name = "x", btn_save_edit_scale = 2L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
 
-      session$setInputs(edit_scale_short_label = "Struk", edit_scale_name = "K1_Empathie", btn_save_edit_scale = 3L)
+      session$setInputs(edit_scale_short_label = "Struct", edit_scale_name = "S1_Cognitive_Activation", btn_save_edit_scale = 3L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_scale_feedback), "alert-danger")
     }
@@ -902,18 +904,18 @@ test_that("adminServer covers export filter modal searches, zero-selection warni
     ),
     {
       # 1. Modal live search (matching + empty match) for Scales, Sources, Users
-      session$setInputs(input_modal_scales_search = "Empathie")
+      session$setInputs(input_modal_scales_search = "CogAct")
       session$flushReact()
-      expect_match(ui_to_html(output$modal_scales_page_ui), "K1_Empathie")
+      expect_match(ui_to_html(output$modal_scales_page_ui), "S1_Cognitive_Activation")
       session$setInputs(input_modal_scales_search = "zzz_none")
       session$flushReact()
       expect_match(ui_to_html(output$modal_scales_page_ui), "text-muted")
       session$setInputs(input_modal_scales_search = "")
       session$flushReact()
 
-      session$setInputs(input_modal_sources_search = "Mueller")
+      session$setInputs(input_modal_sources_search = "Klieme")
       session$flushReact()
-      expect_match(ui_to_html(output$modal_sources_page_ui), "Mueller2024")
+      expect_match(ui_to_html(output$modal_sources_page_ui), "Klieme2024")
       session$setInputs(input_modal_sources_search = "zzz_none")
       session$flushReact()
       expect_match(ui_to_html(output$modal_sources_page_ui), "text-muted")

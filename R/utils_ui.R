@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # User interface components and modal builders for CodingManageR
 # shiny is imported via NAMESPACE
 

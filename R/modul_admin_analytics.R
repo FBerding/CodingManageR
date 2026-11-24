@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # ADMIN MODULE SERVER HELPERS: RELIABILITY, CODING SEARCH & DIAGNOSTICS (TABS 5, 6, 8)
 # ==============================================================================
@@ -436,7 +438,7 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
                color = "#166534", size = 3.2, hjust = 1.05) +
       geom_text(aes(label = ifelse(is.na(val), tr("common.no_data", lang),
                                    if (is_pct) paste0(sprintf("%.1f", val), " %") else sprintf("%.3f", val))),
-                hjust = -0.15, size = 3.3, fontface = "bold", color = "#16243A") +
+                hjust = -0.15, size = 3.3, fontface = "bold", color = "#1C234A") +
       scale_fill_manual(values = color_map, name = tr("admin.reliability.legend_classification", lang)) +
       coord_flip(ylim = c(0, if (is_pct) 115 else 1.18)) +
       labs(
@@ -448,12 +450,12 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
       theme(
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_line(color = "#E2E8F0"),
-        axis.text.y = element_text(face = "bold", color = "#16243A"),
-        axis.text.x = element_text(color = "#526071"),
+        panel.grid.major.x = element_line(color = "#E2E5F0"),
+        axis.text.y = element_text(face = "bold", color = "#1C234A"),
+        axis.text.x = element_text(color = "#525B70"),
         legend.position = "bottom",
-        legend.title = element_text(size = 9, face = "bold", color = "#16243A"),
-        legend.text = element_text(size = 9, color = "#526071")
+        legend.title = element_text(size = 9, face = "bold", color = "#1C234A"),
+        legend.text = element_text(size = 9, color = "#525B70")
       )
 
     p

@@ -1,4 +1,6 @@
 #!/usr/bin/env Rscript
+# Note: This file was generated with the assistance of AI.
+
 # ==============================================================================
 # CodingManageR Local Coverage Verification Script (covr + testthat + shinytest2)
 # Usage: Rscript tests/run_coverage.R

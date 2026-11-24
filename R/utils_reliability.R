@@ -1,3 +1,5 @@
+# Note: This file was generated with the assistance of AI.
+
 # Reliability metrics, stratified sampling, and evaluation utilities
 # DBI is imported via NAMESPACE
 
