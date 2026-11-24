@@ -1,0 +1,338 @@
+# Introduction to CodingManageR
+
+## Overview
+
+CodingManageR is a web portal for systematic qualitative text coding and
+coder training. It guides coders through rating case texts on ordinal
+scales, tracks inter-rater reliability, and gives administrators full
+control over users, scales, texts, sources, and data pipelines.
+
+This guide is split into two parts:
+
+- Part 1 covers the essential workflow every coder needs for daily work.
+- Part 2 explains advanced configuration, monitoring, and data
+  management tools for administrators.
+
+If you have not installed the package yet, see the installation guide
+first with
+[`vignette("CodingManageR", package = "CodingManageR")`](../articles/CodingManageR.md).
+
+## Part 1: Getting Started (Essential Daily Workflow)
+
+Part 1 focuses exclusively on signing in, reviewing your progress,
+completing coding trainings, and recording live ratings.
+
+### 1.1 Launching the Portal and Signing In
+
+On a local computer, open R or RStudio and launch the application:
+
+``` r
+
+CodingManageR::run_app()
+```
+
+In a server setup, open the application URL provided by your
+administrator in a web browser.
+
+On the sign-in screen:
+
+1.  Use the language menu in the top-right corner of the card to switch
+    between English and German at any time.
+2.  Enter your Username and Access Token provided by your administrator.
+3.  Click Sign In.
+
+If your account is currently deactivated, the portal shows a notice
+instead of signing you in. Contact an administrator to activate your
+account.
+
+Once signed in, the top bar shows your username, numeric user ID, role
+(`user` or `admin`), a Refresh View button to reload newly updated data
+without signing out, a Log Out button, and the language selector.
+
+### 1.2 Navigating the Dashboard
+
+After signing in, you start on the Dashboard tab. It has two subtabs
+designed to track your progress and check coding rules.
+
+#### Learning & Coding Progress
+
+At the top, three summary cards show your cumulative counts:
+
+- Live Codings: total empirical case ratings you have recorded in Live
+  Coding.
+- Training Codings: total individual case ratings completed across
+  practice runs.
+- Training Sessions: number of completed training runs.
+
+Below the summary cards, the Reliability & Progress chart plots how
+closely your training ratings match the stored gold-standard answers
+across sessions:
+
+- Use the Coding Dimension / Scale filter to inspect all scales or focus
+  on one specific scale.
+- Use the Reliability Metric selector to view the combined core overview
+  (Accuracy, Cohen’s Kappa, Krippendorff’s Alpha ordinal, and Iota
+  Index) or inspect any of the 16 individual agreement and
+  classification metrics.
+- Review the Training History table underneath the chart for session
+  dates, sample sizes, and exact numeric metric scores.
+- Check the Category Breakdown table at the bottom to see how many live
+  codings, training ratings, and uncoded cases remain per scale.
+
+#### Scales Overview & Requirements
+
+Switch to the second Dashboard subtab to browse all unlocked coding
+scales as a searchable reference handbook.
+
+- Type a scale ID, short code, or name into the search field to filter
+  cards quickly.
+- Each card explains the general scale definition, the rating range (for
+  example `0` to `2` or `0` to `5`), and concrete rating examples for
+  every numeric value.
+
+### 1.3 Practicing in Coding Training
+
+Open the 1. Coding Training tab to practice applying a scale against
+gold-standard texts before working on unrated empirical material. Every
+user can practice all scales available in the database.
+
+Prerequisites: Before Coding Training can be started for a scale, an
+administrator must have stored coding scales and case texts in the
+database. In addition, pre-coded reference cases (stored gold-standard
+or live ratings) must already exist for that scale so the system can
+draw training texts and score your agreement. An administrator provides
+these reference ratings either by coding initial cases directly in the
+portal or by importing them via CSV upload (see Section 2.6).
+
+#### Starting a Training Run
+
+1.  Select a Coding Dimension / Scale from the dropdown list.
+2.  Choose how many training cases to complete in this session. The
+    available pool is sampled across gold-standard texts.
+3.  Click Show Criteria & Examples if you want to review the scale
+    anchors before starting.
+4.  Click Start Training.
+
+#### Rating Cases and Viewing Feedback
+
+For each case in the session:
+
+1.  Read the case text carefully in the left panel. The text ID and
+    primary source reference appear below the text box.
+2.  Move the rating slider in the right panel to select a value between
+    `0` and the scale maximum.
+3.  As you move the slider, the Definition for Selected Value box
+    updates automatically with the example text for that exact score.
+    You can also click Show Criteria & Examples at any time to view all
+    levels side by side.
+4.  Click Next Case to advance, or Finish Training & View Results on the
+    last case. Use Abort if you want to cancel without saving a
+    completed session.
+
+When you finish the final case, CodingManageR compares all your answers
+against the stored gold-standard ratings, computes your agreement and
+reliability scores, saves the session to your history, and displays a
+results summary that immediately updates your Dashboard.
+
+### 1.4 Recording Ratings in Live Coding
+
+Open the 2. Live Coding tab to classify real, uncoded case texts for
+your research project. Unlike Coding Training, Live Coding only displays
+the scales, text sources, and coding sources that an administrator has
+unlocked for your account.
+
+Prerequisites: Before a user can start coding, an administrator must
+have stored coding scales, case texts, and sources in the database and
+unlocked the relevant scales, text sources, and coding sources for that
+user’s account.
+
+#### Configuring Your Workspace
+
+Before loading a text, set three options:
+
+1.  Select Relevant Category: choose one of the coding scales unlocked
+    for your account. If none are listed, ask an administrator to unlock
+    scale permissions for you.
+2.  Case Selection Mode (Text Pool): choose whether to draw random
+    uncoded cases across all your unlocked text sources, or restrict
+    selection to texts from one specific text source.
+3.  Scientific Coding Source: choose the coding source or protocol under
+    which your ratings will be recorded in the database.
+
+The workspace shows how many uncoded cases remain in the selected pool.
+Click Start Coding to load your first case.
+
+#### Coding Workflow
+
+1.  Read the case text and check the Text Source and Coding Source
+    badges at the top.
+2.  Select the appropriate score on the rating slider and review the
+    level definition or open Show Criteria & Examples when in doubt.
+3.  Click Save Rating & Next to store your rating in the database and
+    load the next uncoded case automatically.
+4.  If you prefer a different text from the same pool without saving,
+    click Switch Random Case. Click Pause to return to the workspace
+    setup screen.
+
+Once all uncoded cases in the chosen pool are finished, CodingManageR
+informs you that the pool is complete so you can pick another category
+or text pool.
+
+## Part 2: Advanced & Administrator Features
+
+When you sign in with an account whose role is `admin`, an additional
+Admin Console tab appears in the main navigation bar. It provides eight
+specialized subtabs for access control, corpus preparation, scale
+authoring, coder supervision, CSV data exchange, and database health
+checks.
+
+### 2.1 Administrator Role and Access Control Overview
+
+CodingManageR distinguishes two roles:
+
+- Standard Coders (`user`): see Dashboard, 1. Coding Training, and 2.
+  Live Coding. In Live Coding, they can only view and code scales, text
+  sources, and coding sources explicitly assigned to them.
+- Administrators (`admin`): have automatic access to all scales and
+  sources in Live Coding plus the full Admin Console.
+
+This separation ensures coders stay focused on their assigned material
+while administrators prepare datasets and monitor quality.
+
+### 2.2 User Management
+
+The first Admin Console tab manages accounts in the `user_tokens` table.
+
+- Create Users: click Add User, enter a unique username, assign a role
+  (`user` or `admin`), set active or inactive status, and type or
+  generate a random security token.
+- Search and Pagination: filter users by username, role, or status.
+  Results are paginated at 25 rows per page.
+- Activate or Deactivate Login: toggle a user’s active status directly
+  from the table or inside the edit dialog. Inactive users cannot sign
+  in, without deleting their historical ratings.
+- Self-Protection: the portal blocks you from deactivating or deleting
+  your own currently signed-in admin account.
+- Manage Permissions Matrix: for standard users, use the Sources and
+  Scales buttons in each row to choose exactly which primary text
+  sources they may read, which coding sources they may record ratings
+  under, and which scales are unlocked for them in Live Coding.
+
+### 2.3 Case Texts & Sources Directory
+
+Two dedicated tabs manage empirical texts and their bibliographic
+citations:
+
+#### Case Texts & Source Assignment
+
+- Browse and search all stored texts (25 items per page) by text
+  content, text ID, or assigned source.
+- Click the source assignment control on any text row to link or
+  reassign the text to its primary source in the `sources` directory.
+
+#### Sources Directory
+
+- View, search, add, edit, and delete bibliographic/protocol entries
+  (short reference, full citation, license type such as CC-BY or
+  proprietary, license notes, and URL/DOI).
+- Sources serve two purposes: identifying where a case text came from
+  (text source) and documenting which annotation guideline or
+  coder/model protocol produced a rating (coding source).
+
+### 2.4 Scales Management
+
+The Scales Management tab maintains the coding scheme
+(`scale_definitions`).
+
+- Create New Scale: specify a short label, descriptive scale name,
+  general coding instructions, the maximum integer rating value
+  (`max_value`, starting from `0`), and anchor examples for each score
+  level (`0` up to `max_value`).
+- Edit Scale Safely: you can refine descriptions and level examples at
+  any time. However, `max_value` becomes read-only after creation so
+  previously recorded ratings never shift meaning or go out of bounds.
+
+### 2.5 Reliability Monitoring & Editing Stored Codings
+
+Two tabs help administrators supervise coding quality and fix individual
+entries:
+
+#### Reliability & Progress
+
+- View global KPI totals across all coders (total live codings, total
+  training sessions, and team averages).
+- Filter by coder name, scale, and reliability metric to compare coder
+  performance in a bar chart and detailed summary table, including
+  drill-down views of individual sessions.
+
+#### Edit Codings
+
+- Search individual rows in `user_ratings` by rating type (`kodierung`,
+  `gold_standard`, or `schulung`), scale, text snippet, ID, or username.
+- Open the edit dialog on any rating row to correct its numeric score
+  safely within that scale’s valid `0..max_value` range.
+
+### 2.6 Data Export & CSV Import Basics
+
+The Data & Import/Export tab handles consolidated research downloads and
+bulk master-data uploads.
+
+#### Consolidated Master Data Export
+
+- Combine ratings (`user_ratings`), full case texts (`texts`), scale
+  definitions (`scale_definitions`), and full citations (`sources`) into
+  a single analysis-ready CSV file.
+- Before downloading, filter the export by specific Scales, Sources, or
+  Users if you only need a subset of the project.
+
+#### Raw Table Downloads
+
+- Download complete individual backups for master tables
+  (`scale_definitions`, `texts`, `sources`) and result logs
+  (`user_ratings`, `coding_training`) as separate CSV files.
+
+#### CSV Upload Format and Validation Basics
+
+You can extend or replace five database tables by uploading CSV files:
+
+1.  Scales (`scale_definitions`): required columns `short_label`,
+    `name`, `max_value` (optional `def_desc`, `bsp_0` through `bsp_4`).
+2.  Case Texts (`texts`): required column `text` (optional `source_id`).
+3.  Sources Directory (`sources`): required columns `Kurzreferenz`,
+    `Vollstaendiges_Zitat` (optional `Lizenz`, `Lizenz_Details`,
+    `URL_DOI`).
+4.  Ratings & Gold Standard (`user_ratings`): must match the exported
+    rating table columns (`text_id`, `user_id`, `kategorie`, `typ`,
+    `bewertung`, etc.).
+5.  Training Sessions (`coding_training`): must match the exported
+    training session structure.
+
+Follow these rules to avoid upload errors:
+
+- Always start by clicking Download CSV Template next to the
+  corresponding upload field to get an empty file with the exact
+  expected column headers.
+- Format CSV files as UTF-8 text using a semicolon (`;`) as the column
+  delimiter (not a comma).
+- When you upload a file, CodingManageR automatically cleans
+  whitespace/BOM headers and runs strict schema validation before
+  touching the database.
+- If validation passes, a two-step confirmation dialog lets you choose
+  whether to append new records safely or overwrite existing rows inside
+  a protected database transaction (rolling back automatically if any
+  row fails).
+
+### 2.7 System & Database Diagnosis
+
+The final DB Diagnosis tab provides an instant health overview of the
+relational backend:
+
+- Table Overview: displays live row counts and status across all 9
+  relational tables (`user_tokens`, `sources`, `texts`,
+  `scale_definitions`, `user_ratings`, `coding_training`,
+  `user_source_permissions`, `user_coding_source_permissions`, and
+  `user_scale_permissions`).
+- Integrity Audit: checks for potential structural issues such as
+  ratings pointing to missing texts or scales, texts missing valid
+  sources, or empty master tables, allowing quick verification after
+  bulk CSV imports.

@@ -1,0 +1,210 @@
+# CodingManageR
+
+## Overview
+
+CodingManageR is an R Shiny application for qualitative text coding and
+coder training. This guide explains how to install the package and start
+it either locally for a single user or on a Linux server for multiple
+users with MySQL or MariaDB.
+
+Before installing, make sure R version 4.1.0 or newer is installed on
+your system.
+
+## 1. Installing the R Package
+
+Choose the installation option that matches how you received the
+package.
+
+### Option A: Install from CRAN
+
+Open R or RStudio and run:
+
+``` r
+
+install.packages("CodingManageR")
+```
+
+### Option B: Install from a local archive file (.tar.gz)
+
+If you downloaded a package archive file (for example
+`CodingManageR_1.0.0.tar.gz`), install the required dependencies from
+CRAN first, then install the archive:
+
+``` r
+
+install.packages(c(
+  "aifeducation", "bslib", "DBI", "ggplot2",
+  "jsonlite", "pool", "RSQLite", "shiny"
+))
+
+install.packages(
+  "path/to/CodingManageR_1.0.0.tar.gz",
+  repos = NULL,
+  type = "source"
+)
+```
+
+Replace `path/to/CodingManageR_1.0.0.tar.gz` with the actual path to
+your downloaded file.
+
+### Option C: Install from a local source folder
+
+If you have the unpacked source folder of CodingManageR, install the
+dependencies first and then install from the folder path:
+
+``` r
+
+install.packages(c(
+  "aifeducation", "bslib", "DBI", "ggplot2",
+  "jsonlite", "pool", "RSQLite", "shiny"
+))
+
+install.packages(
+  "path/to/CodingManageR",
+  repos = NULL,
+  type = "source"
+)
+```
+
+Alternatively, you can run `R CMD INSTALL path/to/CodingManageR` in a
+system terminal.
+
+## 2. Local Single-User Setup (SQLite)
+
+Use this setup if you work alone on your own computer. CodingManageR
+stores all data in a local SQLite file automatically. Do not use SQLite
+when multiple people access the app at the same time on a server.
+
+Start the application in R:
+
+``` r
+
+CodingManageR::run_app()
+```
+
+If you want to store the SQLite database in a specific file instead of
+the default user data folder, pass a file path:
+
+``` r
+
+CodingManageR::run_app(sqlite_path = "my_coding_project.sqlite")
+```
+
+On the first start, all database tables and a default administrator
+account are created automatically. You can sign in with username `admin`
+and password `geheim123`, then change the password immediately inside
+the Admin tab.
+
+## 3. Multi-User Server Setup (Ubuntu/Debian with MySQL/MariaDB)
+
+Use this setup when several coders work simultaneously in a web browser
+via Shiny Server Open Source. The instructions below apply to Ubuntu or
+Debian servers.
+
+### Step 1: Install system libraries and MariaDB
+
+Run these commands in the server terminal as a user with `sudo` rights:
+
+``` bash
+sudo apt update
+sudo apt install -y r-base r-base-dev libmariadb-dev libcurl4-openssl-dev libssl-dev libxml2-dev mariadb-server gdebi-core wget
+```
+
+Start the MariaDB database service:
+
+``` bash
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+sudo mariadb-secure-installation
+```
+
+### Step 2: Install CodingManageR and RMariaDB for all system users
+
+Install the packages system-wide so the `shiny` service account can load
+them:
+
+``` bash
+sudo R -e 'install.packages(c("CodingManageR", "RMariaDB"), repos = "https://cloud.r-project.org")'
+```
+
+If you install CodingManageR from a local `.tar.gz` file instead of
+CRAN, first install its dependencies and `RMariaDB` from CRAN, and then
+install the archive with
+`sudo R CMD INSTALL CodingManageR_1.0.0.tar.gz`.
+
+### Step 3: Create the database and database user
+
+Open the database shell:
+
+``` bash
+sudo mariadb
+```
+
+Run the following SQL commands to create the database and a dedicated
+user for CodingManageR. Replace `ChooseAStrongPassword` with your own
+password:
+
+``` sql
+CREATE DATABASE IF NOT EXISTS kodierer_portal
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'shiny_user'@'localhost' IDENTIFIED BY 'ChooseAStrongPassword';
+GRANT ALL PRIVILEGES ON kodierer_portal.* TO 'shiny_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### Step 4: Install Shiny Server Open Source
+
+Download and install Shiny Server (check the Posit website for the
+latest version number if needed):
+
+``` bash
+wget https://download3.rstudio.org/ubuntu-20.04/x86_64/shiny-server-1.5.22.1017-amd64.deb
+sudo gdebi shiny-server-1.5.22.1017-amd64.deb
+```
+
+### Step 5: Deploy the app entrypoint for Shiny Server
+
+Create an application folder inside `/srv/shiny-server/` and copy the
+launcher `app.R` included in the CodingManageR package:
+
+``` bash
+sudo mkdir -p /srv/shiny-server/codingmanager
+sudo R -e 'file.copy(system.file("shiny", "app.R", package = "CodingManageR"), "/srv/shiny-server/codingmanager/app.R", overwrite = TRUE)'
+sudo chown -R shiny:shiny /srv/shiny-server/codingmanager
+```
+
+### Step 6: Configure database credentials and restart
+
+Create an `.Renviron` file in the application folder so Shiny Server
+connects to MariaDB instead of SQLite:
+
+``` bash
+sudo nano /srv/shiny-server/codingmanager/.Renviron
+```
+
+Add the following lines, using the same password you chose in Step 3:
+
+``` ini
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=shiny_user
+MYSQL_PASSWORD=ChooseAStrongPassword
+MYSQL_DBNAME=kodierer_portal
+```
+
+Restrict access to this file so only the `shiny` user can read the
+password, then restart Shiny Server:
+
+``` bash
+sudo chown shiny:shiny /srv/shiny-server/codingmanager/.Renviron
+sudo chmod 600 /srv/shiny-server/codingmanager/.Renviron
+sudo systemctl restart shiny-server
+```
+
+Open `http://<server-ip>:3838/codingmanager/` in your web browser. On
+the first launch, CodingManageR automatically creates all required
+tables in MariaDB and sets up the initial `admin` account (password
+`geheim123`). Sign in and change this default password right away.

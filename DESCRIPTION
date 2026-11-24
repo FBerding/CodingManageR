@@ -46,6 +46,6 @@ Suggests:
     withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://github.com/FBerding/CodingManageR
+URL: https://fberding.github.io/CodingManageR/
 BugReports: https://github.com/FBerding/CodingManageR/issues
 Config/roxygen2/version: 8.0.0
