@@ -1,0 +1,115 @@
+# Automated pkgdown GitHub Pages workflow for CodingManageR
+# Rebuilds the static documentation site into docs/ automatically on pushes to
+# main/master (ignoring docs/-only commits and bot doc commits to prevent loops)
+# and supports on-demand runs via workflow_dispatch.
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - "docs/**"
+  workflow_dispatch:
+
+name: pkgdown
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pkgdown-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pkgdown:
+    name: Build and update pkgdown GitHub Pages (docs/)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (!startsWith(github.event.head_commit.message, 'docs(pkgdown):') &&
+       !startsWith(github.event.head_commit.message, 'docs(vignettes):'))
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Refresh apt package lists on Linux
+        run: |
+          for i in 1 2 3; do
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update && break || sleep 5
+          done
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Query and install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::pkgdown
+            any::knitr
+            any::rmarkdown
+          needs: check
+          cache-version: 2
+
+      - name: Install CodingManageR package
+        run: R CMD INSTALL --no-multiarch --with-keep.source .
+
+      - name: Build pkgdown site into docs/
+        run: |
+          Rscript -e '
+            pkgdown::build_site(devel = FALSE, install = FALSE, preview = FALSE)
+          '
+
+      - name: Verify pkgdown articles and figure assets in docs/
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/index.html
+          test -f docs/articles/CodingManageR.html
+          test -f docs/articles/introduction.html
+
+          shopt -s nullglob
+          src_pngs=(vignettes/figures/*.png)
+          if [ "${#src_pngs[@]}" -gt 0 ]; then
+            for png in "${src_pngs[@]}"; do
+              base="$(basename "$png")"
+              if [ ! -f "docs/articles/figures/${base}" ]; then
+                echo "Missing figure asset in pkgdown output: docs/articles/figures/${base}" >&2
+                exit 1
+              fi
+            done
+            grep -q "Figure 1:" docs/articles/CodingManageR.html
+            grep -q "Figure 2:" docs/articles/CodingManageR.html
+            grep -q "Figure 1:" docs/articles/introduction.html
+            grep -q "Figure 12:" docs/articles/introduction.html
+          fi
+          echo "Verified pkgdown build in docs/ (${#src_pngs[@]} vignette figure asset(s))."
+
+      - name: Commit and push updated docs/ to branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A docs
+          if git diff --cached --quiet; then
+            echo "No changes in docs/ — skipping commit."
+            exit 0
+          fi
+
+          git commit -m "docs(pkgdown): rebuild GitHub Pages site"
+          git push origin "HEAD:${{ github.ref_name }}"

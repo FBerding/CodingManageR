@@ -1,15 +1,21 @@
-# Automated vignette screenshot generation workflow for CodingManageR
+# Automated vignette screenshot generation and pkgdown site update workflow
 # Manually triggered via workflow_dispatch:
 #   1) Launches CodingManageR in headless Chrome via shinytest2/chromote
 #   2) Captures 12 English-language screenshots (4 core views + all 8 Admin subtabs)
 #   3) Optimizes PNG file sizes with pngquant + optipng to stay well below CRAN's 5 MB limit
 #   4) Verifies both vignettes render cleanly with the new screenshots
-#   5) Uploads all PNGs as a downloadable artifact and commits directly to the active branch
+#   5) Rebuilds the pkgdown GitHub Pages site in docs/ and verifies figure assets
+#   6) Uploads all PNGs as a downloadable artifact and commits screenshots + docs/ atomically
 on:
   workflow_dispatch:
     inputs:
       commit_changes:
-        description: "Commit and push generated screenshots directly to this branch"
+        description: "Commit and push generated screenshots (and pkgdown docs/) directly to this branch"
+        required: true
+        type: boolean
+        default: true
+      update_pkgdown:
+        description: "Rebuild the pkgdown GitHub Pages site in docs/ after updating screenshots"
         required: true
         type: boolean
         default: true
@@ -35,9 +41,9 @@ concurrency:
 
 jobs:
   generate-screenshots:
-    name: Generate and optimize vignette screenshots
+    name: Generate screenshots and update pkgdown site
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -79,6 +85,7 @@ jobs:
             any::chromote
             any::knitr
             any::rmarkdown
+            any::pkgdown
             any::withr
           needs: check
           cache-version: 2
@@ -141,12 +148,44 @@ jobs:
             }
           '
 
-      - name: Write screenshot optimization summary to GitHub Job Summary
+      - name: Rebuild pkgdown GitHub Pages site in docs/
+        if: ${{ inputs.update_pkgdown }}
+        run: |
+          Rscript -e '
+            pkgdown::build_site(devel = FALSE, install = FALSE, preview = FALSE)
+          '
+
+      - name: Verify pkgdown articles and figure assets in docs/
+        if: ${{ inputs.update_pkgdown }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/index.html
+          test -f docs/articles/CodingManageR.html
+          test -f docs/articles/introduction.html
+
+          for png in vignettes/figures/*.png; do
+            base="$(basename "$png")"
+            if [ ! -f "docs/articles/figures/${base}" ]; then
+              echo "Missing figure asset in pkgdown output: docs/articles/figures/${base}" >&2
+              exit 1
+            fi
+          done
+
+          grep -q "Figure 1:" docs/articles/CodingManageR.html
+          grep -q "Figure 2:" docs/articles/CodingManageR.html
+          grep -q "Figure 1:" docs/articles/introduction.html
+          grep -q "Figure 12:" docs/articles/introduction.html
+          grep -q "figures/01-login.png" docs/articles/CodingManageR.html
+          grep -q "figures/12-admin-db-diagnosis.png" docs/articles/introduction.html
+          echo "Verified pkgdown site in docs/ with all 12 numbered figure assets."
+
+      - name: Write screenshot and pkgdown summary to GitHub Job Summary
         if: always()
         shell: bash
         run: |
           {
-            echo "## CodingManageR Vignette Screenshots Summary"
+            echo "## CodingManageR Vignette Screenshots & pkgdown Summary"
             echo ""
             if [ -f /tmp/screenshot-report/sizes.tsv ]; then
               echo "| File | Raw Size | Optimized Size | Savings |"
@@ -178,6 +217,13 @@ jobs:
                 h_kb="$(awk -v b="$(stat -c%s "$h")" 'BEGIN { printf "%.1f KB", b/1024 }')"
                 printf -- '- `%s`: %s\n' "$(basename "$h")" "$h_kb"
               done
+              echo ""
+            fi
+            if [ "${{ inputs.update_pkgdown }}" = "true" ] && [ -f docs/pkgdown.yml ]; then
+              echo "### pkgdown GitHub Pages Build (\`docs/\`)"
+              echo ""
+              n_figs="$(find docs/articles/figures -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
+              echo "- Rebuilt \`docs/\` successfully with **${n_figs}** figure PNGs in \`docs/articles/figures/\`."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -189,7 +235,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Commit and push updated screenshots to current branch
+      - name: Commit and push updated screenshots and pkgdown site to current branch
         if: ${{ inputs.commit_changes }}
         shell: bash
         run: |
@@ -198,10 +244,18 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add vignettes/figures/*.png
+          if [ "${{ inputs.update_pkgdown }}" = "true" ]; then
+            git add -A docs
+          fi
+
           if git diff --cached --quiet; then
-            echo "No changes in vignettes/figures/*.png — skipping commit."
+            echo "No changes in vignettes/figures/ or docs/ — skipping commit."
             exit 0
           fi
 
-          git commit -m "docs(vignettes): update automated app screenshots"
+          if [ "${{ inputs.update_pkgdown }}" = "true" ]; then
+            git commit -m "docs(vignettes): update automated app screenshots and pkgdown site"
+          else
+            git commit -m "docs(vignettes): update automated app screenshots"
+          fi
           git push origin "HEAD:${{ github.ref_name }}"

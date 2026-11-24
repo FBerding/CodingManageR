@@ -1,6 +1,9 @@
 ---
 title: "Installing and Launching CodingManageR"
 output: rmarkdown::html_vignette
+resource_files:
+  - figures/01-login.png
+  - figures/02-dashboard.png
 vignette: >
   %\VignetteIndexEntry{CodingManageR}
   %\VignetteEngine{knitr::rmarkdown}
@@ -17,11 +20,20 @@ knitr::opts_chunk$set(
 
 ```{=html}
 <style>
-.figure img, p > img {
+.figure, figure {
+  margin: 1rem 0 1.35rem 0;
+}
+.figure img, figure img, p > img {
   border: 1px solid #d8dee6;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-  margin: 0.75rem 0 0.35rem 0;
+  margin: 0.25rem 0 0.45rem 0;
+}
+.figure p.caption, figcaption, .figure-caption {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-top: 0.35rem;
 }
 </style>
 ```
@@ -93,9 +105,9 @@ Paste this command into the R console and press **Enter**:
 CodingManageR::run_app()
 ```
 
-Your browser or RStudio viewer opens automatically. You will see the **CodingManageR** sign-in screen.
+Your browser or RStudio viewer opens automatically. You will see the **CodingManageR** sign-in screen (see Figure 1).
 
-```{r fig-login, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR sign-in screen showing username and access token inputs along with the English and German language selector.", fig.cap = "The CodingManageR sign-in screen with built-in English/German language switching."}
+```{r fig-login, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR sign-in screen showing username and access token inputs along with the English and German language selector.", fig.cap = "Figure 1: CodingManageR sign-in screen with username and access token fields and the English/German language selector."}
 if (file.exists("figures/01-login.png")) {
   knitr::include_graphics("figures/01-login.png")
 }
@@ -127,9 +139,9 @@ When you start a new database for the first time, the app creates one administra
 
 Sign in with this account. Then open **Admin Console -> User Management** and change the `admin` access token right away.
 
-> **New to CodingManageR?** Click **Getting Started** (*Erste Schritte*) in the top-right header after you sign in. It starts an interactive step-by-step tour right inside the app.
+> **New to CodingManageR?** Click **Getting Started** (*Erste Schritte*) in the top-right header after you sign in (see Figure 2). It starts an interactive step-by-step tour right inside the app.
 
-```{r fig-workspace-dashboard, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR authenticated workspace displaying the top navigation tabs, header actions including Getting Started, KPI summary cards, and reliability progress chart.", fig.cap = "The CodingManageR workspace after sign-in, showing the Dashboard progress overview and top navigation bar."}
+```{r fig-workspace-dashboard, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR authenticated workspace displaying the top navigation tabs, header actions including Getting Started, KPI summary cards, and reliability progress chart.", fig.cap = "Figure 2: Authenticated CodingManageR workspace showing the navigation tabs, Getting Started tour button, personal coding KPIs, and reliability progress chart."}
 if (file.exists("figures/02-dashboard.png")) {
   knitr::include_graphics("figures/02-dashboard.png")
 }
