@@ -1,8 +1,8 @@
 # Create All CodingManageR Database Tables
 
-Creates the complete 9-table relational schema (users, permissions,
-sources, texts, scales, gold standards, ratings, and training logs) for
-SQLite or MySQL/MariaDB.
+Initializes the complete 9-table relational schema (users, permissions,
+sources, texts, scales, ratings, and training logs) in the target SQLite
+or MySQL/MariaDB database using `CREATE TABLE IF NOT EXISTS`.
 
 ## Usage
 
@@ -14,15 +14,18 @@ create_all_tables(con, verbose = TRUE)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - verbose:
 
-  Logical; if TRUE emits status messages during table creation.
+  Logical; if `TRUE` (default), prints status messages during schema
+  creation.
 
 ## Value
 
-Invisibly returns TRUE upon successful schema initialization.
+Logical `TRUE` upon successful table initialization.
 
 ## Examples
 

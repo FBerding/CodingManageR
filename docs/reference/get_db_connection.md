@@ -1,7 +1,8 @@
-# Open a Direct Database Connection (MySQL or SQLite)
+# Open a Database Connection (Backward-Compatible Wrapper)
 
-Establishes a direct DBI connection using MySQL/MariaDB configuration if
-available, with automatic fallback to local SQLite storage.
+Backward-compatible wrapper around
+[`get_db_pool()`](https://fberding.github.io/CodingManageR/reference/get_db_pool.md)
+with `force_pool = TRUE`.
 
 ## Usage
 
@@ -13,16 +14,17 @@ get_db_connection(config = NULL, fallback_to_sqlite = TRUE)
 
 - config:
 
-  Optional named list of database connection parameters.
+  Optional named list of database configuration settings.
 
 - fallback_to_sqlite:
 
-  Logical; if TRUE falls back to SQLite when MySQL/MariaDB is
-  unavailable.
+  Logical; whether to fall back to SQLite if MySQL/MariaDB is not
+  configured or unreachable. Defaults to `TRUE`.
 
 ## Value
 
-An active DBI connection object.
+A [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md) or
+`DBIConnection` object.
 
 ## Examples
 

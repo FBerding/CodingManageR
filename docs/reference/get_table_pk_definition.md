@@ -1,7 +1,7 @@
-# Get Primary Key Column Name for a Database Table
+# Retrieve Table Primary Key Column Name
 
-Looks up the primary key column name associated with a known
-CodingManageR database table.
+Returns the designated primary key column name for each core relational
+table in the CodingManageR database schema.
 
 ## Usage
 
@@ -13,11 +13,12 @@ get_table_pk_definition(table_name)
 
 - table_name:
 
-  Character scalar database table name.
+  A character string naming the database table.
 
 ## Value
 
-A character scalar naming the primary key column, or NULL if undefined.
+A character string with the primary key column name, or `NULL` if not
+recognized.
 
 ## Examples
 

@@ -1,42 +1,49 @@
-# Shiny UI Module for the Progress Dashboard
+# Dashboard Module UI
 
-Constructs the user interface for the CodingManageR personal progress
-and training analytics dashboard.
+Creates the Shiny UI for the coder dashboard, displaying personal coding
+progress, training reliability trends, open-case breakdowns, and an
+interactive scale directory.
 
 ## Usage
 
 ``` r
-dashboardUI(id, kategorie_spalten = NULL, lang = "en",
-  selected_tab = "tab_progress")
+dashboardUI(
+  id,
+  kategorie_spalten = NULL,
+  lang = "en",
+  selected_tab = "tab_progress"
+)
 ```
 
 ## Arguments
 
 - id:
 
-  Character scalar module namespace identifier.
+  Character string specifying the Shiny module namespace identifier.
 
 - kategorie_spalten:
 
-  Reactive expression returning a named character vector mapping scale
-  short labels to scale IDs.
+  Optional character vector of scale column names retained for backward
+  compatibility.
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character string specifying the initial UI language code (`"en"` or
+  `"de"`).
 
 - selected_tab:
 
-  Character scalar specifying the initially selected dashboard tab.
+  Character string selecting the initially active tab (`"tab_progress"`
+  or `"tab_scales_overview"`).
 
 ## Value
 
-A Shiny UI tag list.
+A `shiny.tag` (`fluidPage`) representing the dashboard interface.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-dashboardUI("mod_dashboard", lang = "en")
-} # }
+if (interactive()) {
+  ui <- dashboardUI("mod_dashboard", lang = "en")
+}
 ```

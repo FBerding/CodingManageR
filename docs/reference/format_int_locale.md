@@ -1,7 +1,10 @@
-# Format an Integer with Locale-Specific Grouping
+# Format Integer with Locale-Aware Separators
 
-Formats integer counts using German (".") or English (",") thousands
-separators.
+Formats an integer count using distinct thousands and decimal separators
+matching the active UI language (`"de"` uses `"."`/`","`; `"en"` uses
+`","`/`"."`) so [`prettyNum()`](https://rdrr.io/r/base/formatc.html)
+never emits warnings about identical `big.mark` and `decimal.mark`
+characters.
 
 ## Usage
 
@@ -17,11 +20,11 @@ format_int_locale(x, lang = "en")
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 ## Value
 
-A formatted character string.
+A character string containing the formatted integer.
 
 ## Examples
 

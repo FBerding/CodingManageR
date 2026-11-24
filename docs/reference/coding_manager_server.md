@@ -1,50 +1,71 @@
-# Root Shiny Server Function for CodingManageR
+# Shiny Server Function for CodingManageR
 
-Manages database connectivity, user authentication and account lockout,
-bilingual localization, reactive scale catalog updates, and child module
-orchestration.
+Manages database connectivity, user authentication (including inactive
+account lockout), bilingual UI localization (`de`/`en`), reactive scale
+catalog synchronization, the on-demand role-aware Getting Started
+spotlight tutorial (including automatic tab/subtab switching), and
+routing to the Dashboard, Coding Training, Live Coding, and Admin
+Console Shiny modules.
 
 ## Usage
 
 ``` r
-coding_manager_server(input, output, session, db_con = NULL, sqlite_path = NULL,
-  config = NULL, seed_empty = NULL)
+coding_manager_server(
+  input,
+  output,
+  session,
+  db_con = NULL,
+  sqlite_path = NULL,
+  config = NULL,
+  seed_empty = NULL
+)
 ```
 
 ## Arguments
 
 - input:
 
-  Standard Shiny server input object.
+  Standard Shiny server `input` object.
 
 - output:
 
-  Standard Shiny server output object.
+  Standard Shiny server `output` object.
 
 - session:
 
-  Standard Shiny server session object.
+  Standard Shiny `session` object.
 
 - db_con:
 
-  Active DBI database connection or pool::dbPool object.
+  Optional pre-existing DBI connection or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object. When supplied (e.g., during
+  [`shiny::testServer()`](https://rdrr.io/pkg/shiny/man/testServer.html)
+  tests), the caller retains ownership and the connection is not
+  automatically closed on session end.
 
 - sqlite_path:
 
-  Optional character path to a local SQLite database file.
+  Optional path to a local SQLite database file used when `db_con` is
+  `NULL`.
 
 - config:
 
-  Optional named list of database connection parameters.
+  Optional named database configuration list passed to
+  [`get_db_pool()`](https://fberding.github.io/CodingManageR/reference/get_db_pool.md).
 
 - seed_empty:
 
-  Optional logical controlling whether fresh databases receive only
-  minimal default accounts.
+  Logical passed to
+  [`seed_initial_data()`](https://fberding.github.io/CodingManageR/reference/seed_initial_data.md)
+  on first startup. Defaults to `TRUE` (minimal admin account) unless
+  overridden via options or argument. When `FALSE`, demonstration data
+  is only seeded into a brand-new, empty database; existing SQLite files
+  or populated databases are protected and emit a warning instead.
 
 ## Value
 
-Invisibly returns NULL.
+Invisibly returns `NULL`.
 
 ## Examples
 

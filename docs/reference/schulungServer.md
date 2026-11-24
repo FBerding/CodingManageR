@@ -1,71 +1,89 @@
-# Shiny Server Module for Gold-Standard Coder Training
+# Training Module Server
 
-Runs stratified gold-standard training sessions, computes 16 inter-rater
-reliability metrics via aifeducation, and persists session outcomes.
+Implements the server-side workflow for gold-standard coding training
+sessions, including stratified case pool generation, sequential rating
+collection, reliability metric computation via
+[`berechne_aifeducation_metriken()`](https://fberding.github.io/CodingManageR/reference/berechne_aifeducation_metriken.md),
+session persistence, CSV export, and reference example inspection.
 
 ## Usage
 
 ``` r
-schulungServer(id, db_con, user_id_reactive = NULL, username_reactive,
-  kategorie_spalten, kategorien_liste, trigger_parent, scales_trigger = NULL,
-  current_lang = reactiveVal("de"))
+schulungServer(
+  id,
+  db_con,
+  user_id_reactive = NULL,
+  username_reactive,
+  kategorie_spalten,
+  kategorien_liste,
+  trigger_parent,
+  scales_trigger = NULL,
+  current_lang = reactiveVal("de")
+)
 ```
 
 ## Arguments
 
 - id:
 
-  Character scalar module namespace identifier.
+  Character string specifying the Shiny module namespace identifier.
 
 - db_con:
 
-  Active DBI database connection or pool::dbPool object.
+  Active `DBIConnection` or
+  [`pool::Pool`](http://rstudio.github.io/pool/reference/Pool-class.md)
+  database handle.
 
 - user_id_reactive:
 
-  Optional reactive expression returning the current user ID.
+  Optional reactive expression returning the active user's integer ID.
 
 - username_reactive:
 
-  Reactive expression returning the current username.
+  Reactive expression returning the active username.
 
 - kategorie_spalten:
 
-  Reactive expression returning a named character vector mapping scale
-  short labels to scale IDs.
+  Reactive expression returning a character vector of configured scale
+  identifiers or column names.
 
 - kategorien_liste:
 
-  Reactive expression returning a named character vector of display
-  labels to scale IDs.
+  Reactive expression returning a named character vector of available
+  coding scales (`scale_id` values with display names).
 
 - trigger_parent:
 
-  ReactiveVal counter incremented to notify parent modules of new
-  ratings.
+  A `reactiveVal` incremented when a training session completes so
+  dependent modules refresh automatically.
 
 - scales_trigger:
 
-  Optional reactiveVal counter invalidated when scale definitions
-  change.
+  Optional `reactiveVal` triggered when scale definitions change in the
+  admin panel.
 
 - current_lang:
 
-  Reactive expression or reactiveVal returning the active language code
-  ("de" or "en").
+  Reactive expression or character scalar providing the active UI
+  language code (`"de"` or `"en"`).
 
 ## Value
 
-Invisibly returns the Shiny module server result.
+The return value of
+[`shiny::moduleServer()`](https://rdrr.io/pkg/shiny/man/moduleServer.html).
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-schulungServer("mod_training", db_con = con,
-  username_reactive = shiny::reactive("user1"),
-  kategorie_spalten = shiny::reactive(character(0)),
-  kategorien_liste = shiny::reactive(character(0)),
-  trigger_parent = shiny::reactiveVal(0L))
+schulungServer(
+  id = "mod_training",
+  db_con = db_con,
+  user_id_reactive = reactive(1L),
+  username_reactive = reactive("admin"),
+  kategorie_spalten = reactive(character(0)),
+  kategorien_liste = reactive(c("Scale 1" = "1")),
+  trigger_parent = reactiveVal(0L)
+)
 } # }
 ```

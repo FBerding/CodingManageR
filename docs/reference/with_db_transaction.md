@@ -1,8 +1,12 @@
 # Execute Database Operations Atomically Inside a Transaction
 
-Executes either an R expression block or a function(tx_con) closure
-within a DBI transaction on a direct connection or checked-out pool
-connection, automatically rolling back on error.
+Runs an R expression block or a `function(tx_con)` callback atomically
+within a database transaction. Supports both direct `DBIConnection`
+objects and
+[`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+handles (checking out a dedicated connection for the duration of the
+transaction). Any error triggers an automatic rollback and is re-thrown
+to guarantee data integrity.
 
 ## Usage
 
@@ -14,16 +18,18 @@ with_db_transaction(con, expr)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - expr:
 
-  R expression block or function(tx_con) closure to execute within the
-  transaction.
+  An R expression block or a function accepting the active transaction
+  connection `tx_con`.
 
 ## Value
 
-The return value of the evaluated expression or callback function.
+The value returned by evaluating `expr`.
 
 ## Examples
 

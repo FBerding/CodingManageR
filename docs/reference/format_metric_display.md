@@ -1,7 +1,7 @@
-# Format a Reliability Metric Value for Display
+# Format Numeric Metric or Percentage for Display
 
-Formats a numeric reliability coefficient or percentage value with fixed
-decimal places and safe NA handling.
+Formats numerical reliability metrics with fixed decimal places or as
+percentages with safe `NA` handling.
 
 ## Usage
 
@@ -13,19 +13,22 @@ format_metric_display(val, is_percentage = FALSE, digits = 3)
 
 - val:
 
-  Numeric scalar reliability value to format.
+  A numeric or character value to format.
 
 - is_percentage:
 
-  Logical; if TRUE formats the value as a percentage.
+  Logical; if `TRUE`, formats with 1 decimal place and a percent sign.
+  Defaults to `FALSE`.
 
 - digits:
 
-  Integer scalar number of decimal digits.
+  Integer indicating the number of decimal places for non-percentage
+  values. Defaults to `3`.
 
 ## Value
 
-A formatted character string.
+A formatted character string, or an em dash when `val` is missing or
+non-numeric.
 
 ## Examples
 

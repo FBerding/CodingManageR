@@ -1,7 +1,7 @@
-# Safely Close a Direct DBI Database Connection
+# Safely Close a Database Connection (Backward-Compatible Alias)
 
-Checks whether a DBI connection is open and valid before disconnecting
-it cleanly.
+Backward-compatible alias for
+[`close_db_pool()`](https://fberding.github.io/CodingManageR/reference/close_db_pool.md).
 
 ## Usage
 
@@ -13,11 +13,12 @@ close_db_connection(con)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md),
+  `DBIConnection`, or `NULL`.
 
 ## Value
 
-Invisibly returns TRUE if closed or FALSE otherwise.
+Invisibly returns `NULL`.
 
 ## Examples
 

@@ -1,7 +1,7 @@
-# Check Whether an Object Is a pool::dbPool Connection
+# Check Whether an Object Is a `pool::dbPool` Connection
 
-Tests whether the supplied database handle inherits from the Pool class
-provided by the pool package.
+Tests whether the supplied database handle inherits from the `Pool`
+class provided by the `pool` package.
 
 ## Usage
 
@@ -13,11 +13,11 @@ is_pool_connection(con)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  Database connection or pool object to inspect.
 
 ## Value
 
-A logical scalar (TRUE if the object is a Pool, FALSE otherwise).
+A logical scalar: `TRUE` if `con` is a `Pool` object, `FALSE` otherwise.
 
 ## Examples
 

@@ -1,7 +1,9 @@
-# Translate a Localization Key into the Selected Language
+# Translate a Dot-Separated UI Key with Fallback and Formatting
 
-Looks up a dot-separated translation key in the active language
-dictionary with fallback support and optional sprintf interpolation.
+Resolves a hierarchical translation key from `inst/translations.json`
+for the requested language, falling back to `"en"`, then `"de"`, then
+`default` or `[key]`. Supports optional
+[`sprintf()`](https://rdrr.io/r/base/sprintf.html) positional arguments.
 
 ## Usage
 
@@ -13,20 +15,21 @@ tr(key, lang = "en", ..., default = NULL)
 
 - key:
 
-  Character scalar dot-separated localization key.
+  Dot-separated translation key (e.g., `"auth.login_title"`).
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Target language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 - ...:
 
-  Additional arguments forwarded to underlying functions or sprintf
-  formatting.
+  Optional positional arguments passed to
+  [`sprintf()`](https://rdrr.io/r/base/sprintf.html).
 
 - default:
 
-  Optional character scalar returned when the key is missing.
+  Optional fallback string used when the key is missing across all
+  languages.
 
 ## Value
 
@@ -35,6 +38,6 @@ A localized character string.
 ## Examples
 
 ``` r
-tr("auth.login_btn", lang = "en")
+tr("auth.login_title", lang = "en")
 #> [1] "Sign In"
 ```

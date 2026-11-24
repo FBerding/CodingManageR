@@ -1,7 +1,9 @@
-# Locate the Bundled Translations JSON File
+# Locate the Canonical `translations.json` File
 
-Searches installed package paths and local development paths to locate
-inst/translations.json.
+Resolves the path to `inst/translations.json` across standard R project
+roots, `shiny::runApp("R")` working directories, installed R package
+locations ([`system.file()`](https://rdrr.io/r/base/system.file.html)),
+and web preview fallbacks.
 
 ## Usage
 
@@ -11,11 +13,12 @@ find_translations_file()
 
 ## Value
 
-A character scalar path to translations.json, or NULL if not found.
+Character scalar file path to `translations.json`, or `NULL` if not
+found.
 
 ## Examples
 
 ``` r
 find_translations_file()
-#> [1] "C:/Users/WissMit/AppData/Local/Temp/RtmpYzCNs1/temp_libpath6c78fa66e9d/CodingManageR/translations.json"
+#> [1] "/home/runner/work/_temp/Library/CodingManageR/translations.json"
 ```

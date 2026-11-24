@@ -1,7 +1,10 @@
-# Root Shiny UI Shell for CodingManageR
+# Build the Root Shiny UI for CodingManageR
 
-Constructs the top-level Bootstrap 5 / bslib page layout with browser
-language detection and the dynamic workspace container.
+Constructs the top-level Bootstrap 5 / `bslib` page shell for
+CodingManageR, including browser language auto-detection, interactive
+spotlight tutorial assets, and the reactive `page_content` outlet that
+switches between the sign-in screen and the authenticated multi-tab
+workspace.
 
 ## Usage
 
@@ -13,16 +16,17 @@ coding_manager_ui(lang = "de")
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Default initial language code (`"de"` or `"en"`). Defaults to `"de"`.
 
 ## Value
 
-A Shiny UI tag list.
+A Shiny UI tag list suitable for
+[`shiny::shinyApp()`](https://rdrr.io/pkg/shiny/man/shinyApp.html).
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-coding_manager_ui(lang = "en")
+ui <- coding_manager_ui(lang = "en")
 } # }
 ```

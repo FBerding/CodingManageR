@@ -1,8 +1,8 @@
 # Classify Inter-Rater Reliability Magnitude
 
-Classifies a numeric reliability coefficient (such as kappa or alpha)
-into a localized qualitative interpretation category and Bootstrap badge
-class.
+Classifies a numeric reliability coefficient (such as Cohen's kappa or
+Krippendorff's alpha) according to the benchmark criteria of Landis and
+Koch (1977).
 
 ## Usage
 
@@ -14,25 +14,26 @@ classify_reliability_magnitude(kappa, lang = "en")
 
 - kappa:
 
-  Numeric scalar inter-rater reliability coefficient.
+  Numeric scalar representing Cohen's kappa or another agreement
+  coefficient.
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 ## Value
 
-A list with classification label, color/badge class, and interpretation
-metadata.
+A named list containing `label` (localized benchmark label) and
+`css_class` (Bootstrap styling class).
 
 ## Examples
 
 ``` r
-classify_reliability_magnitude(0.82, lang = "en")
+classify_reliability_magnitude(0.74, lang = "en")
 #> $label
-#> [1] "Almost Perfect (> 0.80)"
+#> [1] "Substantial (0.61–0.80)"
 #> 
 #> $css_class
-#> [1] "text-success bg-light border-success"
+#> [1] "text-info bg-light border-info"
 #> 
 ```

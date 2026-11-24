@@ -1,40 +1,47 @@
-# Render a Bootstrap KPI Summary Card
+# Render Standardized KPI Stat Card
 
-Constructs a styled Bootstrap column containing a KPI metric title,
-prominent value, and optional subtitle.
+Generates a consistent Bootstrap card widget for dashboard and
+administrative key performance indicators.
 
 ## Usage
 
 ``` r
-render_kpi_card_ui(title, value, subtitle = NULL, bg_class = "bg-primary",
-  width = 4)
+render_kpi_card_ui(
+  title,
+  value,
+  subtitle = NULL,
+  bg_class = "bg-primary",
+  width = 4
+)
 ```
 
 ## Arguments
 
 - title:
 
-  Character scalar card heading.
+  Character string describing the metric (e.g., `"Total Codings"`).
 
 - value:
 
-  Character or numeric scalar KPI value displayed on the card.
+  Numeric or character representation of the primary metric value.
 
 - subtitle:
 
-  Optional character scalar subtitle displayed beneath the KPI value.
+  Optional character string providing extra context or time window.
 
 - bg_class:
 
-  Character scalar Bootstrap background CSS class.
+  Character string defining the Bootstrap background color class (e.g.,
+  `"bg-dark"`, `"bg-success"`, `"bg-info"`). Defaults to `"bg-primary"`.
 
 - width:
 
-  Integer scalar Bootstrap grid column width (1 to 12).
+  Integer column width according to Bootstrap's 12-column grid. Defaults
+  to `4`.
 
 ## Value
 
-A Shiny UI tag object.
+A Shiny `column` UI tag containing the styled stat card.
 
 ## Examples
 

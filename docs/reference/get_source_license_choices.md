@@ -1,7 +1,7 @@
-# Get Localized Source License Choices
+# Retrieve Localized Source License Options
 
-Returns standard license options (such as Creative Commons and
-proprietary research licenses) for source metadata forms.
+Returns standard license options (such as Creative Commons, Open Data
+Commons, institutional, and custom licenses) for source metadata forms.
 
 ## Usage
 
@@ -13,11 +13,12 @@ get_source_license_choices(lang = "en")
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 ## Value
 
-A named character vector of license choices.
+A named character vector mapping localized license labels to stored
+license identifiers.
 
 ## Examples
 

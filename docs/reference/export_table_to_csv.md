@@ -1,7 +1,7 @@
-# Fetch a Database Table for CSV Export
+# Generate CSV Content for a Database Table
 
-Queries all rows of an allowlisted CodingManageR database table in a
-standardized order suitable for CSV download.
+Queries all rows from the specified table in the active database and
+serializes them into a UTF-8 CSV string with semicolon delimiters.
 
 ## Usage
 
@@ -13,20 +13,23 @@ export_table_to_csv(con, table_name)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - table_name:
 
-  Character scalar database table name.
+  A character string specifying the table name.
 
 ## Value
 
-A data frame containing the table contents.
+A character string containing the serialized CSV content including
+headers.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-export_table_to_csv(con, "sources")
+csv_str <- export_table_to_csv(con, "sources")
 } # }
 ```

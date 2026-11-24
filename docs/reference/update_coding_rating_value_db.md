@@ -1,7 +1,9 @@
-# Update an Existing Coding Rating Value in the Database
+# Update Only the Numeric Scale Rating Value for a Stored Coding
 
-Updates the ordinal rating value of a single record in user_ratings
-within a validated database statement.
+Validates that the specified `rating_id` exists and that `new_value`
+falls strictly within `0..max_value` of the associated scale definition,
+then updates `user_ratings.bewertung` in place without altering coder,
+type, case, or source metadata.
 
 ## Usage
 
@@ -13,24 +15,28 @@ update_coding_rating_value_db(con, rating_id, new_value)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - rating_id:
 
-  Integer scalar identifier of the rating record in user_ratings.
+  Integer primary key of the record in `user_ratings`.
 
 - new_value:
 
-  Integer scalar new ordinal rating value.
+  Numeric or integer scalar representing the corrected score on the
+  scale.
 
 ## Value
 
-An integer count of affected rows (1 on success).
+A named list with `success` (logical), `old_value` (integer),
+`new_value` (integer), `text_id` (integer), and `message` (character).
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-update_coding_rating_value_db(con, rating_id = 1L, new_value = 2L)
+res <- update_coding_rating_value_db(con, rating_id = 201, new_value = 2)
 } # }
 ```

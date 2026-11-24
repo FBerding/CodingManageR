@@ -1,7 +1,7 @@
-# Clean and Normalize Imported Table Column Names
+# Sanitize and Clean Data Frame Column Names
 
-Removes UTF-8 byte-order marks (BOM), trims whitespace, and normalizes
-column names of an imported data frame.
+Standardizes imported or uploaded column names by stripping UTF-8
+byte-order marks (BOM) and trimming leading and trailing whitespace.
 
 ## Usage
 
@@ -13,11 +13,11 @@ clean_table_columns(df)
 
 - df:
 
-  Data frame to clean or validate.
+  A `data.frame` whose column names should be cleaned.
 
 ## Value
 
-A data frame with cleaned column names.
+A `data.frame` with trimmed, standardized column names.
 
 ## Examples
 

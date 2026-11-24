@@ -1,42 +1,57 @@
-# Search Case Coding Ratings in the Database
+# Search and Filter Submitted Case Codings Across Scales
 
-Queries user_ratings joined with case texts, scales, and coder accounts
-using optional scale, rating type, and full-text search filters.
+Queries `user_ratings` joined with `texts`, `scale_definitions`,
+`user_tokens`, and `sources` to allow administrators to locate specific
+case ratings by scale, rating type (`kodierung`, `gold_standard`,
+`schulung`), case ID, text excerpt, or coder username.
 
 ## Usage
 
 ``` r
-search_case_codings_db(con, scale_filter = "all", type_filter = "all",
-  search_query = "")
+search_case_codings_db(
+  con,
+  scale_filter = "all",
+  type_filter = "all",
+  search_query = ""
+)
 ```
 
 ## Arguments
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object representing the active database connection.
 
 - scale_filter:
 
-  Character scalar scale filter ("all" or a scale ID).
+  Character string specifying either `"all"` or a target `scale_id` (or
+  scale name/short label). Defaults to `"all"`.
 
 - type_filter:
 
-  Character scalar rating type filter ("all", "kodierung", or
-  "schulung").
+  Character string specifying either `"all"` or one of `"kodierung"`,
+  `"gold_standard"`, `"schulung"`. Defaults to `"all"`.
 
 - search_query:
 
-  Character scalar full-text search query.
+  Optional character string used to filter results across rating ID,
+  text ID, case text content, coder username, and scale labels. Defaults
+  to `""`.
 
 ## Value
 
-A data frame of matching rating records.
+A `data.frame` containing matching rating records ordered by
+`rating_id DESC`, including resolved scale metadata
+(`resolved_scale_id`, `scale_name`, `scale_short_label`,
+`scale_max_value`) and case context.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-search_case_codings_db(con, scale_filter = "all", type_filter = "all")
+results <- search_case_codings_db(con, scale_filter = "1",
+  type_filter = "kodierung", search_query = "101")
 } # }
 ```

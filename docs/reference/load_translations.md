@@ -1,7 +1,9 @@
-# Load and Cache Application Translation Dictionaries
+# Load Translations Dictionary from JSON with Modification-Time Caching
 
-Reads the bilingual translation catalog from inst/translations.json and
-caches it in an internal package environment.
+Reads and parses `inst/translations.json` into a nested R list, caching
+the result in memory until the file's modification timestamp changes.
+Falls back to a minimal built-in dictionary if the JSON file cannot be
+accessed.
 
 ## Usage
 
@@ -13,17 +15,17 @@ load_translations(force_reload = FALSE)
 
 - force_reload:
 
-  Logical; if TRUE bypasses the cache and reloads translations from
-  disk.
+  Logical; if `TRUE`, bypasses the cache and reloads from disk. Defaults
+  to `FALSE`.
 
 ## Value
 
-A nested list containing translations keyed by language code.
+A nested named `list` containing language sub-trees (e.g., `de`, `en`).
 
 ## Examples
 
 ``` r
-dicts <- load_translations()
-names(dicts)
+dict <- load_translations()
+names(dict)
 #> [1] "de" "en"
 ```

@@ -1,46 +1,53 @@
-# Count Unrated Cases for a Coder and Scale
+# Count Unrated Cases for a Specific Scale and User
 
-Queries the database to count how many eligible case texts have not yet
-been coded by a specific user on a given scale and optional source
-filter.
+Counts how many cases in the database have not yet been evaluated by the
+current user or marked as gold standard for the given scale/category.
 
 ## Usage
 
 ``` r
-count_unrated_cases_db(con, scale_identifier, user_id, mode = "alle",
-  source_id = NULL, permitted_source_ids = NULL)
+count_unrated_cases_db(
+  con,
+  scale_identifier,
+  user_id,
+  mode = "alle",
+  source_id = NULL,
+  permitted_source_ids = NULL
+)
 ```
 
 ## Arguments
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - scale_identifier:
 
-  Integer scale_id or character short_label identifying the coding
-  scale.
+  Character or integer specifying the `scale_id` or scale name.
 
 - user_id:
 
-  Integer scalar user identifier.
+  Integer representing the active user.
 
 - mode:
 
-  Character scalar rating filter mode (e.g., "alle").
+  Character scalar: either `"alle"` (all permitted sources) or
+  `"quelle"` (filtered by `source_id`). Defaults to `"alle"`.
 
 - source_id:
 
-  Optional integer scalar source identifier filter.
+  Optional integer filter used when `mode = "quelle"`.
 
 - permitted_source_ids:
 
-  Optional integer vector of source IDs permitted for the coder.
+  Optional integer vector of sources the user is allowed to access.
 
 ## Value
 
-An integer scalar giving the number of remaining unrated cases.
+An integer scalar representing the count of remaining unrated cases.
 
 ## Examples
 

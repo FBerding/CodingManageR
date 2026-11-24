@@ -1,7 +1,8 @@
-# Retrieve User Account Metadata from the Database
+# Retrieve User Metadata and Identifier
 
-Fetches user account information (ID, username, role permissions, and
-active status) by username or user ID.
+Resolves user identification and role permissions given either a
+username or an existing `user_id`. Handles Shiny reactive expressions
+and falls back to database lookup.
 
 ## Usage
 
@@ -13,20 +14,23 @@ get_user_info_db(con, username, user_id = NULL)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - username:
 
-  Character scalar username to look up.
+  Character scalar or reactive expression containing the username.
 
 - user_id:
 
-  Integer scalar user identifier.
+  Optional integer scalar or reactive expression containing the user
+  identifier.
 
 ## Value
 
-A single-row data frame with user metadata, or a 0-row data frame if not
-found.
+A named list containing `id` (integer `user_id`), `name` (character
+username), and `permissions` (character role: `"admin"` or `"user"`).
 
 ## Examples
 

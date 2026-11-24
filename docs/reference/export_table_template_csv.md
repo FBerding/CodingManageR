@@ -1,7 +1,7 @@
-# Build an Empty Schema Template Data Frame for CSV Export
+# Generate Empty CSV Template for Table Upload
 
-Returns a zero-row data frame with the exact expected column schema for
-a given CodingManageR database table to guide CSV imports.
+Generates a header-only semicolon-delimited CSV template to assist
+administrators in preparing structured master-data uploads.
 
 ## Usage
 
@@ -13,11 +13,11 @@ export_table_template_csv(table_name)
 
 - table_name:
 
-  Character scalar database table name.
+  A character string specifying the target table.
 
 ## Value
 
-A zero-row data frame with the target table columns.
+A character string containing the semicolon-delimited header row.
 
 ## Examples
 

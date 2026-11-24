@@ -1,7 +1,9 @@
-# Get Named Language Choices for UI Selectors
+# Get Labeled Language Choices for Shiny Inputs
 
-Returns a named character vector mapping display labels to supported
-language codes for Shiny input widgets.
+Returns a named character vector suitable for
+[`shiny::selectInput()`](https://rdrr.io/pkg/shiny/man/selectInput.html)
+or
+[`language_selector_ui()`](https://fberding.github.io/CodingManageR/reference/language_selector_ui.md).
 
 ## Usage
 
@@ -11,7 +13,7 @@ get_language_choices()
 
 ## Value
 
-A named character vector of language choices.
+A named character vector mapping display labels to language codes.
 
 ## Examples
 

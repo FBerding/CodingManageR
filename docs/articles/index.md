@@ -1,6 +1,8 @@
 # Articles
 
-### All vignettes
+### User Guides
 
-- [CodingManageR](CodingManageR.md):
-- [Introduction to CodingManageR](introduction.md):
+- [Installing and Launching
+  CodingManageR](https://fberding.github.io/CodingManageR/articles/CodingManageR.md):
+- [Introduction to
+  CodingManageR](https://fberding.github.io/CodingManageR/articles/introduction.md):

@@ -1,7 +1,10 @@
-# Build the Bilingual Language Selector Widget
+# Render Header Language Selector Dropdown Widget
 
-Creates a compact UI control allowing users to switch the CodingManageR
-interface between German and English.
+Builds a compact language dropdown for switching between supported UI
+languages in the login card and application header bar. Uses an explicit
+DOM `onchange` event (`selected_ui_lang`) instead of bidirectional
+`selectInput()` binding so re-renders inside `renderUI()` never trigger
+WebSocket echo loops on Shiny Server.
 
 ## Usage
 
@@ -13,20 +16,20 @@ language_selector_ui(id = "app_language", current_lang = "de", class = "")
 
 - id:
 
-  Character scalar module namespace identifier.
+  Logical identifier attribute (`data-lang-selector`) for the widget.
+  Defaults to `"app_language"`.
 
 - current_lang:
 
-  Reactive expression or reactiveVal returning the active language code
-  ("de" or "en").
+  Active language code (`"de"` or `"en"`). Defaults to `"de"`.
 
 - class:
 
-  Optional character scalar of additional CSS classes.
+  Optional extra CSS classes appended to the wrapper element.
 
 ## Value
 
-A Shiny UI tag object.
+A Shiny `tags$div` UI element containing the styled language selector.
 
 ## Examples
 

@@ -1,7 +1,8 @@
-# Get Metadata and Thresholds for a Reliability Metric
+# Retrieve Localized Metadata for a Single Reliability Metric Key
 
-Returns display label, short label, percentage flag, and visual badge
-thresholds for a given reliability metric key.
+Returns the localized title, short label, description, percentage
+formatting flag, and accent color associated with a given reliability
+metric key.
 
 ## Usage
 
@@ -17,11 +18,12 @@ get_reliability_metric_meta(metric_key, lang = "en")
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 ## Value
 
-A named list of metadata fields for the requested metric.
+A named list with elements `label`, `short_label`, `desc`, `is_pct`, and
+`color`.
 
 ## Examples
 

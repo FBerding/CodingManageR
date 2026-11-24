@@ -1,46 +1,54 @@
-# Draw a Random Unrated Case Text from the Database
+# Draw an Unrated Case for Active Coding
 
-Selects a single random unrated case text for a coder on a specified
-scale, respecting source permissions and rating mode.
+Fetches a random case from `texts` that has not yet been coded by the
+user or locked as a gold standard on the given scale.
 
 ## Usage
 
 ``` r
-draw_unrated_case_db(con, scale_identifier, user_id, mode = "alle",
-  source_id = NULL, permitted_source_ids = NULL)
+draw_unrated_case_db(
+  con,
+  scale_identifier,
+  user_id,
+  mode = "alle",
+  source_id = NULL,
+  permitted_source_ids = NULL
+)
 ```
 
 ## Arguments
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - scale_identifier:
 
-  Integer scale_id or character short_label identifying the coding
-  scale.
+  Character or integer specifying the `scale_id` or scale name.
 
 - user_id:
 
-  Integer scalar user identifier.
+  Integer representing the active user.
 
 - mode:
 
-  Character scalar rating filter mode (e.g., "alle").
+  Character scalar: either `"alle"` or `"quelle"`. Defaults to `"alle"`.
 
 - source_id:
 
-  Optional integer scalar source identifier filter.
+  Optional integer filter used when `mode = "quelle"`.
 
 - permitted_source_ids:
 
-  Optional integer vector of source IDs permitted for the coder.
+  Optional integer vector of sources the user is allowed to access.
 
 ## Value
 
-A single-row data frame containing the drawn case text, or a 0-row data
-frame if none remain.
+A 1-row `data.frame` containing case details (`text_id`, `text`,
+`source_id`, `befund_text`), or an empty `data.frame` if no cases
+remain.
 
 ## Examples
 

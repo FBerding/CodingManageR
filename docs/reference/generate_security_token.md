@@ -1,7 +1,7 @@
-# Generate a Random Alphanumeric Access Token
+# Generate a Secure Random Alphanumeric Token
 
-Generates a random character access token of the specified length for
-authenticating CodingManageR users.
+Generates a random alphanumeric string suitable for user login tokens or
+temporary access keys.
 
 ## Usage
 
@@ -13,15 +13,17 @@ generate_security_token(length = 12)
 
 - length:
 
-  Integer scalar length of the generated token.
+  Integer specifying the number of characters in the generated token.
+  Defaults to `12`. Must be a positive integer.
 
 ## Value
 
-A single character string of length equal to the requested token length.
+A character scalar of length `length` containing random ASCII letters
+and digits.
 
 ## Examples
 
 ``` r
-generate_security_token(12)
-#> [1] "SwlKLUUEdLie"
+generate_security_token(16)
+#> [1] "SwlKLUUEdLieexom"
 ```

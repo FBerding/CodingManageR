@@ -1,8 +1,8 @@
-# Get Sources Permitted for Live Field Coding by a User
+# Retrieve Authorized Scientific Coding Sources for a User
 
-Returns the subset of scientific sources that a user is authorized to
-code in the Live Coding module (excluding training-only sources unless
-permitted).
+Fetches all source IDs that the specified user is authorized to assign
+as scientific coding references. Administrators receive all sources
+unconditionally.
 
 ## Usage
 
@@ -14,19 +14,22 @@ get_user_permitted_coding_sources_db(con, user_id, is_admin = FALSE)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - user_id:
 
-  Integer scalar user identifier.
+  Integer representing the user's primary key in `user_tokens`.
 
 - is_admin:
 
-  Logical indicating whether the user holds administrator privileges.
+  Logical; if `TRUE`, returns all source IDs unconditionally. Defaults
+  to `FALSE`.
 
 ## Value
 
-A data frame of permitted coding sources.
+An integer vector of permitted scientific coding source IDs.
 
 ## Examples
 

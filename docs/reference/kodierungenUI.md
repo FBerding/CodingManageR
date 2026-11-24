@@ -1,6 +1,7 @@
-# Shiny UI Module for Live Field Coding
+# Coding Module UI
 
-Constructs the user interface container for the Live Coding workflow.
+Creates the Shiny UI container for the interactive case coding
+workspace.
 
 ## Usage
 
@@ -12,16 +13,16 @@ kodierungenUI(id)
 
 - id:
 
-  Character scalar module namespace identifier.
+  Character string specifying the Shiny module namespace identifier.
 
 ## Value
 
-A Shiny UI tag list.
+A `shiny.tag` (`uiOutput`) rendering the coding workspace.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-kodierungenUI("mod_codings")
-} # }
+if (interactive()) {
+  ui <- shiny::fluidPage(kodierungenUI("mod_codings"))
+}
 ```

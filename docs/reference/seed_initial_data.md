@@ -1,8 +1,11 @@
-# Seed Initial Accounts or Demo Data into the Database
+# Seed Initial Accounts or Demonstration Data into the Database
 
-Populates a newly initialized CodingManageR database either with minimal
-default accounts (empty = TRUE) or with a complete demonstration dataset
-(empty = FALSE).
+Populates a CodingManageR database either with minimal default accounts
+(`empty = TRUE`) or with a complete demonstration dataset
+(`empty = FALSE`) including users, coding scales, scientific sources,
+case texts, permissions, gold-standard ratings, and training history.
+Prints a structured tabular summary report via
+[`message()`](https://rdrr.io/r/base/message.html).
 
 ## Usage
 
@@ -14,16 +17,22 @@ seed_initial_data(con, empty = TRUE)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - empty:
 
-  Logical; if TRUE seeds minimal default accounts only, if FALSE seeds
-  the full demonstration dataset.
+  Logical; if `TRUE` (default), seeds only the default `admin` and
+  inactive `historic_user` accounts. If `FALSE`, seeds the full
+  demonstration dataset only when all 9 tables are completely empty; if
+  any table already contains rows, emits a warning and skips all
+  demonstration inserts.
 
 ## Value
 
-Invisibly returns TRUE after seeding completes.
+Invisibly returns a named list summarizing row counts, schema creation
+status, and checksums for all 9 tables.
 
 ## Examples
 

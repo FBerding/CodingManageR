@@ -1,7 +1,7 @@
 # Check Whether a Connection Uses MySQL or MariaDB
 
-Inspects a DBI connection or pool object to determine whether the
-underlying backend is MySQL or MariaDB.
+Tests whether a direct `DBIConnection` inherits from `MariaDBConnection`
+or `MySQLConnection`.
 
 ## Usage
 
@@ -13,16 +13,16 @@ is_mysql(con)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` object or `NULL`.
 
 ## Value
 
-A logical scalar (TRUE for MySQL/MariaDB, FALSE otherwise).
+A logical scalar: `TRUE` for MySQL/MariaDB connections, `FALSE`
+otherwise.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-is_mysql(con)
-} # }
+is_mysql(NULL)
+#> [1] FALSE
 ```

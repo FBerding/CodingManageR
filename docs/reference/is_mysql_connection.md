@@ -1,7 +1,9 @@
-# Check Whether a DBI or Pool Connection Targets MySQL/MariaDB
+# Check Whether a Connection Targets MySQL or MariaDB
 
-Detects RMariaDB or RMySQL backend connections, including connections
-managed inside a pool::dbPool.
+Inspects a direct `DBIConnection` or
+[`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+handle to determine whether the underlying database backend is MySQL or
+MariaDB.
 
 ## Usage
 
@@ -13,17 +15,18 @@ is_mysql_connection(con)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 ## Value
 
-A logical scalar indicating whether the connection uses MySQL or
-MariaDB.
+A logical scalar: `TRUE` for MySQL/MariaDB connections, `FALSE`
+otherwise.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-is_mysql_connection(con)
-} # }
+is_mysql_connection(NULL)
+#> [1] FALSE
 ```

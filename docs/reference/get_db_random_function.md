@@ -1,7 +1,7 @@
-# Return the SQL Random Ordering Expression for a Connection
+# Determine SQL Random Order Expression
 
-Returns "RAND()" for MySQL/MariaDB connections and "RANDOM()" for SQLite
-connections.
+Returns the SQL function for random row ordering depending on whether
+the connection uses MySQL/MariaDB (`RAND()`) or SQLite (`RANDOM()`).
 
 ## Usage
 
@@ -13,16 +13,20 @@ get_db_random_function(con)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object representing the active database connection.
 
 ## Value
 
-A character scalar containing the SQL random function name.
+A character scalar: `"RAND()"` for MySQL/MariaDB or `"RANDOM()"` for
+SQLite.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-get_db_random_function(con)
+rand_expr <- get_db_random_function(con)
+query <- paste0("SELECT * FROM texts ORDER BY ", rand_expr, " LIMIT 1")
 } # }
 ```

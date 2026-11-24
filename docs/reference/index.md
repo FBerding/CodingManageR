@@ -1,118 +1,197 @@
 # Package index
 
-## All functions
+## Launching the Application
 
-- [`adminServer()`](adminServer.md) : Shiny Server Module for the Admin
-  Console
-- [`adminUI()`](adminUI.md) : Shiny UI Module for the Admin Console
-- [`berechne_aifeducation_metriken()`](berechne_aifeducation_metriken.md)
-  : Compute Inter-Rater Reliability Metrics via aifeducation
-- [`build_coding_search_pagination_ui()`](build_coding_search_pagination_ui.md)
-  : Build Pagination Controls for Coding Search Results
-- [`build_coding_search_table_ui()`](build_coding_search_table_ui.md) :
-  Build HTML Table for Coding Search Results
-- [`build_edit_coding_value_modal()`](build_edit_coding_value_modal.md)
-  : Build Modal Dialog for Editing a Coding Rating Value
-- [`build_scale_examples_modal()`](build_scale_examples_modal.md) :
-  Build Modal Dialog Displaying Scale Anchor Examples
-- [`classify_reliability_magnitude()`](classify_reliability_magnitude.md)
+Entrypoints for running CodingManageR locally (SQLite) or on Shiny
+Server (MariaDB/MySQL).
+
+- [`run_app()`](https://fberding.github.io/CodingManageR/reference/run_app.md)
+  : Launch the CodingManageR Shiny Application
+- [`coding_manager_ui()`](https://fberding.github.io/CodingManageR/reference/coding_manager_ui.md)
+  : Build the Root Shiny UI for CodingManageR
+- [`coding_manager_server()`](https://fberding.github.io/CodingManageR/reference/coding_manager_server.md)
+  : Shiny Server Function for CodingManageR
+
+## Shiny Workspace Modules
+
+Modular UI and server components for the Dashboard, Coding Training,
+Live Coding, and Admin Console workspaces.
+
+- [`dashboardUI()`](https://fberding.github.io/CodingManageR/reference/dashboardUI.md)
+  : Dashboard Module UI
+- [`dashboardServer()`](https://fberding.github.io/CodingManageR/reference/dashboardServer.md)
+  : Dashboard Module Server
+- [`schulungUI()`](https://fberding.github.io/CodingManageR/reference/schulungUI.md)
+  : Training Module UI
+- [`schulungServer()`](https://fberding.github.io/CodingManageR/reference/schulungServer.md)
+  : Training Module Server
+- [`kodierungenUI()`](https://fberding.github.io/CodingManageR/reference/kodierungenUI.md)
+  : Coding Module UI
+- [`kodierungenServer()`](https://fberding.github.io/CodingManageR/reference/kodierungenServer.md)
+  : Coding Module Server
+- [`adminUI()`](https://fberding.github.io/CodingManageR/reference/adminUI.md)
+  : Admin Module UI
+- [`adminServer()`](https://fberding.github.io/CodingManageR/reference/adminServer.md)
+  : Admin Module Server
+
+## Database Connections, Schema & Seeding
+
+Connection pooling, SQLite/MariaDB dialect helpers, transaction
+management, schema creation, and initial data seeding.
+
+- [`get_db_pool()`](https://fberding.github.io/CodingManageR/reference/get_db_pool.md)
+  : Create a Database Connection Pool or Direct DBI Connection
+
+- [`get_db_connection()`](https://fberding.github.io/CodingManageR/reference/get_db_connection.md)
+  : Open a Database Connection (Backward-Compatible Wrapper)
+
+- [`close_db_pool()`](https://fberding.github.io/CodingManageR/reference/close_db_pool.md)
+  : Safely Close a Connection Pool or DBI Connection
+
+- [`close_db_connection()`](https://fberding.github.io/CodingManageR/reference/close_db_connection.md)
+  : Safely Close a Database Connection (Backward-Compatible Alias)
+
+- [`is_mysql()`](https://fberding.github.io/CodingManageR/reference/is_mysql.md)
+  : Check Whether a Connection Uses MySQL or MariaDB
+
+- [`is_mysql_connection()`](https://fberding.github.io/CodingManageR/reference/is_mysql_connection.md)
+  : Check Whether a Connection Targets MySQL or MariaDB
+
+- [`is_pool_connection()`](https://fberding.github.io/CodingManageR/reference/is_pool_connection.md)
+  :
+
+  Check Whether an Object Is a
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  Connection
+
+- [`get_db_random_function()`](https://fberding.github.io/CodingManageR/reference/get_db_random_function.md)
+  : Determine SQL Random Order Expression
+
+- [`with_db_transaction()`](https://fberding.github.io/CodingManageR/reference/with_db_transaction.md)
+  : Execute Database Operations Atomically Inside a Transaction
+
+- [`create_all_tables()`](https://fberding.github.io/CodingManageR/reference/create_all_tables.md)
+  : Create All CodingManageR Database Tables
+
+- [`seed_initial_data()`](https://fberding.github.io/CodingManageR/reference/seed_initial_data.md)
+  : Seed Initial Accounts or Demonstration Data into the Database
+
+## Database Queries, Permissions & Rating Corrections
+
+Per-user authorization lookups, unrated case sampling, paginated coding
+search, and rating value updates.
+
+- [`get_user_info_db()`](https://fberding.github.io/CodingManageR/reference/get_user_info_db.md)
+  : Retrieve User Metadata and Identifier
+- [`get_user_permitted_sources_db()`](https://fberding.github.io/CodingManageR/reference/get_user_permitted_sources_db.md)
+  : Retrieve Authorized Text Sources for a User
+- [`get_user_permitted_coding_sources_db()`](https://fberding.github.io/CodingManageR/reference/get_user_permitted_coding_sources_db.md)
+  : Retrieve Authorized Scientific Coding Sources for a User
+- [`count_unrated_cases_db()`](https://fberding.github.io/CodingManageR/reference/count_unrated_cases_db.md)
+  : Count Unrated Cases for a Specific Scale and User
+- [`draw_unrated_case_db()`](https://fberding.github.io/CodingManageR/reference/draw_unrated_case_db.md)
+  : Draw an Unrated Case for Active Coding
+- [`search_case_codings_db()`](https://fberding.github.io/CodingManageR/reference/search_case_codings_db.md)
+  : Search and Filter Submitted Case Codings Across Scales
+- [`get_coding_detail_db()`](https://fberding.github.io/CodingManageR/reference/get_coding_detail_db.md)
+  : Retrieve Detailed Context for a Single Rating Record
+- [`update_coding_rating_value_db()`](https://fberding.github.io/CodingManageR/reference/update_coding_rating_value_db.md)
+  : Update Only the Numeric Scale Rating Value for a Stored Coding
+- [`generate_security_token()`](https://fberding.github.io/CodingManageR/reference/generate_security_token.md)
+  : Generate a Secure Random Alphanumeric Token
+
+## Inter-Rater Reliability & Stratified Training
+
+Computation of 16 reliability metrics via aifeducation, stratified
+training pool sampling, and metric metadata helpers.
+
+- [`berechne_aifeducation_metriken()`](https://fberding.github.io/CodingManageR/reference/berechne_aifeducation_metriken.md)
+  :
+
+  Compute Inter-Rater Reliability Metrics via `aifeducation`
+
+- [`generate_stratified_training_pool()`](https://fberding.github.io/CodingManageR/reference/generate_stratified_training_pool.md)
+  : Generate Stratified Training Pool Guaranteeing Full Scale Range
+
+- [`get_reliability_metric_choices()`](https://fberding.github.io/CodingManageR/reference/get_reliability_metric_choices.md)
+  : Retrieve Localized Optgroup Choices for Reliability Metric Selectors
+
+- [`get_reliability_metric_meta()`](https://fberding.github.io/CodingManageR/reference/get_reliability_metric_meta.md)
+  : Retrieve Localized Metadata for a Single Reliability Metric Key
+
+- [`classify_reliability_magnitude()`](https://fberding.github.io/CodingManageR/reference/classify_reliability_magnitude.md)
   : Classify Inter-Rater Reliability Magnitude
-- [`clean_table_columns()`](clean_table_columns.md) : Clean and
-  Normalize Imported Table Column Names
-- [`close_db_connection()`](close_db_connection.md) : Safely Close a
-  Direct DBI Database Connection
-- [`close_db_pool()`](close_db_pool.md) : Safely Close a Database
-  Connection Pool or DBI Connection
-- [`coding_manager_server()`](coding_manager_server.md) : Root Shiny
-  Server Function for CodingManageR
-- [`coding_manager_ui()`](coding_manager_ui.md) : Root Shiny UI Shell
-  for CodingManageR
-- [`count_unrated_cases_db()`](count_unrated_cases_db.md) : Count
-  Unrated Cases for a Coder and Scale
-- [`create_all_tables()`](create_all_tables.md) : Create All
-  CodingManageR Database Tables
-- [`dashboardServer()`](dashboardServer.md) : Shiny Server Module for
-  the Progress Dashboard
-- [`dashboardUI()`](dashboardUI.md) : Shiny UI Module for the Progress
-  Dashboard
-- [`detect_browser_language()`](detect_browser_language.md) : Detect
-  Supported Application Language from Browser Locale
-- [`draw_unrated_case_db()`](draw_unrated_case_db.md) : Draw a Random
-  Unrated Case Text from the Database
-- [`export_table_template_csv()`](export_table_template_csv.md) : Build
-  an Empty Schema Template Data Frame for CSV Export
-- [`export_table_to_csv()`](export_table_to_csv.md) : Fetch a Database
-  Table for CSV Export
-- [`fetch_consolidated_master_export()`](fetch_consolidated_master_export.md)
-  : Fetch Consolidated Master Coding Export Dataset
-- [`find_translations_file()`](find_translations_file.md) : Locate the
-  Bundled Translations JSON File
-- [`format_int_locale()`](format_int_locale.md) : Format an Integer with
-  Locale-Specific Grouping
-- [`format_metric_display()`](format_metric_display.md) : Format a
-  Reliability Metric Value for Display
-- [`generate_security_token()`](generate_security_token.md) : Generate a
-  Random Alphanumeric Access Token
-- [`generate_stratified_training_pool()`](generate_stratified_training_pool.md)
-  : Generate a Stratified Gold-Standard Training Pool
-- [`get_coding_detail_db()`](get_coding_detail_db.md) : Retrieve
-  Detailed Metadata for a Single Rating Record
-- [`get_db_connection()`](get_db_connection.md) : Open a Direct Database
-  Connection (MySQL or SQLite)
-- [`get_db_pool()`](get_db_pool.md) : Create a Pooled Database
-  Connection (MySQL or SQLite)
-- [`get_db_random_function()`](get_db_random_function.md) : Return the
-  SQL Random Ordering Expression for a Connection
-- [`get_language_choices()`](get_language_choices.md) : Get Named
-  Language Choices for UI Selectors
-- [`get_reliability_metric_choices()`](get_reliability_metric_choices.md)
-  : Get Localized Choices of Inter-Rater Reliability Metrics
-- [`get_reliability_metric_meta()`](get_reliability_metric_meta.md) :
-  Get Metadata and Thresholds for a Reliability Metric
-- [`get_source_license_choices()`](get_source_license_choices.md) : Get
-  Localized Source License Choices
-- [`get_supported_languages()`](get_supported_languages.md) : List
-  Supported Interface Language Codes
-- [`get_table_pk_definition()`](get_table_pk_definition.md) : Get
-  Primary Key Column Name for a Database Table
-- [`get_user_info_db()`](get_user_info_db.md) : Retrieve User Account
-  Metadata from the Database
-- [`get_user_permitted_coding_sources_db()`](get_user_permitted_coding_sources_db.md)
-  : Get Sources Permitted for Live Field Coding by a User
-- [`get_user_permitted_sources_db()`](get_user_permitted_sources_db.md)
-  : Get All Sources Permitted for a User
-- [`is_mysql()`](is_mysql.md) : Check Whether a Connection Uses MySQL or
-  MariaDB
-- [`is_mysql_connection()`](is_mysql_connection.md) : Check Whether a
-  DBI or Pool Connection Targets MySQL/MariaDB
-- [`is_pool_connection()`](is_pool_connection.md) : Check Whether an
-  Object Is a pool::dbPool Connection
-- [`kodierungenServer()`](kodierungenServer.md) : Shiny Server Module
-  for Live Field Coding
-- [`kodierungenUI()`](kodierungenUI.md) : Shiny UI Module for Live Field
-  Coding
-- [`language_selector_ui()`](language_selector_ui.md) : Build the
-  Bilingual Language Selector Widget
-- [`load_translations()`](load_translations.md) : Load and Cache
-  Application Translation Dictionaries
-- [`render_kpi_card_ui()`](render_kpi_card_ui.md) : Render a Bootstrap
-  KPI Summary Card
-- [`render_metric_badge_ui()`](render_metric_badge_ui.md) : Render a
-  Color-Coded Reliability Metric Badge
-- [`run_app()`](run_app.md) : Launch the CodingManageR Shiny Application
-- [`schulungServer()`](schulungServer.md) : Shiny Server Module for
-  Gold-Standard Coder Training
-- [`schulungUI()`](schulungUI.md) : Shiny UI Module for Gold-Standard
-  Coder Training
-- [`search_case_codings_db()`](search_case_codings_db.md) : Search Case
-  Coding Ratings in the Database
-- [`seed_initial_data()`](seed_initial_data.md) : Seed Initial Accounts
-  or Demo Data into the Database
-- [`tr()`](tr.md) : Translate a Localization Key into the Selected
-  Language
-- [`update_coding_rating_value_db()`](update_coding_rating_value_db.md)
-  : Update an Existing Coding Rating Value in the Database
-- [`validate_import_schema()`](validate_import_schema.md) : Validate an
-  Uploaded CSV Data Frame Against Table Schema Rules
-- [`with_db_transaction()`](with_db_transaction.md) : Execute Database
-  Operations Atomically Inside a Transaction
+
+- [`format_metric_display()`](https://fberding.github.io/CodingManageR/reference/format_metric_display.md)
+  : Format Numeric Metric or Percentage for Display
+
+- [`get_source_license_choices()`](https://fberding.github.io/CodingManageR/reference/get_source_license_choices.md)
+  : Retrieve Localized Source License Options
+
+## Data Export, Templates & Import Validation
+
+Consolidated master dataset exports, raw table CSV snapshots, template
+generators, and import schema validation.
+
+- [`fetch_consolidated_master_export()`](https://fberding.github.io/CodingManageR/reference/fetch_consolidated_master_export.md)
+  : Build and Execute Consolidated Master Data Export Query
+- [`export_table_to_csv()`](https://fberding.github.io/CodingManageR/reference/export_table_to_csv.md)
+  : Generate CSV Content for a Database Table
+- [`export_table_template_csv()`](https://fberding.github.io/CodingManageR/reference/export_table_template_csv.md)
+  : Generate Empty CSV Template for Table Upload
+- [`clean_table_columns()`](https://fberding.github.io/CodingManageR/reference/clean_table_columns.md)
+  : Sanitize and Clean Data Frame Column Names
+- [`get_table_pk_definition()`](https://fberding.github.io/CodingManageR/reference/get_table_pk_definition.md)
+  : Retrieve Table Primary Key Column Name
+- [`validate_import_schema()`](https://fberding.github.io/CodingManageR/reference/validate_import_schema.md)
+  : Validate Table Schema for Data Upload
+
+## Localization & UI Builders
+
+Bilingual German/English translation utilities and reusable Bootstrap 5
+UI components.
+
+- [`tr()`](https://fberding.github.io/CodingManageR/reference/tr.md) :
+  Translate a Dot-Separated UI Key with Fallback and Formatting
+
+- [`load_translations()`](https://fberding.github.io/CodingManageR/reference/load_translations.md)
+  : Load Translations Dictionary from JSON with Modification-Time
+  Caching
+
+- [`find_translations_file()`](https://fberding.github.io/CodingManageR/reference/find_translations_file.md)
+  :
+
+  Locate the Canonical `translations.json` File
+
+- [`get_supported_languages()`](https://fberding.github.io/CodingManageR/reference/get_supported_languages.md)
+  : Get Supported Language Codes
+
+- [`get_language_choices()`](https://fberding.github.io/CodingManageR/reference/get_language_choices.md)
+  : Get Labeled Language Choices for Shiny Inputs
+
+- [`detect_browser_language()`](https://fberding.github.io/CodingManageR/reference/detect_browser_language.md)
+  : Normalize and Validate a Browser Locale String
+
+- [`language_selector_ui()`](https://fberding.github.io/CodingManageR/reference/language_selector_ui.md)
+  : Render Header Language Selector Dropdown Widget
+
+- [`render_kpi_card_ui()`](https://fberding.github.io/CodingManageR/reference/render_kpi_card_ui.md)
+  : Render Standardized KPI Stat Card
+
+- [`render_metric_badge_ui()`](https://fberding.github.io/CodingManageR/reference/render_metric_badge_ui.md)
+  : Render Metric Status Badge
+
+- [`build_scale_examples_modal()`](https://fberding.github.io/CodingManageR/reference/build_scale_examples_modal.md)
+  : Build Modal Dialog for Coding Scale Definitions and Stage Examples
+
+- [`build_edit_coding_value_modal()`](https://fberding.github.io/CodingManageR/reference/build_edit_coding_value_modal.md)
+  : Build Modal Dialog for Editing a Case Coding Rating Value
+
+- [`build_coding_search_table_ui()`](https://fberding.github.io/CodingManageR/reference/build_coding_search_table_ui.md)
+  : Build Paginated Table UI for Admin Coding Search and Correction
+
+- [`build_coding_search_pagination_ui()`](https://fberding.github.io/CodingManageR/reference/build_coding_search_pagination_ui.md)
+  : Build Pagination Bar for Admin Coding Search Table
+
+- [`format_int_locale()`](https://fberding.github.io/CodingManageR/reference/format_int_locale.md)
+  : Format Integer with Locale-Aware Separators

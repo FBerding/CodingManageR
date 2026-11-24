@@ -1,7 +1,8 @@
-# Build Modal Dialog Displaying Scale Anchor Examples
+# Build Modal Dialog for Coding Scale Definitions and Stage Examples
 
-Constructs a Shiny modal showing the coding scale definition,
-descriptions, and anchor examples across all ordinal levels.
+Constructs a Shiny `modalDialog()` displaying full scale descriptions,
+stage boundaries, and concrete anchor examples for all ordinal levels
+from `0` through `max_value`.
 
 ## Usage
 
@@ -13,21 +14,21 @@ build_scale_examples_modal(scale_df, active_level = NULL, lang = "en")
 
 - scale_df:
 
-  Data frame containing the scale definition and level anchor
-  descriptions.
+  A 1-row `data.frame` from `scale_definitions`.
 
 - active_level:
 
-  Optional integer scalar highlighting the currently selected ordinal
-  level.
+  Optional integer highlighting a specific score level (e.g., `0..4`).
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`) passed to
+  [`tr()`](https://fberding.github.io/CodingManageR/reference/tr.md).
+  Defaults to `"en"`.
 
 ## Value
 
-A Shiny modal dialog UI object.
+A Shiny `modalDialog` object ready to be passed to `showModal()`.
 
 ## Examples
 

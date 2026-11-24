@@ -1,40 +1,69 @@
 # CodingManageR
 
-**CodingManageR** is a multi-user R Shiny web application and training
-portal for qualitative text coding across ordinal scales. It supports
-zero-configuration local SQLite databases for single-user desktop
-sessions as well as pooled MariaDB/MySQL backends for concurrent Open
-Source Shiny Server deployments.
+**CodingManageR** is a web app for qualitative text coding and coder
+training. You use it in your browser to rate texts on ordered numeric
+scales. It runs locally on one computer with a single SQLite database
+file, or on a shared web server for a whole team.
 
 ## Core Features
 
-- **Stratified Coder Training & 16 Reliability Metrics**: Draws balanced
-  gold-standard training pools guaranteeing representation of every
-  discrete scale level (`0..max_value`) and computes 16 inter-rater
-  reliability and classification metrics via `aifeducation` (including
-  Cohen’s Kappa, Krippendorff’s Alpha, Gwet’s AC1/AC2, Iota2, Kendall’s
-  W, and Macro F1).
-- **Role-Based Live Coding Workspace**: Enforces granular per-user
-  permissions across coding scales, text corpora, and scientific coding
-  reference sources, with automatic exclusion of already-coded and
-  gold-standard cases.
-- **Personal Progress Dashboard**: Tracks live codings, training
-  sessions, interactive `ggplot2` reliability trajectories across all 16
-  metrics, Landis & Koch benchmark badges, and a searchable coding scale
-  catalog.
-- **8-Tab Administration Console**: Manages users (token generation,
-  active/inactive lockouts, permissions), texts, sources/licenses,
-  ordinal scales, cross-coder reliability comparisons, rating
-  corrections, schema-validated CSV imports/consolidated master exports,
-  and a 9-table foreign-key integrity audit.
-- **Bilingual Localization**: Built-in German (`de`) and English (`en`)
-  interface with automatic browser locale detection and live header
-  language switching.
+- **Balanced Coder Training**: Practice with reference texts that cover
+  every level of a rating scale.
+- **16 Reliability Metrics**: Check agreement between a coder and
+  reference answers with 16 standard statistics. These include Cohen’s
+  Kappa, Krippendorff’s Alpha, Gwet’s AC1 and AC2, Iota2, Kendall’s W,
+  and Macro F1.
+- **Training Reports and Downloads**: View a case-by-case comparison
+  after each training session and download the results as a spreadsheet
+  file.
+- **Guided Live Coding**: Read case texts and select scores with a
+  simple slider and live level definitions.
+- **Automatic Case Filtering**: Skip already-coded texts and reference
+  training cases automatically during live coding.
+- **Role-Based Access Control**: Separate standard coders from
+  administrators and unlock specific scales and sources for each user.
+- **Personal Progress Dashboard**: Track live codings, completed
+  training sessions, and reliability trends over time.
+- **Searchable Scale Handbook**: Browse all unlocked rating scales and
+  level examples in one place.
+- **Reference Examples Window**: Open real coded examples for any scale
+  level during training or live coding.
+- **User Management**: Create accounts, generate login passwords, pause
+  inactive users, and manage user permissions.
+- **Source and License Directory**: Store citations, coding guidelines,
+  and usage licenses for texts and ratings.
+- **Custom Ordinal Scales**: Create rating scales with clear
+  instructions and anchor examples for every level.
+- **Team Reliability Overview**: Compare training results across coders
+  and inspect each coder’s session history.
+- **Rating Corrections**: Search saved ratings and fix individual
+  scoring mistakes safely.
+- **CSV Import and Export**: Upload tables in bulk with checked
+  templates and export ready-to-use research datasets.
+- **Database Health Checks**: Inspect table counts and check for broken
+  links inside the database.
+- **Interactive Getting Started Guide**: Follow a built-in step-by-step
+  tour inside the app with automatic tab switching.
+- **Bilingual Interface**: Switch the full interface and the guided tour
+  live between English and German at any time.
 
 ## Installation
 
-Install the development version of **CodingManageR** from GitHub using
-`pak` or `remotes`:
+You can install **CodingManageR** from CRAN or from GitHub.
+
+### From CRAN
+
+Install the stable version from CRAN:
+
+``` r
+
+install.packages("CodingManageR")
+```
+
+### From GitHub
+
+Install the newest development version from GitHub with `pak` or
+`remotes`:
 
 ``` r
 
@@ -51,33 +80,54 @@ remotes::install_github("FBerding/CodingManageR")
 
 ### Local Single-User Mode (SQLite)
 
-Launch the interactive portal with a local SQLite database seeded with
-sample scales, clinical narratives, gold standards, and demo accounts:
+Start the app with a new local SQLite database file. SQLite saves your
+whole project in one file on your computer. With `empty = TRUE`, the app
+creates only the first administrator account.
 
 ``` r
 
 library(CodingManageR)
 
-# Start the Shiny application with a local SQLite database
-run_app(sqlite_path = "coding_portal.sqlite", seed_empty = FALSE)
+# Start a clean project with a local SQLite database
+run_app(sqlite_path = "coding_portal.sqlite", empty = TRUE)
+
+# Save another independent project in a second .sqlite file
+run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
 ```
 
-Default seeded demo accounts (`seed_empty = FALSE`):
+Each `.sqlite` file holds one separate project with its own scales,
+sources, texts, users, and ratings. Before you copy, rename, or archive
+a project file, stop the app cleanly first. Stopping the app saves
+temporary write-ahead log files (`-wal` and `-shm`) back into the main
+`.sqlite` file.
+
+Want to test the app first? Use `empty = FALSE` to load sample scales,
+example texts, reference cases, and demo accounts:
+
+``` r
+
+run_app(sqlite_path = "coding_demo.sqlite", empty = FALSE)
+```
+
+Demo mode (`empty = FALSE`) creates these accounts:
 
 | Role | Username | Access Token | Scope |
 |:---|:---|:---|:---|
-| Administrator | `admin` | `geheim123` | Full workspace + 8-tab Admin Console |
-| Coder | `user1` | `token2026` | Dashboard, Training & Live Coding (restricted scales/sources) |
-| Locked Demo | `inaktiv_demo` | `gesperrt123` | Deactivated account (`is_active = 0`) |
+| Administrator | `admin` | `geheim123` | Full workspace and 8-tab Admin Console |
+| Coder | `user1` | `token2026` | Dashboard, Training, and Live Coding (assigned scales and sources) |
+| Locked Demo | `inaktiv_demo` | `gesperrt123` | Inactive account (`is_active = 0`) |
 
-> For production starts with only the administrator account and empty
-> content tables, use `run_app(seed_empty = TRUE)`.
+> In clean mode (`empty = TRUE`), sign in as `admin` with token
+> `geheim123`. Change this password right away in **Admin Console -\>
+> User Management**. Click **Getting Started** in the top header at any
+> time to start the interactive tour inside the app.
 
 ### Multi-User Deployment (Shiny Server + MariaDB/MySQL)
 
-For concurrent web sessions on Open Source Shiny Server, configure a
-pooled MariaDB/MySQL connection via environment variables (e.g., in
-`.Renviron`) before calling [`run_app()`](reference/run_app.md):
+To host the app for a team on Open Source Shiny Server, connect to a
+MariaDB or MySQL database. Set these environment variables (for example
+in `.Renviron`) before calling
+[`run_app()`](https://fberding.github.io/CodingManageR/reference/run_app.md):
 
 ``` bash
 MYSQL_HOST=127.0.0.1
@@ -87,32 +137,15 @@ MYSQL_PASSWORD=your_secure_password
 MYSQL_DBNAME=kodierer_portal
 ```
 
-See the bundled vignettes
-([`vignette("CodingManageR", package = "CodingManageR")`](articles/CodingManageR.md))
-for full server deployment and database architecture instructions.
+## Documentation & Guides
 
-## Testing & Coverage
+Two step-by-step guides for beginners and administrators come with the
+package:
 
-Run the automated `testthat`,
-[`shiny::testServer()`](https://rdrr.io/pkg/shiny/man/testServer.html),
-and headless `shinytest2` test suite locally:
-
-``` r
-
-# Run all package tests
-devtools::test()
-
-# Compute local covr test coverage (enforces >= 95% gate)
-source("tests/run_coverage.R")
-```
-
-To re-render this `README.Rmd` into `README.md` for GitHub after edits,
-run:
-
-``` r
-
-devtools::build_readme()
-```
+- **Installation & Server Setup**:
+  [`vignette("CodingManageR", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR.md)
+- **Step-by-Step Workflow Guide (Setup, Coding & Administration)**:
+  [`vignette("introduction", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/introduction.md)
 
 ## Citation & License
 
@@ -124,5 +157,5 @@ v3.0 (GPL-3)**.
 citation("CodingManageR")
 ```
 
-If you encounter a bug or have a feature request, please open an issue
-on [GitHub Issues](https://github.com/FBerding/CodingManageR/issues).
+Found a bug or have an idea for a new feature? Open an issue on [GitHub
+Issues](https://github.com/FBerding/CodingManageR/issues).

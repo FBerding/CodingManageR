@@ -1,44 +1,52 @@
-# Generate a Stratified Gold-Standard Training Pool
+# Generate Stratified Training Pool Guaranteeing Full Scale Range
 
-Draws a balanced, stratified subset of gold-standard annotated case
-texts across all ordinal scale levels (0 to max_scale_value) for coder
-reliability training.
+Draws a balanced, stratified sample of training cases from `texts` and
+`user_ratings` (prioritizing `gold_standard` benchmarks over field
+codings), ensuring that every discrete ordinal level from `0` to
+`max_scale_value` is represented whenever available.
 
 ## Usage
 
 ``` r
-generate_stratified_training_pool(con, scale_identifier, target_count,
-  max_scale_value)
+generate_stratified_training_pool(
+  con,
+  scale_identifier,
+  target_count,
+  max_scale_value
+)
 ```
 
 ## Arguments
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - scale_identifier:
 
-  Integer scale_id or character short_label identifying the coding
-  scale.
+  Character or integer identifying the coding scale.
 
 - target_count:
 
-  Integer scalar desired number of stratified training cases.
+  Total number of training items to draw (at least
+  `max_scale_value + 1`).
 
 - max_scale_value:
 
-  Integer scalar maximum ordinal scale value.
+  Integer indicating the maximum allowed score on this scale.
 
 ## Value
 
-A data frame of sampled training cases with gold-standard ratings.
+A `data.frame` of sampled training cases including `text_id`, `text`,
+`source_id`, `case_text`, `bewertung`, and `val_int`.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-generate_stratified_training_pool(con, scale_identifier = 1L,
+pool_df <- generate_stratified_training_pool(con, scale_identifier = 1L,
   target_count = 8L, max_scale_value = 3L)
 } # }
 ```

@@ -1,7 +1,9 @@
-# Retrieve Detailed Metadata for a Single Rating Record
+# Retrieve Detailed Context for a Single Rating Record
 
-Queries full details for a single user_ratings row joined with its case
-text, scale definition, and coder username.
+Fetches a single rating from `user_ratings` together with its full case
+text and complete `scale_definitions` stage descriptions (`def_n_0`
+through `def_n_5`) to populate the administrator value-correction
+dialog.
 
 ## Usage
 
@@ -13,21 +15,23 @@ get_coding_detail_db(con, rating_id)
 
 - con:
 
-  Active DBI database connection or pool::dbPool object.
+  A `DBIConnection` or
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+  object.
 
 - rating_id:
 
-  Integer scalar identifier of the rating record in user_ratings.
+  Integer primary key identifying the target record in `user_ratings`.
 
 ## Value
 
-A single-row data frame with rating details, or a 0-row data frame if
-not found.
+A 1-row `data.frame` containing rating, case, coder, and scale stage
+fields, or an empty `data.frame` if the record cannot be found.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-get_coding_detail_db(con, rating_id = 1L)
+get_coding_detail_db(con, rating_id = 201L)
 } # }
 ```

@@ -1,7 +1,7 @@
-# Shiny UI Module for Gold-Standard Coder Training
+# Training Module UI
 
-Constructs the user interface container for the Coding Training
-workflow.
+Creates the Shiny UI container for the interactive coding training
+module.
 
 ## Usage
 
@@ -13,16 +13,16 @@ schulungUI(id)
 
 - id:
 
-  Character scalar module namespace identifier.
+  Character string specifying the Shiny module namespace identifier.
 
 ## Value
 
-A Shiny UI tag list.
+A `shiny.tag` (`uiOutput`) rendering the training workspace.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-schulungUI("mod_training")
-} # }
+if (interactive()) {
+  ui <- shiny::fluidPage(schulungUI("mod_training"))
+}
 ```

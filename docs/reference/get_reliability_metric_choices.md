@@ -1,7 +1,8 @@
-# Get Localized Choices of Inter-Rater Reliability Metrics
+# Retrieve Localized Optgroup Choices for Reliability Metric Selectors
 
-Returns a named character vector of supported reliability metric keys
-and their localized labels for UI selectors.
+Builds a grouped list of supported inter-rater reliability metric keys
+and localized display labels for use in
+[`shiny::selectInput()`](https://rdrr.io/pkg/shiny/man/selectInput.html).
 
 ## Usage
 
@@ -13,15 +14,16 @@ get_reliability_metric_choices(lang = "en", include_all_core = TRUE)
 
 - lang:
 
-  Character scalar language code ("de" or "en").
+  Character language code (`"de"` or `"en"`). Defaults to `"en"`.
 
 - include_all_core:
 
-  Logical; if TRUE includes all core inter-rater reliability metrics.
+  Logical; whether to include the combined `"all_core"` overview option.
+  Defaults to `TRUE`.
 
 ## Value
 
-A named character vector of reliability metrics.
+A named list suitable for `shiny::selectInput(..., choices = ...)`.
 
 ## Examples
 
