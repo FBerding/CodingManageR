@@ -11,7 +11,8 @@ seed_initial_data(con, empty = TRUE)
 
 \item{empty}{Logical; if \code{TRUE} (default), seeds only the default \code{admin} and
 inactive \code{historic_user} accounts. If \code{FALSE}, seeds the full demonstration
-dataset.}
+dataset only when all 9 tables are completely empty; if any table already
+contains rows, emits a warning and skips all demonstration inserts.}
 }
 \value{
 Invisibly returns a named list summarizing row counts, schema

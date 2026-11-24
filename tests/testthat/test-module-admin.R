@@ -51,7 +51,14 @@ test_that("adminServer Subtab 1 (Users): CRUD, validation, self-protection, 25-r
       session$setInputs(user_search_query = "")
       session$flushReact()
       expect_match(ui_to_html(output$users_counter_badge), "30")
-      expect_match(ui_to_html(output$users_table_container), "<table")
+      users_tbl_html <- ui_to_html(output$users_table_container)
+      expect_match(users_tbl_html, "<table")
+      expect_match(users_tbl_html, "fa-lock")
+      expect_match(users_tbl_html, "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022")
+      expect_false(grepl("geheim123", users_tbl_html, fixed = TRUE))
+      expect_false(grepl("sys_gold_standard_internal", users_tbl_html, fixed = TRUE))
+      expect_false(grepl("sys_expert_internal", users_tbl_html, fixed = TRUE))
+      expect_match(users_tbl_html, "token2026")
       expect_match(ui_to_html(output$users_pagination_controls), "btn_users_next")
 
       session$setInputs(btn_users_next = 1L)
@@ -717,14 +724,32 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
         session$flushReact()
       })
 
-      # Admin self-edit modal & save (keeps role = admin, is_active = 1 even if inputs differ)
+      # Admin self-edit modal & save:
+      # 1) Blank password keeps existing password unchanged and keeps role = admin, is_active = 1
       session$setInputs(trigger_edit_user = admin_id)
       session$flushReact()
-      session$setInputs(edit_token = "geheim123", edit_permissions = "user", edit_is_active = 0L, btn_save_edited_user = 1L)
+      session$setInputs(edit_token = "", edit_permissions = "user", edit_is_active = 0L, btn_save_edited_user = 1L)
       session$flushReact()
-      adm_row <- DBI::dbGetQuery(con, "SELECT permissions, is_active FROM user_tokens WHERE user_id = ?", params = list(admin_id))
+      adm_row <- DBI::dbGetQuery(con, "SELECT token, permissions, is_active FROM user_tokens WHERE user_id = ?", params = list(admin_id))
+      expect_equal(adm_row$token[1], "geheim123")
       expect_equal(adm_row$permissions[1], "admin")
       expect_equal(adm_row$is_active[1], 1L)
+
+      # 2) Non-empty too-short password (<4 chars) rejected with alert-danger and leaves token unchanged
+      session$setInputs(trigger_edit_user = admin_id)
+      session$flushReact()
+      session$setInputs(edit_token = "ab", edit_permissions = "user", edit_is_active = 0L, btn_save_edited_user = 2L)
+      session$flushReact()
+      expect_match(ui_to_html(output$edit_user_feedback), "alert-danger")
+      expect_equal(DBI::dbGetQuery(con, "SELECT token FROM user_tokens WHERE user_id = ?", params = list(admin_id))$token[1], "geheim123")
+
+      # 3) Valid new password updates token while preserving admin role and active status
+      session$setInputs(edit_token = "admin_new_pw_99", edit_permissions = "user", edit_is_active = 0L, btn_save_edited_user = 3L)
+      session$flushReact()
+      adm_upd <- DBI::dbGetQuery(con, "SELECT token, permissions, is_active FROM user_tokens WHERE user_id = ?", params = list(admin_id))
+      expect_equal(adm_upd$token[1], "admin_new_pw_99")
+      expect_equal(adm_upd$permissions[1], "admin")
+      expect_equal(adm_upd$is_active[1], 1L)
 
       # Delete modal for user1 (has ratings -> info alert branch; do not confirm delete)
       expect_no_error({

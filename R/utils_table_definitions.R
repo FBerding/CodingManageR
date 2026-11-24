@@ -241,7 +241,8 @@ create_all_tables <- function(con, verbose = TRUE) {
 #' @param con A `DBIConnection` or `pool::dbPool` object.
 #' @param empty Logical; if `TRUE` (default), seeds only the default `admin` and
 #'   inactive `historic_user` accounts. If `FALSE`, seeds the full demonstration
-#'   dataset.
+#'   dataset only when all 9 tables are completely empty; if any table already
+#'   contains rows, emits a warning and skips all demonstration inserts.
 #'
 #' @return Invisibly returns a named list summarizing row counts, schema
 #'   creation status, and checksums for all 9 tables.
@@ -303,6 +304,23 @@ seed_initial_data <- function(con, empty = TRUE) {
     }, error = function(e) "OK (validated)")
   }
 
+  # Pre-seed global row count check across all 9 tables to protect existing databases
+  counts_before <- vapply(all_tables, function(t_name) {
+    as.integer(dbGetQuery(con, sprintf("SELECT COUNT(*) FROM %s", t_name))[1, 1])
+  }, integer(1))
+  total_rows_before <- sum(counts_before, na.rm = TRUE)
+  skip_demo_seed <- !empty && total_rows_before > 0L
+
+  if (skip_demo_seed) {
+    warning(
+      sprintf(
+        "[DB-Seed] Existing database already contains data (%d row(s) across existing tables). Skipping demonstration data seeding (empty = FALSE) to protect existing data.",
+        total_rows_before
+      ),
+      call. = FALSE
+    )
+  }
+
   # ----------------------------------------------------------------------------
   # 1. user_tokens (authentication and accounts - 8 demo accounts)
   # ----------------------------------------------------------------------------
@@ -311,7 +329,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$n_before <- n_b
 
   if (!empty) {
-    if (n_b == 0) {
+    if (!skip_demo_seed && n_b == 0) {
       dbExecute(con, "
         INSERT INTO user_tokens (username, token, permissions, is_active) VALUES
         ('admin', 'geheim123', 'admin', 1),
@@ -339,6 +357,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d accounts inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d accounts present)", n_a)
   } else if (empty && n_a > 1) {
     report[[tbl]]$status_label <- sprintf("Already populated (%d accounts present)", n_a)
   } else if (empty) {
@@ -354,7 +374,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM scale_definitions")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       scales <- list(
         list(
@@ -412,6 +432,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d scales inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d scales present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -425,7 +447,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM sources")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       sources_data <- list(
         list(
@@ -472,6 +494,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d sources inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d sources present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -485,7 +509,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_source_permissions")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       u_ids <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
       uid_user1 <- u_ids$user_id[u_ids$username == "user1"]
@@ -509,6 +533,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d permissions present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -522,7 +548,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_coding_source_permissions")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       u_ids <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
       uid_user1 <- u_ids$user_id[u_ids$username == "user1"]
@@ -546,6 +572,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d coding permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d permissions present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -559,7 +587,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_scale_permissions")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       u_ids <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
       uid_user1 <- u_ids$user_id[u_ids$username == "user1"]
@@ -583,6 +611,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d scale permissions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d permissions present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -596,7 +626,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM texts")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       fallback_texts <- data.frame(
         text_id = c(
@@ -679,6 +709,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d texts inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d texts present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -692,7 +724,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM user_ratings")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       ratings_data <- data.frame(
         rating_id = c(
@@ -812,6 +844,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d ratings [12 gold standards, 22 field], total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d ratings present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -825,7 +859,7 @@ seed_initial_data <- function(con, empty = TRUE) {
   n_b <- as.integer(dbGetQuery(con, "SELECT COUNT(*) FROM coding_training")[1, 1])
   report[[tbl]]$n_before <- n_b
 
-  if (!empty) {
+  if (!empty && !skip_demo_seed) {
     if (n_b == 0) {
       u_ids_tr <- dbGetQuery(con, "SELECT user_id, username FROM user_tokens")
       get_tr_uid <- function(uname, fallback = 1L) {
@@ -877,6 +911,8 @@ seed_initial_data <- function(con, empty = TRUE) {
   report[[tbl]]$checksum <- calc_checksum(tbl)
   if (report[[tbl]]$n_inserted > 0) {
     report[[tbl]]$status_label <- sprintf("Newly populated (+%d training sessions inserted, total: %d)", report[[tbl]]$n_inserted, n_a)
+  } else if (skip_demo_seed) {
+    report[[tbl]]$status_label <- sprintf("Skipped demo seeding (existing database protected, %d training sessions present)", n_a)
   } else if (empty) {
     report[[tbl]]$status_label <- sprintf("Not populated (mode: empty = TRUE, total: %d)", n_a)
   } else {
@@ -886,7 +922,13 @@ seed_initial_data <- function(con, empty = TRUE) {
   # ----------------------------------------------------------------------------
   # Tabular status report with row counts and checksums
   # ----------------------------------------------------------------------------
-  mode_label <- if (empty) "Minimal Admin Account (empty = TRUE)" else "Full Standard Dataset (empty = FALSE)"
+  mode_label <- if (empty) {
+    "Minimal Admin Account (empty = TRUE)"
+  } else if (skip_demo_seed) {
+    "Full Standard Dataset (empty = FALSE, skipped: existing database protected)"
+  } else {
+    "Full Standard Dataset (empty = FALSE)"
+  }
 
   lines <- c()
   lines <- c(lines, "+----+--------------------------------+-------------+--------+-----------+--------+----------------------+")

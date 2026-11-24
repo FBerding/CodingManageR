@@ -13,8 +13,34 @@ test_that("coding_manager_ui and run_app construct valid Shiny UI and shiny.appo
   tmp_sqlite <- tempfile(fileext = ".sqlite")
   withr::defer(unlink(c(tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm")), force = TRUE))
 
+  withr::local_options(list(shiny.maxRequestSize = NULL))
+
   app_obj <- run_app(sqlite_path = tmp_sqlite, empty = FALSE)
   expect_s3_class(app_obj, "shiny.appobj")
+  expect_true(is.function(app_obj$onStart))
+
+  dereg_default <- app_obj$onStart()
+  if (is.function(dereg_default)) withr::defer(dereg_default())
+  expect_equal(getOption("shiny.maxRequestSize"), 3 * 1024^3)
+
+  custom_hook_called <- FALSE
+  app_custom <- run_app(
+    sqlite_path = tmp_sqlite,
+    empty = FALSE,
+    max_upload_size_gb = 1.5,
+    onStart = function() {
+      custom_hook_called <<- TRUE
+    }
+  )
+  dereg_custom <- app_custom$onStart()
+  if (is.function(dereg_custom)) withr::defer(dereg_custom())
+  expect_equal(getOption("shiny.maxRequestSize"), 1.5 * 1024^3)
+  expect_true(custom_hook_called)
+
+  options(shiny.maxRequestSize = 12345)
+  app_null <- run_app(sqlite_path = tmp_sqlite, empty = FALSE, max_upload_size_gb = NULL)
+  app_null$onStart()
+  expect_equal(getOption("shiny.maxRequestSize"), 12345)
 })
 
 test_that("coding_manager_server enforces authentication, inactive lockout, RBAC navigation, i18n, refresh, and logout", {
@@ -337,5 +363,145 @@ test_that("coding_manager_server initializes self-managed SQLite pools, empty ca
     )
   )
 })
+
+test_that("run_app(empty = FALSE) never writes sample data into an existing SQLite database file", {
+  # Verifies end-to-end via run_app()$serverFuncSource() and shiny::testServer():
+  # 1) Existing SQLite file initialized with empty = TRUE (+ custom scale) emits a warning
+  #    and receives 0 sample rows across all 9 tables when reopened with run_app(empty = FALSE)
+  # 2) Existing schema-only SQLite file with 0 rows in all 9 tables also emits a warning
+  #    and remains at 0 rows across all 9 tables under run_app(empty = FALSE)
+  # 3) Brand-new, non-existent SQLite file under run_app(empty = FALSE) seeds the full
+  #    demonstration dataset cleanly without warning
+  existing_sqlite <- tempfile(pattern = "cm_existing_study_", fileext = ".sqlite")
+  blank_existing_sqlite <- tempfile(pattern = "cm_existing_blank_", fileext = ".sqlite")
+  fresh_demo_sqlite <- tempfile(pattern = "cm_fresh_demo_", fileext = ".sqlite")
+
+  withr::defer(unlink(c(
+    existing_sqlite, paste0(existing_sqlite, "-wal"), paste0(existing_sqlite, "-shm"),
+    blank_existing_sqlite, paste0(blank_existing_sqlite, "-wal"), paste0(blank_existing_sqlite, "-shm"),
+    fresh_demo_sqlite, paste0(fresh_demo_sqlite, "-wal"), paste0(fresh_demo_sqlite, "-shm")
+  ), force = TRUE))
+
+  all_tables <- c(
+    "user_tokens", "scale_definitions", "sources",
+    "user_source_permissions", "user_coding_source_permissions",
+    "user_scale_permissions", "texts", "user_ratings", "coding_training"
+  )
+
+  count_all_tables <- function(db_file) {
+    con_chk <- DBI::dbConnect(RSQLite::SQLite(), db_file)
+    on.exit(DBI::dbDisconnect(con_chk), add = TRUE)
+    vapply(all_tables, function(tbl) {
+      as.integer(DBI::dbGetQuery(con_chk, sprintf("SELECT COUNT(*) FROM %s", tbl))[1, 1])
+    }, integer(1))
+  }
+
+  # Prepare Scenario 1: existing SQLite study created with empty = TRUE + 1 custom scale
+  con_setup <- DBI::dbConnect(RSQLite::SQLite(), existing_sqlite)
+  create_all_tables(con_setup, verbose = FALSE)
+  suppressMessages(seed_initial_data(con_setup, empty = TRUE))
+  DBI::dbExecute(
+    con_setup,
+    "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc) VALUES (1, 'Custom', 'Custom_Study_Scale', 3, 'Own scale')"
+  )
+  DBI::dbDisconnect(con_setup)
+  expect_true(file.exists(existing_sqlite))
+
+  # Prepare Scenario 2: existing SQLite file on disk with empty schema (0 rows in all 9 tables)
+  con_blank <- DBI::dbConnect(RSQLite::SQLite(), blank_existing_sqlite)
+  create_all_tables(con_blank, verbose = FALSE)
+  DBI::dbDisconnect(con_blank)
+  expect_true(file.exists(blank_existing_sqlite))
+
+  withr::with_options(
+    list(
+      CodingManageR.db_con = NULL,
+      CodingManageR.db_config = NULL,
+      CodingManageR.sqlite_path = NULL,
+      CodingManageR.seed_empty = NULL
+    ),
+    withr::with_envvar(
+      c(MYSQL_HOST = "", MYSQL_DB_HOST = "", MYSQL_USER = "", MYSQL_DB_USER = "", SQLITE_PATH = ""),
+      {
+        # Scenario 1: run_app(empty = FALSE) on existing study SQLite file -> warning + 0 sample rows
+        app_existing <- run_app(sqlite_path = existing_sqlite, empty = FALSE)
+        expect_warning(
+          suppressMessages(
+            shiny::testServer(
+              app_existing$serverFuncSource(),
+              {
+                session$flushReact()
+              }
+            )
+          ),
+          regexp = "Existing SQLite database file detected"
+        )
+
+        counts_1 <- count_all_tables(existing_sqlite)
+        expect_equal(counts_1[["user_tokens"]], 2L)
+        expect_equal(counts_1[["scale_definitions"]], 1L)
+        expect_equal(counts_1[["sources"]], 0L)
+        expect_equal(counts_1[["user_source_permissions"]], 0L)
+        expect_equal(counts_1[["user_coding_source_permissions"]], 0L)
+        expect_equal(counts_1[["user_scale_permissions"]], 0L)
+        expect_equal(counts_1[["texts"]], 0L)
+        expect_equal(counts_1[["user_ratings"]], 0L)
+        expect_equal(counts_1[["coding_training"]], 0L)
+
+        con_verify <- DBI::dbConnect(RSQLite::SQLite(), existing_sqlite)
+        users_after <- tryCatch(
+          DBI::dbGetQuery(con_verify, "SELECT username FROM user_tokens ORDER BY username ASC")$username,
+          finally = NULL
+        )
+        scales_after <- tryCatch(
+          DBI::dbGetQuery(con_verify, "SELECT name FROM scale_definitions")$name,
+          finally = DBI::dbDisconnect(con_verify)
+        )
+        expect_equal(users_after, c("admin", "historic_user"))
+        expect_equal(scales_after, "Custom_Study_Scale")
+
+        # Scenario 2: run_app(empty = FALSE) on existing 0-row schema-only SQLite file -> warning + 0 rows
+        app_blank <- run_app(sqlite_path = blank_existing_sqlite, empty = FALSE)
+        expect_warning(
+          suppressMessages(
+            shiny::testServer(
+              app_blank$serverFuncSource(),
+              {
+                session$flushReact()
+              }
+            )
+          ),
+          regexp = "Existing SQLite database file detected"
+        )
+
+        counts_2 <- count_all_tables(blank_existing_sqlite)
+        expect_true(all(counts_2 == 0L))
+
+        # Scenario 3: Positive control - brand-new SQLite file with run_app(empty = FALSE) seeds demo data
+        expect_false(file.exists(fresh_demo_sqlite))
+        app_fresh <- run_app(sqlite_path = fresh_demo_sqlite, empty = FALSE)
+        expect_no_warning(
+          suppressMessages(
+            shiny::testServer(
+              app_fresh$serverFuncSource(),
+              {
+                session$flushReact()
+              }
+            )
+          )
+        )
+
+        counts_3 <- count_all_tables(fresh_demo_sqlite)
+        expect_equal(counts_3[["user_tokens"]], 8L)
+        expect_equal(counts_3[["scale_definitions"]], 3L)
+        expect_equal(counts_3[["sources"]], 4L)
+        expect_equal(counts_3[["texts"]], 34L)
+        expect_equal(counts_3[["user_ratings"]], 34L)
+        expect_equal(counts_3[["coding_training"]], 10L)
+      }
+    )
+  )
+})
+
 
 

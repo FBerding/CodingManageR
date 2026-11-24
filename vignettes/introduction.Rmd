@@ -15,6 +15,17 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{=html}
+<style>
+.figure img, p > img {
+  border: 1px solid #d8dee6;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  margin: 0.75rem 0 0.35rem 0;
+}
+</style>
+```
+
 ## Welcome
 
 **CodingManageR** helps researchers, teachers, and students run qualitative text coding projects in a web browser. After you open the app, you do not need any R coding skills. You set up projects, train coders, and collect ratings with simple clicks.
@@ -92,6 +103,12 @@ Follow these four steps in order for every new project. Create **Sources -> Scal
 
 > **Why this matters:** Every new database starts with the same default admin password. Change it first to protect your project.
 
+```{r fig-intro-login, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR sign-in screen with username field, masked access token input, Sign In button, and English/German language selector.", fig.cap = "Sign-in screen with bilingual language switcher in the card header."}
+if (file.exists("figures/01-login.png")) {
+  knitr::include_graphics("figures/01-login.png")
+}
+```
+
 ### 1.2 Step 1: Define Sources (`Sources Directory`)
 
 Before you add texts or start live coding, create at least two sources. Create one **Text Source** (where your texts come from) and one **Coding Source** (the coding guide or study protocol for your ratings).
@@ -104,6 +121,12 @@ Before you add texts or start live coding, create at least two sources. Create o
 3. Click Save. Repeat this for each text collection or coding guide in your project.
 
 > **Have many sources in a spreadsheet?** You can upload them all at once with a CSV template (see Section 3.4).
+
+```{r fig-admin-sources, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Sources Directory subtab listing scientific sources with short references, full citations, license badges, and edit controls.", fig.cap = "Admin Console: Sources Directory for managing text corpora and coding protocols."}
+if (file.exists("figures/06-admin-sources.png")) {
+  knitr::include_graphics("figures/06-admin-sources.png")
+}
+```
 
 ### 1.3 Step 2: Define Coding Scales (`Scales Management`)
 
@@ -119,6 +142,12 @@ Next, create the rating scales that your coders will use.
 3. Click Save. Repeat this for any other scales.
 
 > **Important Rule:** You can edit text descriptions at any time later. However, **`max_value` is locked after you create the scale**. This protects saved ratings so scores never change their meaning.
+
+```{r fig-admin-scales, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Scales Management subtab listing coding scales with short labels, score ranges from 0 to max_value, and descriptions.", fig.cap = "Admin Console: Scales Management showing configured ordinal coding scales."}
+if (file.exists("figures/07-admin-scales.png")) {
+  knitr::include_graphics("figures/07-admin-scales.png")
+}
+```
 
 ### 1.4 Step 3: Add Case Texts and Link Sources
 
@@ -139,6 +168,12 @@ A **CSV** file is a simple table file that you can edit in Excel or LibreOffice.
 1. Open **Admin Console -> Case Texts & Source Assignment**.
 2. Use the search box to find texts by content, ID, or source. The table shows 25 rows per page.
 3. Click the source button on any row to assign or change its **Text Source**.
+
+```{r fig-admin-texts, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Case Texts and Source Assignment subtab showing a searchable, paginated table of case texts and their assigned text sources.", fig.cap = "Admin Console: Case Texts & Source Assignment with live search and source linking."}
+if (file.exists("figures/08-admin-texts.png")) {
+  knitr::include_graphics("figures/08-admin-texts.png")
+}
+```
 
 #### Preparing Reference Cases for Coder Training
 
@@ -182,6 +217,12 @@ Follow these steps to add a new coder:
 
 > **Need to pause a coder later?** Set their status to **Inactive** in **User Management**. They cannot sign in anymore, but all of their saved ratings stay safe.
 
+```{r fig-admin-users, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console User Management subtab listing user accounts, roles, masked administrator and system tokens, active toggles, and scale and source permission buttons.", fig.cap = "Admin Console: User Management with hidden privileged passwords and per-user permission controls."}
+if (file.exists("figures/05-admin-users.png")) {
+  knitr::include_graphics("figures/05-admin-users.png")
+}
+```
+
 ### 2.2 Step 2: Practice in Coding Training and Review the Dashboard
 
 Coders should practice in **1. Coding Training** before they code real study data. Any signed-in user can practice on any scale that has reference ratings.
@@ -199,6 +240,12 @@ Coders should practice in **1. Coding Training** before they code real study dat
    - Click **Save & Next Case**. On the last text, click **Finish Training & View Results**. To stop early without saving a finished run, click **Abort Training**.
 7. At the end, the app compares your scores with the reference answers. You see your reliability scores and a case-by-case table. You can click **Download Training Results (.csv)** to save a copy, or click **Start New Training** to try again.
 
+```{r fig-coding-training, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Coding Training workspace displaying a case text on the left and the ordinal rating slider with a live level definition box on the right.", fig.cap = "1. Coding Training: side-by-side case text, rating slider, and live anchor description."}
+if (file.exists("figures/03-coding-training.png")) {
+  knitr::include_graphics("figures/03-coding-training.png")
+}
+```
+
 #### Checking Personal Progress on the `Dashboard`
 
 Open the **Dashboard** tab at any time to check your progress:
@@ -211,6 +258,12 @@ Open the **Dashboard** tab at any time to check your progress:
   - Shows a searchable codebook of all scales unlocked for you, with every score range and anchor example.
 
 > **Tip:** Click **Refresh View** in the top bar if an admin adds new scales, texts, or permissions while you are signed in.
+
+```{r fig-dashboard, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Personal Dashboard displaying KPI cards for live codings, training ratings, and sessions alongside the longitudinal reliability trend chart.", fig.cap = "Dashboard: personal coding counts, reliability learning curve, and training history."}
+if (file.exists("figures/02-dashboard.png")) {
+  knitr::include_graphics("figures/02-dashboard.png")
+}
+```
 
 ### 2.3 Step 3: Record Real Ratings in Live Coding (`2. Live Coding`)
 
@@ -234,6 +287,12 @@ When a coder finishes training and has permissions unlocked, they can start real
 
 The app skips already-coded texts and gold-standard training cases automatically. When no open cases remain in a pool, the app tells you so you can pick another scale or text source.
 
+```{r fig-live-coding, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Live Coding workspace showing the active scale and source banner, case text panel on the left, rating slider with live stage guidance on the right, and Save and Next Case button.", fig.cap = "2. Live Coding: active case view with scale/source banner and live rating guidance."}
+if (file.exists("figures/04-live-coding.png")) {
+  knitr::include_graphics("figures/04-live-coding.png")
+}
+```
+
 ### Part 2 Checklist — Smooth Daily Coding
 
 - [ ] Coder account created with an access token in **User Management**.
@@ -255,6 +314,12 @@ Open the **Reliability & Progress** subtab to check activity and agreement acros
 - Filter by **coder**, **scale**, and **reliability metric**. Compare coders in a bar chart and a summary table.
 - Click a coder's detail button in the table to open a pop-up window. It shows all of their training sessions and live codings. This helps you spot scales where the team needs clearer examples or more discussion.
 
+```{r fig-admin-reliability, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Reliability and Progress subtab displaying team KPI summary cards, filter controls, a coder comparison bar chart, and a summary table.", fig.cap = "Admin Console: Reliability & Progress comparing inter-rater reliability across coders."}
+if (file.exists("figures/09-admin-reliability.png")) {
+  knitr::include_graphics("figures/09-admin-reliability.png")
+}
+```
+
 ### 3.2 Find and Correct Stored Ratings (`Edit Codings`)
 
 Mistakes happen. Sometimes a coder clicks the wrong number before saving.
@@ -262,6 +327,12 @@ Mistakes happen. Sometimes a coder clicks the wrong number before saving.
 1. Open the **Edit Codings** subtab.
 2. Filter saved ratings by **rating type** (`kodierung`, `gold_standard`, or `schulung`), **scale**, **coder**, **case ID**, or a keyword from the text.
 3. Click the edit button on the row you want to fix and enter the new score. The app makes sure the new score stays inside the scale's `0..max_value` range.
+
+```{r fig-admin-edit-codings, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Edit Codings subtab with rating type, scale, and keyword filters above a searchable table of stored ratings with edit buttons.", fig.cap = "Admin Console: Edit Codings for filtering and correcting individual stored ratings."}
+if (file.exists("figures/10-admin-edit-codings.png")) {
+  knitr::include_graphics("figures/10-admin-edit-codings.png")
+}
+```
 
 ### 3.3 Export Research Datasets and Backups (`Data & Import/Export`)
 
@@ -282,12 +353,24 @@ Follow these steps so your upload works on the first try:
 3. Upload your file. The app cleans small formatting issues and checks every column before changing the database.
 4. In the confirmation window, choose **append** (add new rows) or **replace** (replace the whole table). If an append upload contains IDs that already exist, the app warns you. You can choose to skip those rows or update them with the new CSV values. Every import runs inside a protected **database transaction**: if any error happens, the app cancels the upload and leaves your old data untouched.
 
+```{r fig-admin-data, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console Data and Import/Export subtab showing consolidated master dataset export filters, raw table backups, and CSV upload controls.", fig.cap = "Admin Console: Data & Import/Export for filtered master datasets, raw backups, and CSV imports."}
+if (file.exists("figures/11-admin-data-import-export.png")) {
+  knitr::include_graphics("figures/11-admin-data-import-export.png")
+}
+```
+
 ### 3.5 Check Database Health and Integrity (`DB Diagnosis`)
 
 Open **DB Diagnosis** after big CSV uploads or from time to time during a long study:
 
 - **Table Overview:** Shows live row counts and status for all 9 database tables (`user_tokens`, `sources`, `texts`, `scale_definitions`, `user_ratings`, `coding_training`, and the three permission tables).
 - **Integrity Audit:** Checks for broken links, such as a rating pointing to a missing text or scale, or a text without a valid source. It also checks that foreign-key protection (rules that keep linked tables consistent) is active.
+
+```{r fig-admin-diagnosis, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "Admin Console DB Diagnosis subtab displaying live row counts for all nine database tables and relational integrity audit status cards.", fig.cap = "Admin Console: DB Diagnosis reporting table health, row counts, and relational integrity."}
+if (file.exists("figures/12-admin-db-diagnosis.png")) {
+  knitr::include_graphics("figures/12-admin-db-diagnosis.png")
+}
+```
 
 ### Administrator Quick-Reference Table
 

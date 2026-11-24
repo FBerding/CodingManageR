@@ -1,0 +1,207 @@
+# Automated vignette screenshot generation workflow for CodingManageR
+# Manually triggered via workflow_dispatch:
+#   1) Launches CodingManageR in headless Chrome via shinytest2/chromote
+#   2) Captures 12 English-language screenshots (4 core views + all 8 Admin subtabs)
+#   3) Optimizes PNG file sizes with pngquant + optipng to stay well below CRAN's 5 MB limit
+#   4) Verifies both vignettes render cleanly with the new screenshots
+#   5) Uploads all PNGs as a downloadable artifact and commits directly to the active branch
+on:
+  workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: "Commit and push generated screenshots directly to this branch"
+        required: true
+        type: boolean
+        default: true
+      viewport_width:
+        description: "Browser viewport width in pixels"
+        required: false
+        type: string
+        default: "1280"
+      viewport_height:
+        description: "Browser viewport height in pixels"
+        required: false
+        type: string
+        default: "860"
+
+name: update-vignette-screenshots
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-screenshots:
+    name: Generate and optimize vignette screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CHROMOTE_HEADLESS: new
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install PNG optimization utilities (pngquant, optipng)
+        run: |
+          for i in 1 2 3; do
+            sudo DEBIAN_FRONTEND=noninteractive apt-get update && break || sleep 5
+          done
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y pngquant optipng
+
+      - name: Setup Headless Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Query and install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::shinytest2
+            any::chromote
+            any::knitr
+            any::rmarkdown
+            any::withr
+          needs: check
+          cache-version: 2
+
+      - name: Install CodingManageR package
+        run: R CMD INSTALL --no-multiarch --with-keep.source .
+
+      - name: Generate 12 English-language app screenshots
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          Rscript tools/generate_vignette_screenshots.R \
+            --output-dir vignettes/figures \
+            --width "${{ inputs.viewport_width }}" \
+            --height "${{ inputs.viewport_height }}" \
+            --lang en
+
+      - name: Optimize PNG sizes for CRAN tarball budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(vignettes/figures/*.png)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No PNG files found in vignettes/figures/" >&2
+            exit 1
+          fi
+
+          mkdir -p /tmp/screenshot-report
+          : > /tmp/screenshot-report/sizes.tsv
+
+          total_before=0
+          total_after=0
+          for f in "${files[@]}"; do
+            before_bytes="$(stat -c%s "$f")"
+            total_before=$((total_before + before_bytes))
+
+            # Lossy palette quantization (high visual fidelity) skipping if larger
+            pngquant --quality=72-90 --speed 1 --strip --skip-if-larger --force --output "$f" "$f" || true
+            # Lossless deflate optimization
+            optipng -o2 -strip all -quiet "$f" || true
+
+            after_bytes="$(stat -c%s "$f")"
+            total_after=$((total_after + after_bytes))
+            printf '%s\t%d\t%d\n' "$(basename "$f")" "$before_bytes" "$after_bytes" >> /tmp/screenshot-report/sizes.tsv
+          done
+
+          printf 'TOTAL\t%d\t%d\n' "$total_before" "$total_after" > /tmp/screenshot-report/total.tsv
+
+      - name: Verify vignettes render cleanly with embedded screenshots
+        run: |
+          mkdir -p /tmp/vignette-preview
+          Rscript -e '
+            rmarkdown::render("vignettes/CodingManageR.Rmd", output_dir = "/tmp/vignette-preview", quiet = TRUE)
+            rmarkdown::render("vignettes/introduction.Rmd", output_dir = "/tmp/vignette-preview", quiet = TRUE)
+            for (h in c("CodingManageR.html", "introduction.html")) {
+              p <- file.path("/tmp/vignette-preview", h)
+              if (!file.exists(p)) stop("Rendered vignette missing: ", p)
+              cat(sprintf("Rendered %-22s : %6.1f KB\n", h, file.info(p)$size / 1024))
+            }
+          '
+
+      - name: Write screenshot optimization summary to GitHub Job Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## CodingManageR Vignette Screenshots Summary"
+            echo ""
+            if [ -f /tmp/screenshot-report/sizes.tsv ]; then
+              echo "| File | Raw Size | Optimized Size | Savings |"
+              echo "| :--- | ---: | ---: | ---: |"
+              while IFS=$'\t' read -r fname b_raw b_opt; do
+                kb_raw="$(awk -v b="$b_raw" 'BEGIN { printf "%.1f KB", b/1024 }')"
+                kb_opt="$(awk -v b="$b_opt" 'BEGIN { printf "%.1f KB", b/1024 }')"
+                pct="$(awk -v r="$b_raw" -v o="$b_opt" 'BEGIN { if (r > 0) printf "%.0f%%", (1 - o/r) * 100; else print "0%" }')"
+                printf '| `%s` | %s | %s | %s |\n' "$fname" "$kb_raw" "$kb_opt" "$pct"
+              done < /tmp/screenshot-report/sizes.tsv
+              if [ -f /tmp/screenshot-report/total.tsv ]; then
+                IFS=$'\t' read -r _ tot_raw tot_opt < /tmp/screenshot-report/total.tsv
+                tot_raw_kb="$(awk -v b="$tot_raw" 'BEGIN { printf "%.1f KB", b/1024 }')"
+                tot_opt_kb="$(awk -v b="$tot_opt" 'BEGIN { printf "%.1f KB", b/1024 }')"
+                tot_pct="$(awk -v r="$tot_raw" -v o="$tot_opt" 'BEGIN { if (r > 0) printf "%.0f%%", (1 - o/r) * 100; else print "0%" }')"
+                printf '| **Total (12 PNGs)** | **%s** | **%s** | **%s** |\n' "$tot_raw_kb" "$tot_opt_kb" "$tot_pct"
+                if [ "$tot_opt" -gt 2621440 ]; then
+                  echo ""
+                  echo "> **Warning:** Optimized PNG directory exceeds 2.5 MB; review CRAN tarball size before release."
+                fi
+              fi
+              echo ""
+            fi
+            if [ -d /tmp/vignette-preview ]; then
+              echo "### Rendered Vignette Sizes (with Base64-embedded PNGs)"
+              echo ""
+              for h in /tmp/vignette-preview/*.html; do
+                [ -f "$h" ] || continue
+                h_kb="$(awk -v b="$(stat -c%s "$h")" 'BEGIN { printf "%.1f KB", b/1024 }')"
+                printf -- '- `%s`: %s\n' "$(basename "$h")" "$h_kb"
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated screenshots as artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: vignette-screenshots
+          path: vignettes/figures/*.png
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Commit and push updated screenshots to current branch
+        if: ${{ inputs.commit_changes }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add vignettes/figures/*.png
+          if git diff --cached --quiet; then
+            echo "No changes in vignettes/figures/*.png — skipping commit."
+            exit 0
+          fi
+
+          git commit -m "docs(vignettes): update automated app screenshots"
+          git push origin "HEAD:${{ github.ref_name }}"

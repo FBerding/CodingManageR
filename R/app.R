@@ -77,6 +77,9 @@ coding_manager_ui <- function(lang = "de") {
 #' @param config Optional named database configuration list passed to [get_db_pool()].
 #' @param seed_empty Logical passed to [seed_initial_data()] on first startup.
 #'   Defaults to `TRUE` (minimal admin account) unless overridden via options or argument.
+#'   When `FALSE`, demonstration data is only seeded into a brand-new, empty
+#'   database; existing SQLite files or populated databases are protected and
+#'   emit a warning instead.
 #'
 #' @return Invisibly returns `NULL`.
 #' @examples
@@ -99,16 +102,22 @@ coding_manager_server <- function(input, output, session,
     opt_con
   } else {
     cfg <- if (!is.null(config)) config else getOption("CodingManageR.db_config", default = list())
-    eff_sqlite <- if (!is.null(sqlite_path) && nzchar(as.character(sqlite_path))) {
-      as.character(sqlite_path)
-    } else if (!is.null(cfg$sqlite_path) && nzchar(as.character(cfg$sqlite_path))) {
-      as.character(cfg$sqlite_path)
+    eff_sqlite <- if (!is.null(sqlite_path) && length(sqlite_path) > 0L && nzchar(as.character(sqlite_path)[1])) {
+      as.character(sqlite_path)[1]
+    } else if (!is.null(cfg$sqlite_path) && length(cfg$sqlite_path) > 0L && nzchar(as.character(cfg$sqlite_path)[1])) {
+      as.character(cfg$sqlite_path)[1]
+    } else if (!is.null(cfg$sqlite_f) && length(cfg$sqlite_f) > 0L && nzchar(as.character(cfg$sqlite_f)[1])) {
+      as.character(cfg$sqlite_f)[1]
     } else {
       getOption("CodingManageR.sqlite_path", default = Sys.getenv("SQLITE_PATH", unset = ""))
     }
     if (nzchar(eff_sqlite)) {
       cfg$sqlite_path <- eff_sqlite
     }
+    resolved_sqlite <- resolve_sqlite_path(config = cfg, check_option = FALSE, create_dir = FALSE)
+    sqlite_file_existed <- nzchar(resolved_sqlite) &&
+      !identical(resolved_sqlite, ":memory:") &&
+      file.exists(resolved_sqlite)
     owns_connection <- TRUE
     con_new <- get_db_pool(config = cfg, fallback_to_sqlite = TRUE, force_pool = TRUE)
     create_all_tables(con_new, verbose = FALSE)
@@ -117,7 +126,17 @@ coding_manager_server <- function(input, output, session,
     } else {
       isTRUE(getOption("CodingManageR.seed_empty", default = TRUE))
     }
-    seed_initial_data(con_new, empty = eff_empty)
+    if (!eff_empty && !is_mysql_connection(con_new) && isTRUE(sqlite_file_existed)) {
+      warning(
+        sprintf(
+          "[CodingManageR] Existing SQLite database file detected ('%s'). Skipping demonstration data seeding (empty = FALSE) to protect existing data.",
+          resolved_sqlite
+        ),
+        call. = FALSE
+      )
+    } else {
+      seed_initial_data(con_new, empty = eff_empty)
+    }
     con_new
   }
 
@@ -528,7 +547,14 @@ coding_manager_server <- function(input, output, session,
 #'   to [get_db_pool()].
 #' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
 #'   database. Defaults to `TRUE` (creates only the default `admin` and
-#'   `historic_user` accounts).
+#'   `historic_user` accounts). When `FALSE`, demonstration data is only inserted
+#'   into a brand-new, empty database; existing SQLite files or databases that
+#'   already contain rows are left untouched and trigger a warning.
+#' @param max_upload_size_gb Positive numeric maximum file upload size in
+#'   gigabytes applied via `options(shiny.maxRequestSize = ...)` while the app
+#'   runs (restored cleanly on app shutdown). Defaults to `3` (3 GB). Set to
+#'   `NULL` to leave the session's existing `shiny.maxRequestSize` option
+#'   unchanged.
 #' @param options Optional list of options forwarded to `shiny::shinyApp()`.
 #' @param ... Additional arguments forwarded to `shiny::shinyApp()`.
 #'
@@ -548,6 +574,7 @@ coding_manager_server <- function(input, output, session,
 run_app <- function(sqlite_path = NULL,
                     config = NULL,
                     empty = TRUE,
+                    max_upload_size_gb = 3,
                     options = list(),
                     ...) {
   app_server <- function(input, output, session) {
@@ -561,10 +588,39 @@ run_app <- function(sqlite_path = NULL,
     )
   }
 
-  shiny::shinyApp(
-    ui = coding_manager_ui(),
-    server = app_server,
-    options = options,
-    ...
+  dots <- list(...)
+  user_on_start <- dots$onStart
+  dots$onStart <- NULL
+
+  app_on_start <- function() {
+    deregister <- NULL
+    if (!is.null(max_upload_size_gb) &&
+        is.numeric(max_upload_size_gb) &&
+        length(max_upload_size_gb) == 1L &&
+        is.finite(max_upload_size_gb) &&
+        max_upload_size_gb > 0) {
+      prev_max_req <- getOption("shiny.maxRequestSize")
+      options(shiny.maxRequestSize = as.numeric(max_upload_size_gb) * 1024^3)
+      deregister <- shiny::onStop(function() {
+        options(shiny.maxRequestSize = prev_max_req)
+      })
+    }
+    if (is.function(user_on_start)) {
+      user_on_start()
+    }
+    invisible(deregister)
+  }
+
+  do.call(
+    shiny::shinyApp,
+    c(
+      list(
+        ui = coding_manager_ui(),
+        server = app_server,
+        onStart = app_on_start,
+        options = options
+      ),
+      dots
+    )
   )
 }

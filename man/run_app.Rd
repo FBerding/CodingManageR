@@ -4,7 +4,14 @@
 \alias{run_app}
 \title{Launch the CodingManageR Shiny Application}
 \usage{
-run_app(sqlite_path = NULL, config = NULL, empty = TRUE, options = list(), ...)
+run_app(
+  sqlite_path = NULL,
+  config = NULL,
+  empty = TRUE,
+  max_upload_size_gb = 3,
+  options = list(),
+  ...
+)
 }
 \arguments{
 \item{sqlite_path}{Optional file path to a local SQLite database. Passing a
@@ -16,7 +23,15 @@ to \code{\link[=get_db_pool]{get_db_pool()}}.}
 
 \item{empty}{Logical passed to \code{\link[=seed_initial_data]{seed_initial_data()}} when initializing a fresh
 database. Defaults to \code{TRUE} (creates only the default \code{admin} and
-\code{historic_user} accounts).}
+\code{historic_user} accounts). When \code{FALSE}, demonstration data is only inserted
+into a brand-new, empty database; existing SQLite files or databases that
+already contain rows are left untouched and trigger a warning.}
+
+\item{max_upload_size_gb}{Positive numeric maximum file upload size in
+gigabytes applied via \code{options(shiny.maxRequestSize = ...)} while the app
+runs (restored cleanly on app shutdown). Defaults to \code{3} (3 GB). Set to
+\code{NULL} to leave the session's existing \code{shiny.maxRequestSize} option
+unchanged.}
 
 \item{options}{Optional list of options forwarded to \code{shiny::shinyApp()}.}
 

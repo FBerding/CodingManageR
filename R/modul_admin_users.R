@@ -5,6 +5,16 @@
 # function compact and avoid quadratic AST instrumentation overhead under covr.
 # ==============================================================================
 
+#' Check Whether a User Role Has Protected (Hidden) Credentials
+#'
+#' @param perm Character role value from `user_tokens.permissions`.
+#' @return Logical scalar; `TRUE` for `"admin"` and `"system"` roles.
+#' @keywords internal
+#' @noRd
+is_protected_token_role <- function(perm) {
+  !is.null(perm) && !is.na(perm) && tolower(trimws(as.character(perm))) %in% c("admin", "system")
+}
+
 #' Register Admin Tab 1 User Table, Search, Toggle, and Source Permissions
 #'
 #' Registers reactive outputs and observers for the paginated user table,
@@ -36,7 +46,10 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
     user_table_trigger()
 
     users_df <- tryCatch({
-      dbGetQuery(db_con, "SELECT user_id, username, token, permissions, is_active FROM user_tokens ORDER BY permissions ASC, user_id ASC")
+      dbGetQuery(
+        db_con,
+        "SELECT user_id, username, CASE WHEN LOWER(COALESCE(permissions, '')) IN ('admin', 'system') THEN NULL ELSE token END AS token, permissions, is_active FROM user_tokens ORDER BY permissions ASC, user_id ASC"
+      )
     }, error = function(e) {
       data.frame(user_id = integer(0), username = character(0), token = character(0), permissions = character(0), is_active = integer(0))
     })
@@ -299,6 +312,17 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
         )
       }
 
+      token_cell <- if (is_protected_token_role(u_perm) || is.na(u_tok)) {
+        tags$span(
+          class = "text-muted small",
+          title = tr("admin.users.token_hidden_tip", lang),
+          icon("lock", class = "me-1"),
+          "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+        )
+      } else {
+        tags$code(u_tok)
+      }
+
       tags$tr(
         class = if (u_active == 0) "table-light text-muted" else "",
         tags$td(
@@ -310,7 +334,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
           tags$strong(u_name),
           if (is_self) tags$span(class = "badge bg-secondary ms-1", tr("admin.users.badge_currently_logged_in", lang))
         ),
-        tags$td(style = "vertical-align: middle; font-family: monospace;", tags$code(u_tok)),
+        tags$td(style = "vertical-align: middle; font-family: monospace;", token_cell),
         tags$td(style = "vertical-align: middle;", role_badge),
         tags$td(style = "vertical-align: middle;", status_widget),
         tags$td(style = "vertical-align: middle;", sources_widget),
@@ -776,9 +800,17 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
     req(u_target)
 
     user_row <- if (grepl("^[0-9]+$", as.character(u_target))) {
-      dbGetQuery(db_con, "SELECT user_id, username, token, permissions, is_active FROM user_tokens WHERE user_id = ?", params = list(as.integer(u_target)))
+      dbGetQuery(
+        db_con,
+        "SELECT user_id, username, CASE WHEN LOWER(COALESCE(permissions, '')) IN ('admin', 'system') THEN NULL ELSE token END AS token, permissions, is_active FROM user_tokens WHERE user_id = ?",
+        params = list(as.integer(u_target))
+      )
     } else {
-      dbGetQuery(db_con, "SELECT user_id, username, token, permissions, is_active FROM user_tokens WHERE username = ?", params = list(as.character(u_target)))
+      dbGetQuery(
+        db_con,
+        "SELECT user_id, username, CASE WHEN LOWER(COALESCE(permissions, '')) IN ('admin', 'system') THEN NULL ELSE token END AS token, permissions, is_active FROM user_tokens WHERE username = ?",
+        params = list(as.character(u_target))
+      )
     }
 
     if (nrow(user_row) == 0) return()
@@ -787,9 +819,27 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
     u_id <- as.integer(user_row$user_id[1])
     u_name <- as.character(user_row$username[1])
     is_self <- (u_id == aktiver_admin_id() || u_name == aktiver_admin())
+    is_protected <- is_protected_token_role(user_row$permissions[1])
 
     role_choices <- setNames(c("user", "admin"), c(tr("admin.users.opt_user_desc", lang), tr("admin.users.opt_admin_desc", lang)))
     status_choices <- setNames(c(1, 0), c(tr("admin.users.opt_active_desc", lang), tr("admin.users.opt_inactive_desc", lang)))
+
+    token_input_ui <- if (is_protected) {
+      tagList(
+        passwordInput(
+          ns("edit_token"),
+          label = NULL,
+          value = "",
+          placeholder = tr("admin.users.placeholder_token_unchanged", lang)
+        ),
+        tags$small(class = "text-muted", tr("admin.users.hint_token_unchanged", lang))
+      )
+    } else {
+      div(class = "input-group",
+          textInput(ns("edit_token"), label = NULL, value = user_row$token),
+          actionButton(ns("btn_generate_edit_token"), tr("admin.users.btn_generate", lang), icon = icon("sync"), class = "btn-outline-secondary")
+      )
+    }
 
     showModal(modalDialog(
       title = div(icon("user-edit", class = "me-2 text-primary"), tr("admin.users.modal_edit_title", lang, paste0(u_name, " [#", u_id, "]"))),
@@ -811,10 +861,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
         ),
         div(class = "mb-3",
             tags$label(class = "form-label fw-bold", tr("admin.users.label_token_req", lang)),
-            div(class = "input-group",
-                textInput(ns("edit_token"), label = NULL, value = user_row$token),
-                actionButton(ns("btn_generate_edit_token"), tr("admin.users.btn_generate", lang), icon = icon("sync"), class = "btn-outline-secondary")
-            )
+            token_input_ui
         ),
         div(class = "mb-3",
             tags$label(class = "form-label fw-bold", tr("admin.users.label_role", lang)),
@@ -855,12 +902,15 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
     u_id <- as.integer(row$user_id[1])
     u_name <- as.character(row$username[1])
     is_self <- (u_id == aktiver_admin_id() || u_name == aktiver_admin())
-    new_token <- trimws(input$edit_token)
+    is_protected <- is_protected_token_role(row$permissions[1])
+    new_token <- if (is.null(input$edit_token)) "" else trimws(as.character(input$edit_token))
 
     new_perm <- if (is_self) "admin" else input$edit_permissions
     new_active <- if (is_self) 1 else as.integer(input$edit_is_active)
 
-    if (is.null(new_token) || nchar(new_token) < 4) {
+    keep_existing_token <- is_protected && !nzchar(new_token)
+
+    if (!keep_existing_token && nchar(new_token) < 4) {
       output$edit_user_feedback <- renderUI({
         div(class = "alert alert-danger py-2 mt-2", tr("admin.users.err_token_short", lang))
       })
@@ -868,8 +918,13 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
     }
 
     tryCatch({
-      dbExecute(db_con, "UPDATE user_tokens SET token = ?, permissions = ?, is_active = ? WHERE user_id = ?",
-                params = list(new_token, new_perm, new_active, u_id))
+      if (keep_existing_token) {
+        dbExecute(db_con, "UPDATE user_tokens SET permissions = ?, is_active = ? WHERE user_id = ?",
+                  params = list(new_perm, new_active, u_id))
+      } else {
+        dbExecute(db_con, "UPDATE user_tokens SET token = ?, permissions = ?, is_active = ? WHERE user_id = ?",
+                  params = list(new_token, new_perm, new_active, u_id))
+      }
 
       removeModal()
       user_table_trigger(user_table_trigger() + 1)

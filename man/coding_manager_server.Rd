@@ -31,7 +31,10 @@ ownership and the connection is not automatically closed on session end.}
 \item{config}{Optional named database configuration list passed to \code{\link[=get_db_pool]{get_db_pool()}}.}
 
 \item{seed_empty}{Logical passed to \code{\link[=seed_initial_data]{seed_initial_data()}} on first startup.
-Defaults to \code{TRUE} (minimal admin account) unless overridden via options or argument.}
+Defaults to \code{TRUE} (minimal admin account) unless overridden via options or argument.
+When \code{FALSE}, demonstration data is only seeded into a brand-new, empty
+database; existing SQLite files or populated databases are protected and
+emit a warning instead.}
 }
 \value{
 Invisibly returns \code{NULL}.

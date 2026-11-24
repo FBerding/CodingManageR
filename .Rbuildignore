@@ -13,3 +13,4 @@
 ^pkgdown$
 ^cobertura\.xml$
 ^\.aistudio$
+^tools$

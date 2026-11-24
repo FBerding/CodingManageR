@@ -269,10 +269,14 @@ test_that("seed_initial_data populates full demo dataset, minimal empty mode, au
   expect_equal(rep1$user_ratings$n_total, 34L)
   expect_equal(rep1$coding_training$n_total, 10L)
 
-  # Second call must be strictly idempotent (0 new rows inserted)
-  rep2 <- suppressMessages(seed_initial_data(con_full, empty = FALSE))
+  # Second call must be strictly idempotent (0 new rows inserted) and emit protection warning
+  expect_warning(
+    rep2 <- suppressMessages(seed_initial_data(con_full, empty = FALSE)),
+    regexp = "Existing database already contains data"
+  )
   expect_true(all(vapply(rep2, function(x) x$n_inserted == 0L, logical(1))))
   expect_false(any(vapply(rep2, function(x) isTRUE(x$created), logical(1))))
+  expect_true(all(vapply(rep2, function(x) grepl("existing database protected", x$status_label, ignore.case = TRUE), logical(1))))
 
   # Minimal empty = TRUE seed on blank DB
   con_empty <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
@@ -293,3 +297,54 @@ test_that("seed_initial_data populates full demo dataset, minimal empty mode, au
   expect_equal(rep_empty_2$user_tokens$n_inserted, 0L)
   expect_match(rep_empty_2$user_tokens$status_label, "Already populated")
 })
+
+test_that("seed_initial_data(empty = FALSE) protects partially populated databases and emits a warning", {
+  # Verifies global 9-table protection in seed_initial_data(con, empty = FALSE):
+  # 1) A database initialized with empty = TRUE (2 user rows, 8 empty tables) must NOT receive
+  #    any demo scales, sources, permissions, texts, ratings, or training sessions
+  # 2) A database containing only 1 row in a non-user table (scale_definitions) while user_tokens
+  #    has 0 rows must NOT receive any demo rows in any table (including user_tokens)
+  con_partial_users <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_partial_users))
+  DBI::dbExecute(con_partial_users, "PRAGMA foreign_keys = ON;")
+
+  suppressMessages(seed_initial_data(con_partial_users, empty = TRUE))
+
+  expect_warning(
+    rep_prot_1 <- suppressMessages(seed_initial_data(con_partial_users, empty = FALSE)),
+    regexp = "Existing database already contains data"
+  )
+  expect_true(all(vapply(rep_prot_1, function(x) x$n_inserted == 0L, logical(1))))
+  expect_equal(rep_prot_1$user_tokens$n_total, 2L)
+  expect_equal(rep_prot_1$scale_definitions$n_total, 0L)
+  expect_equal(rep_prot_1$sources$n_total, 0L)
+  expect_equal(rep_prot_1$user_source_permissions$n_total, 0L)
+  expect_equal(rep_prot_1$user_coding_source_permissions$n_total, 0L)
+  expect_equal(rep_prot_1$user_scale_permissions$n_total, 0L)
+  expect_equal(rep_prot_1$texts$n_total, 0L)
+  expect_equal(rep_prot_1$user_ratings$n_total, 0L)
+  expect_equal(rep_prot_1$coding_training$n_total, 0L)
+
+  # Non-user table populated (1 custom scale, 0 users)
+  con_partial_scale <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con_partial_scale))
+  DBI::dbExecute(con_partial_scale, "PRAGMA foreign_keys = ON;")
+  create_all_tables(con_partial_scale, verbose = FALSE)
+  DBI::dbExecute(
+    con_partial_scale,
+    "INSERT INTO scale_definitions (scale_id, short_label, name, max_value) VALUES (1, 'S1', 'Study_Scale_1', 4)"
+  )
+
+  expect_warning(
+    rep_prot_2 <- suppressMessages(seed_initial_data(con_partial_scale, empty = FALSE)),
+    regexp = "Existing database already contains data"
+  )
+  expect_true(all(vapply(rep_prot_2, function(x) x$n_inserted == 0L, logical(1))))
+  expect_equal(rep_prot_2$user_tokens$n_total, 0L)
+  expect_equal(rep_prot_2$scale_definitions$n_total, 1L)
+  expect_equal(rep_prot_2$sources$n_total, 0L)
+  expect_equal(rep_prot_2$texts$n_total, 0L)
+  expect_equal(rep_prot_2$user_ratings$n_total, 0L)
+  expect_equal(rep_prot_2$coding_training$n_total, 0L)
+})
+

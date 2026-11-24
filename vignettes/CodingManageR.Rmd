@@ -15,6 +15,17 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{=html}
+<style>
+.figure img, p > img {
+  border: 1px solid #d8dee6;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  margin: 0.75rem 0 0.35rem 0;
+}
+</style>
+```
+
 ## Welcome
 
 **CodingManageR** is a web app for qualitative text coding and coder training. You do not need to write code to use it. After you start the app, you work with simple menus and buttons in your web browser.
@@ -84,6 +95,12 @@ CodingManageR::run_app()
 
 Your browser or RStudio viewer opens automatically. You will see the **CodingManageR** sign-in screen.
 
+```{r fig-login, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR sign-in screen showing username and access token inputs along with the English and German language selector.", fig.cap = "The CodingManageR sign-in screen with built-in English/German language switching."}
+if (file.exists("figures/01-login.png")) {
+  knitr::include_graphics("figures/01-login.png")
+}
+```
+
 You can also choose a specific file name or folder for your project. Pass the path with `sqlite_path`, or set the `SQLITE_PATH` environment variable:
 
 ```{r}
@@ -111,6 +128,12 @@ When you start a new database for the first time, the app creates one administra
 Sign in with this account. Then open **Admin Console -> User Management** and change the `admin` access token right away.
 
 > **New to CodingManageR?** Click **Getting Started** (*Erste Schritte*) in the top-right header after you sign in. It starts an interactive step-by-step tour right inside the app.
+
+```{r fig-workspace-dashboard, eval = TRUE, echo = FALSE, out.width = "100%", fig.alt = "CodingManageR authenticated workspace displaying the top navigation tabs, header actions including Getting Started, KPI summary cards, and reliability progress chart.", fig.cap = "The CodingManageR workspace after sign-in, showing the Dashboard progress overview and top navigation bar."}
+if (file.exists("figures/02-dashboard.png")) {
+  knitr::include_graphics("figures/02-dashboard.png")
+}
+```
 
 ### Step 4: Managing Multiple Local Projects
 

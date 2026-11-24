@@ -59,6 +59,53 @@ is_mysql_connection <- function(con) {
   inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
 }
 
+#' Resolve Effective SQLite Database File Path
+#'
+#' Resolves the target SQLite file path using CodingManageR's standard
+#' precedence: explicit `sqlite_path`, `config$sqlite_path`, `config$sqlite_f`,
+#' optional `getOption("CodingManageR.sqlite_path")`, `Sys.getenv("SQLITE_PATH")`,
+#' and finally the default file under `tools::R_user_dir("CodingManageR", "data")`.
+#'
+#' @param config Optional named database configuration list.
+#' @param sqlite_path Optional explicit SQLite file path.
+#' @param check_option Logical; if `TRUE`, checks `getOption("CodingManageR.sqlite_path")`
+#'   before `Sys.getenv("SQLITE_PATH")`. Defaults to `FALSE`.
+#' @param create_dir Logical; if `TRUE`, creates the default user data directory
+#'   when falling back to the default file path. Defaults to `FALSE`.
+#'
+#' @return Character scalar containing the resolved SQLite path.
+#' @keywords internal
+#' @noRd
+resolve_sqlite_path <- function(config = NULL,
+                                sqlite_path = NULL,
+                                check_option = FALSE,
+                                create_dir = FALSE) {
+  if (!is.null(sqlite_path) && length(sqlite_path) > 0L && nzchar(as.character(sqlite_path)[1])) {
+    return(as.character(sqlite_path)[1])
+  }
+  if (!is.null(config$sqlite_path) && length(config$sqlite_path) > 0L && nzchar(as.character(config$sqlite_path)[1])) {
+    return(as.character(config$sqlite_path)[1])
+  }
+  if (!is.null(config$sqlite_f) && length(config$sqlite_f) > 0L && nzchar(as.character(config$sqlite_f)[1])) {
+    return(as.character(config$sqlite_f)[1])
+  }
+  if (isTRUE(check_option)) {
+    opt_path <- getOption("CodingManageR.sqlite_path", default = "")
+    if (!is.null(opt_path) && length(opt_path) > 0L && nzchar(as.character(opt_path)[1])) {
+      return(as.character(opt_path)[1])
+    }
+  }
+  env_path <- Sys.getenv("SQLITE_PATH", unset = "")
+  if (nzchar(env_path)) {
+    return(env_path)
+  }
+  data_dir <- tools::R_user_dir("CodingManageR", which = "data")
+  if (isTRUE(create_dir) && !dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  file.path(data_dir, "lokale_datenbank.sqlite")
+}
+
 #' Create a Database Connection Pool or Direct DBI Connection
 #'
 #' Creates a thread-safe `pool::dbPool` (recommended for multi-user Shiny Server
@@ -91,17 +138,7 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
   password <- if (!is.null(config$password)) as.character(config$password) else Sys.getenv("MYSQL_PASSWORD", unset = Sys.getenv("MYSQL_DB_PASSWORD", unset = ""))
   dbname   <- if (!is.null(config$dbname) && nzchar(as.character(config$dbname))) as.character(config$dbname) else Sys.getenv("MYSQL_DBNAME", unset = Sys.getenv("MYSQL_DB_NAME", unset = "kodierer_portal"))
 
-  sqlite_f <- if (!is.null(config$sqlite_path) && nzchar(as.character(config$sqlite_path))) {
-    as.character(config$sqlite_path)
-  } else if (!is.null(config$sqlite_f) && nzchar(as.character(config$sqlite_f))) {
-    as.character(config$sqlite_f)
-  } else if (nzchar(Sys.getenv("SQLITE_PATH", unset = ""))) {
-    Sys.getenv("SQLITE_PATH")
-  } else {
-    data_dir <- tools::R_user_dir("CodingManageR", which = "data")
-    if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
-    file.path(data_dir, "lokale_datenbank.sqlite")
-  }
+  sqlite_f <- resolve_sqlite_path(config = config, check_option = FALSE, create_dir = TRUE)
 
   min_size     <- if (!is.null(config$minSize)) as.integer(config$minSize) else 2L
   max_size     <- if (!is.null(config$maxSize)) as.integer(config$maxSize) else 15L
