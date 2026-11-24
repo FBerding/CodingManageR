@@ -5,6 +5,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>CodingManageR: Multi-User Qualitative Coding Portal &amp; Training Manager • CodingManageR</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" sizes="any" href="favicon.ico">
+<link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -12,6 +17,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="CodingManageR: Multi-User Qualitative Coding Portal &amp; Training Manager">
 <meta name="description" content="A multi-user R Shiny web application and training portal for qualitative text coding across ordinal scales with 16 inter-rater reliability metrics, stratified gold-standard training pools, and an interactive Getting Started tutorial overlay.">
 <meta property="og:description" content="A multi-user R Shiny web application and training portal for qualitative text coding across ordinal scales with 16 inter-rater reliability metrics, stratified gold-standard training pools, and an interactive Getting Started tutorial overlay.">
+<meta property="og:image" content="https://fberding.github.io/CodingManageR/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -34,8 +40,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
-<li><a class="dropdown-item" href="articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>English</h6></li>
+    <li><a class="dropdown-item" href="articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
     <li><a class="dropdown-item" href="articles/introduction.html">Introduction to CodingManageR (3-Part Workflow)</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Deutsch</h6></li>
+    <li><a class="dropdown-item" href="articles/CodingManageR-de.html">Installation und Start von CodingManageR (Deutsch)</a></li>
+    <li><a class="dropdown-item" href="articles/introduction-de.html">Einführung in CodingManageR (Deutsch)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
@@ -53,11 +64,22 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="codingmanager">CodingManageR<a class="anchor" aria-label="anchor" href="#codingmanager"></a>
-</h1></div>
+<div class="page-header">
+<img src="logo.png" class="logo" alt=""><h1 id="codingmanager-">CodingManageR 
+<a class="anchor" aria-label="anchor" href="#codingmanager-"></a>
+</h1>
+</div>
 <!-- badges: start -->
 
-<p><strong>CodingManageR</strong> is a web app for qualitative text coding and coder training. You use it in your browser to rate texts on ordered numeric scales. It runs locally on one computer with a single SQLite database file, or on a shared web server for a whole team.</p>
+<p><strong>CodingManageR</strong> is an R Shiny web application for qualitative text coding, coder calibration, and inter-rater reliability management. Researchers, instructors, and coding teams use it directly in a web browser to rate textual data—such as classroom observation transcripts, student essays, interview excerpts, or instructional vignettes—on custom ordered numeric scales without writing code during day-to-day coding work.</p>
+<p>From early-stage coder training to large-scale empirical data collection, <strong>CodingManageR</strong> supports two flexible deployment modes so it scales effortlessly with the size of your research program:</p>
+<ul>
+<li>
+<strong>Manage Multiple Projects Locally (SQLite):</strong> Individual researchers and small teams can run the app locally on a laptop or workstation without any server administration. Each study lives in its own self-contained <code>.sqlite</code> file with isolated scales, text corpora, bibliographic sources, user accounts, and ratings—making it easy to maintain, back up, and archive <strong>multiple independent projects</strong> side by side.</li>
+<li>
+<strong>Collaborate Across Locations on Large Projects (Shiny Server + MariaDB/MySQL):</strong> For <strong>larger multi-user studies and multi-site consortia</strong>, CodingManageR connects to a central <strong>MariaDB or MySQL server</strong> (for example behind Open Source Shiny Server). Coders and project administrators can sign in from <strong>different sites, departments, or partner universities</strong> to work simultaneously on one shared, role-protected database while tracking team-wide reliability in real time.</li>
+</ul>
+<p>Whether you run a single local study or coordinate an international coding team, <strong>CodingManageR</strong> combines stratified gold-standard training pools, 16 established reliability metrics, transparent source and license tracking, bulk CSV import/export, and a bilingual (English/German) interface with an interactive in-app tour.</p>
 <div class="section level2">
 <h2 id="core-features">Core Features<a class="anchor" aria-label="anchor" href="#core-features"></a>
 </h2>
@@ -123,96 +145,74 @@
 <span><span class="co"># Or using remotes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"FBerding/CodingManageR"</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
-</h2>
-<div class="section level3">
-<h3 id="local-single-user-mode-sqlite">Local Single-User Mode (SQLite)<a class="anchor" aria-label="anchor" href="#local-single-user-mode-sqlite"></a>
-</h3>
-<p>Start the app with a new local SQLite database file. SQLite saves your whole project in one file on your computer. With <code>empty = TRUE</code>, the app creates only the first administrator account.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://fberding.github.io/CodingManageR/">CodingManageR</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Start a clean project with a local SQLite database</span></span>
-<span><span class="fu"><a href="reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"coding_portal.sqlite"</span>, empty <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Save another independent project in a second .sqlite file</span></span>
-<span><span class="fu"><a href="reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"study_b.sqlite"</span>, empty <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Each <code>.sqlite</code> file holds one separate project with its own scales, sources, texts, users, and ratings. Before you copy, rename, or archive a project file, stop the app cleanly first. Stopping the app saves temporary write-ahead log files (<code>-wal</code> and <code>-shm</code>) back into the main <code>.sqlite</code> file.</p>
-<p>Want to test the app first? Use <code>empty = FALSE</code> to load sample scales, example texts, reference cases, and demo accounts:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"coding_demo.sqlite"</span>, empty <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-<p>Demo mode (<code>empty = FALSE</code>) creates these accounts:</p>
-<table class="table">
-<colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
-</colgroup>
-<thead><tr>
-<th align="left">Role</th>
-<th align="left">Username</th>
-<th align="left">Access Token</th>
-<th align="left">Scope</th>
-</tr></thead>
-<tbody>
-<tr>
-<td align="left">Administrator</td>
-<td align="left"><code>admin</code></td>
-<td align="left"><code>geheim123</code></td>
-<td align="left">Full workspace and 8-tab Admin Console</td>
-</tr>
-<tr>
-<td align="left">Coder</td>
-<td align="left"><code>user1</code></td>
-<td align="left"><code>token2026</code></td>
-<td align="left">Dashboard, Training, and Live Coding (assigned scales and sources)</td>
-</tr>
-<tr>
-<td align="left">Locked Demo</td>
-<td align="left"><code>inaktiv_demo</code></td>
-<td align="left"><code>gesperrt123</code></td>
-<td align="left">Inactive account (<code>is_active = 0</code>)</td>
-</tr>
-</tbody>
-</table>
 <blockquote>
-<p>In clean mode (<code>empty = TRUE</code>), sign in as <code>admin</code> with token <code>geheim123</code>. Change this password right away in <strong>Admin Console -&gt; User Management</strong>. Click <strong>Getting Started</strong> in the top header at any time to start the interactive tour inside the app.</p>
+<p><strong>Ready to launch the app?</strong> Step-by-step launch instructions, demo credentials, and local SQLite vs. multi-user MariaDB/MySQL server configuration have moved to the dedicated vignettes. Start with the <strong><a href="https://fberding.github.io/CodingManageR/articles/introduction.html">Get started ↗</a></strong> workflow guide or consult <strong><a href="https://fberding.github.io/CodingManageR/articles/CodingManageR.html">Installing and Launching CodingManageR ↗</a></strong> for detailed setup commands.</p>
 </blockquote>
-</div>
-<div class="section level3">
-<h3 id="multi-user-deployment-shiny-server--mariadbmysql">Multi-User Deployment (Shiny Server + MariaDB/MySQL)<a class="anchor" aria-label="anchor" href="#multi-user-deployment-shiny-server--mariadbmysql"></a>
-</h3>
-<p>To host the app for a team on Open Source Shiny Server, connect to a MariaDB or MySQL database. Set these environment variables (for example in <code>.Renviron</code>) before calling <code><a href="reference/run_app.html">run_app()</a></code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="va">MYSQL_HOST</span><span class="op">=</span>127.0.0.1</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="va">MYSQL_PORT</span><span class="op">=</span>3306</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="va">MYSQL_USER</span><span class="op">=</span>coding_portal_user</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="va">MYSQL_PASSWORD</span><span class="op">=</span>your_secure_password</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="va">MYSQL_DBNAME</span><span class="op">=</span>kodierer_portal</span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="documentation--guides">Documentation &amp; Guides<a class="anchor" aria-label="anchor" href="#documentation--guides"></a>
 </h2>
-<p>Two step-by-step guides for beginners and administrators come with the package:</p>
-<ul>
-<li>
-<strong>Installation &amp; Server Setup</strong>: <code><a href="articles/CodingManageR.html">vignette("CodingManageR", package = "CodingManageR")</a></code>
-</li>
-<li>
-<strong>Step-by-Step Workflow Guide (Setup, Coding &amp; Administration)</strong>: <code><a href="articles/introduction.html">vignette("introduction", package = "CodingManageR")</a></code>
-</li>
-</ul>
+<p>Four illustrated, step-by-step vignettes (<strong>English</strong> and <strong>German</strong>) ship with <strong>CodingManageR</strong> and are published online on the package website. Click any <strong>badge</strong> or <strong>guide title</strong> below to open the corresponding vignette directly in your browser:</p>
+<table class="table">
+<colgroup>
+<col width="18%">
+<col width="22%">
+<col width="22%">
+<col width="18%">
+<col width="18%">
+</colgroup>
+<thead><tr>
+<th align="left">Guide</th>
+<th align="center">Language</th>
+<th align="center">Online Vignette</th>
+<th align="left">What It Covers</th>
+<th align="left">Open in R</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left"><strong><a href="https://fberding.github.io/CodingManageR/articles/introduction.html">Get started: Introduction to CodingManageR ↗</a></strong></td>
+<td align="center">EN</td>
+<td align="center"><a href="https://fberding.github.io/CodingManageR/articles/introduction.html"><img src="https://img.shields.io/badge/Read_Online-Get_Started_%E2%86%92-33418F?style=for-the-badge" alt="Open Get Started"></a></td>
+<td align="left">Complete 3-part workflow covering initial project setup (sources, scales, texts), coder training &amp; live coding, and team administration.</td>
+<td align="left"><code><a href="articles/introduction.html">vignette("introduction", package = "CodingManageR")</a></code></td>
+</tr>
+<tr>
+<td align="left"><strong><a href="https://fberding.github.io/CodingManageR/articles/CodingManageR.html">Installing and Launching CodingManageR ↗</a></strong></td>
+<td align="center">EN</td>
+<td align="center"><a href="https://fberding.github.io/CodingManageR/articles/CodingManageR.html"><img src="https://img.shields.io/badge/Read_Online-Setup_Guide_%E2%86%92-198754?style=for-the-badge" alt="Open Setup Guide"></a></td>
+<td align="left">Installing the package, running multiple local SQLite projects, exploring demo mode (<code>empty = FALSE</code>), and configuring Shiny Server with MariaDB/MySQL.</td>
+<td align="left"><code><a href="articles/CodingManageR.html">vignette("CodingManageR", package = "CodingManageR")</a></code></td>
+</tr>
+<tr>
+<td align="left"><strong><a href="https://fberding.github.io/CodingManageR/articles/introduction-de.html">Einführung in CodingManageR (Deutsch) ↗</a></strong></td>
+<td align="center">DE</td>
+<td align="center"><a href="https://fberding.github.io/CodingManageR/articles/introduction-de.html"><img src="https://img.shields.io/badge/Online_lesen-Einf%C3%BChrung_(DE)_%E2%86%92-33418F?style=for-the-badge" alt="Deutsch: Einführung öffnen"></a></td>
+<td align="left">Vollständiger 3-teiliger Leitfaden auf Deutsch: Projekteinrichtung (Quellen, Skalen, Falltexte), Kodierschulung &amp; Feldkodierung sowie Team-Administration.</td>
+<td align="left"><code><a href="articles/introduction-de.html">vignette("introduction-de", package = "CodingManageR")</a></code></td>
+</tr>
+<tr>
+<td align="left"><strong><a href="https://fberding.github.io/CodingManageR/articles/CodingManageR-de.html">Installation und Start von CodingManageR (Deutsch) ↗</a></strong></td>
+<td align="center">DE</td>
+<td align="center"><a href="https://fberding.github.io/CodingManageR/articles/CodingManageR-de.html"><img src="https://img.shields.io/badge/Online_lesen-Installation_(DE)_%E2%86%92-198754?style=for-the-badge" alt="Deutsch: Installation öffnen"></a></td>
+<td align="left">Paketinstallation, lokale Mehrprojekt-Nutzung mit SQLite, Demo-Modus (<code>empty = FALSE</code>) sowie Mehrbenutzer-Setup mit Shiny Server und MariaDB/MySQL.</td>
+<td align="left"><code><a href="articles/CodingManageR-de.html">vignette("CodingManageR-de", package = "CodingManageR")</a></code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Full Function Reference:</strong> Browse all exported functions and documentation articles on the <a href="https://fberding.github.io/CodingManageR/">CodingManageR Documentation Website ↗</a>.</p>
+</blockquote>
 </div>
 <div class="section level2">
 <h2 id="citation--license">Citation &amp; License<a class="anchor" aria-label="anchor" href="#citation--license"></a>
 </h2>
 <p><strong>CodingManageR</strong> is licensed under the <strong>GNU General Public License v3.0 (GPL-3)</strong>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"CodingManageR"</span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>AI-Assisted Development Notice:</strong> The source code, documentation, vignettes, and built-in demonstration data (example scales, sources, and case texts) of <strong>CodingManageR</strong> were created with the assistance of AI.</p>
+</blockquote>
 <p>Found a bug or have an idea for a new feature? Open an issue on <a href="https://github.com/FBerding/CodingManageR/issues" class="external-link">GitHub Issues</a>.</p>
 </div>
 </div>

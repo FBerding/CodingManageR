@@ -5,6 +5,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Introduction to CodingManageR • CodingManageR</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -32,8 +37,13 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
-<li><a class="dropdown-item" href="../articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>English</h6></li>
+    <li><a class="dropdown-item" href="../articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
     <li><a class="dropdown-item" href="../articles/introduction.html">Introduction to CodingManageR (3-Part Workflow)</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Deutsch</h6></li>
+    <li><a class="dropdown-item" href="../articles/CodingManageR-de.html">Installation und Start von CodingManageR (Deutsch)</a></li>
+    <li><a class="dropdown-item" href="../articles/introduction-de.html">Einführung in CodingManageR (Deutsch)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -55,8 +65,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Introduction to CodingManageR</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Introduction to CodingManageR</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/FBerding/CodingManageR/blob/master/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
@@ -83,7 +92,7 @@
 }
 </style>
 <div class="section level2">
-<h2 id="welcome">Welcome<a class="anchor" aria-label="anchor" href="#welcome"></a>
+<h2 id="welcome">1 Welcome<a class="anchor" aria-label="anchor" href="#welcome"></a>
 </h2>
 <p><strong>CodingManageR</strong> helps researchers, teachers, and
 students run qualitative text coding projects in a web browser. After
@@ -103,7 +112,7 @@ projects, train coders, and collect ratings with simple clicks.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left"><strong>Part 1: Initial Setup</strong></td>
+<td align="left"><strong>Part 1: Initial Setup (Section 3)</strong></td>
 <td align="left">Change the admin password and add
 <strong>sources</strong>, <strong>coding scales</strong>, and
 <strong>case texts</strong>
@@ -111,14 +120,16 @@ projects, train coders, and collect ratings with simple clicks.</p>
 <td align="left">Project lead / Administrator</td>
 </tr>
 <tr class="even">
-<td align="left"><strong>Part 2: The Coding Process</strong></td>
+<td align="left"><strong>Part 2: The Coding Process (Section
+4)</strong></td>
 <td align="left">Add <strong>new users</strong>, run <strong>coder
 training</strong>, and record <strong>live codings</strong>
 </td>
 <td align="left">Project lead &amp; Coders</td>
 </tr>
 <tr class="odd">
-<td align="left"><strong>Part 3: Further Admin Tools</strong></td>
+<td align="left"><strong>Part 3: Further Admin Tools (Section
+5)</strong></td>
 <td align="left">Check team quality, fix ratings, export data, upload
 CSV files, and check the database</td>
 <td align="left">Project lead / Administrator</td>
@@ -129,13 +140,19 @@ CSV files, and check the database</td>
 first:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"CodingManageR"</span>, package <span class="op">=</span> <span class="st">"CodingManageR"</span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>AI-Assisted Development Notice:</strong> This vignette, the
+<strong>CodingManageR</strong> package source code, and all built-in
+demonstration examples (coding scales, reference sources, and classroom
+case texts) were generated with the assistance of AI.</p>
+</blockquote>
 <hr>
 </div>
 <div class="section level2">
-<h2 id="before-you-begin">Before You Begin<a class="anchor" aria-label="anchor" href="#before-you-begin"></a>
+<h2 id="before-you-begin">2 Before You Begin<a class="anchor" aria-label="anchor" href="#before-you-begin"></a>
 </h2>
 <div class="section level3">
-<h3 id="key-terms-in-plain-english">Key Terms in Plain English<a class="anchor" aria-label="anchor" href="#key-terms-in-plain-english"></a>
+<h3 id="key-terms-in-plain-english">2.1 Key Terms in Plain English<a class="anchor" aria-label="anchor" href="#key-terms-in-plain-english"></a>
 </h3>
 <p>If you are new to text coding, these six terms will help you
 understand the app:</p>
@@ -160,26 +177,34 @@ partly present, <code>2</code> = clearly present.</td>
 <tr class="even">
 <td align="left"><strong>Case Text</strong></td>
 <td align="left">One single text that a coder reads and rates. Examples
-are a student essay, an interview part, or a clinical note.</td>
+are a classroom observation transcript, a student essay, or a reflection
+journal entry.</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Source</strong></td>
-<td align="left">A reference for a text or a rating rule. A <strong>Text
-Source</strong> shows where a text came from. A <strong>Coding
-Source</strong> shows which guide or study protocol was used for a
-rating.</td>
+<td align="left">A bibliographic or project reference for a text, a
+coding scale/manual, or a rating itself. A <strong>Text Source</strong>
+documents where a case text originated. A <strong>Coding Source</strong>
+documents not only where the coding scale, manual, or study protocol
+came from, but can also specify where the <strong>coding (the
+rating/evaluation of a text) itself originated</strong>—for example, an
+external study, expert consensus panel, or published benchmark
+dataset.</td>
 </tr>
 <tr class="even">
 <td align="left">
 <strong>Gold Standard</strong> (Reference Case)</td>
-<td align="left">A case text that already has an agreed correct score.
-The app uses these cases to train new coders and check their
-agreement.</td>
+<td align="left">A case text with an agreed reference score. Together
+with other already-coded cases for a category, these reference cases
+allow coders to practice and verify agreement during training.</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>Inter-Rater Reliability</strong></td>
-<td align="left">A statistical score that shows how often two raters
-agree. In training, it compares a coder with the gold standard.</td>
+<td align="left">A statistical measure of agreement among raters (which
+can involve two or more coders). In CodingManageR training, reliability
+is calculated not only against explicit <code>gold_standard</code>
+entries, but across <strong>all already-coded reference cases available
+for a category</strong>.</td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Access Token</strong></td>
@@ -190,7 +215,7 @@ their username to sign in.</td>
 </table>
 </div>
 <div class="section level3">
-<h3 id="launching-the-app-and-switching-language">Launching the App and Switching Language<a class="anchor" aria-label="anchor" href="#launching-the-app-and-switching-language"></a>
+<h3 id="launching-the-app-and-switching-language">2.2 Launching the App and Switching Language<a class="anchor" aria-label="anchor" href="#launching-the-app-and-switching-language"></a>
 </h3>
 <p>To start a clean local project on your computer, open R or RStudio
 and run:</p>
@@ -221,7 +246,8 @@ folder and backup tips.</p>
 header. Your work stays safe when you switch.</p>
 </div>
 <div class="section level3">
-<h3 id="built-in-interactive-walkthrough-getting-started">Built-In Interactive Walkthrough (<code>Getting Started</code>)<a class="anchor" aria-label="anchor" href="#built-in-interactive-walkthrough-getting-started"></a>
+<h3 id="built-in-interactive-walkthrough-getting-started">2.3 Built-In Interactive Walkthrough
+(<code>Getting Started</code>)<a class="anchor" aria-label="anchor" href="#built-in-interactive-walkthrough-getting-started"></a>
 </h3>
 <p>You do not need to keep this guide open while you learn the app.
 After you sign in, click <strong>Getting Started</strong> (<em>Erste
@@ -247,13 +273,13 @@ and German in the header, every tip translates right away.</li>
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-1-initial-setup-of-the-app">Part 1: Initial Setup of the App<a class="anchor" aria-label="anchor" href="#part-1-initial-setup-of-the-app"></a>
+<h2 id="part-1-initial-setup-of-the-app">3 Part 1: Initial Setup of the App<a class="anchor" aria-label="anchor" href="#part-1-initial-setup-of-the-app"></a>
 </h2>
 <p>Follow these four steps in order for every new project. Create
 <strong>Sources -&gt; Scales -&gt; Case Texts</strong> in this sequence
 so every dropdown menu is ready when you need it.</p>
 <div class="section level3">
-<h3 id="sign-in-as-administrator-and-change-the-default-password">1.1 Sign In as Administrator and Change the Default Password<a class="anchor" aria-label="anchor" href="#sign-in-as-administrator-and-change-the-default-password"></a>
+<h3 id="sign-in-as-administrator-and-change-the-default-password">3.1 Sign In as Administrator and Change the Default Password<a class="anchor" aria-label="anchor" href="#sign-in-as-administrator-and-change-the-default-password"></a>
 </h3>
 <ol style="list-style-type: decimal">
 <li>Open the sign-in screen (see Figure 1) and enter the default admin
@@ -286,12 +312,13 @@ English/German language selector in the card header.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-1-define-sources-sources-directory">1.2 Step 1: Define Sources (<code>Sources Directory</code>)<a class="anchor" aria-label="anchor" href="#step-1-define-sources-sources-directory"></a>
+<h3 id="step-1-define-sources-sources-directory">3.2 Step 1: Define Sources (<code>Sources Directory</code>)<a class="anchor" aria-label="anchor" href="#step-1-define-sources-sources-directory"></a>
 </h3>
 <p>Before you add texts or start live coding, create at least two
-sources. Create one <strong>Text Source</strong> (where your texts come
-from) and one <strong>Coding Source</strong> (the coding guide or study
-protocol for your ratings).</p>
+sources: one <strong>Text Source</strong> (where your case texts come
+from) and one <strong>Coding Source</strong> (which documents the coding
+scale/manual or study protocol <strong>and/or</strong> where the
+ratings/codings of the texts themselves originated).</p>
 <ol style="list-style-type: decimal">
 <li>In <strong>Admin Console</strong>, open the <strong>Sources
 Directory</strong> subtab (see Figure 2).</li>
@@ -311,12 +338,15 @@ project description.</li>
 text.</li>
 </ul>
 </li>
-<li>Click Save. Repeat this for each text collection or coding guide in
-your project.</li>
+<li>Click Save. Repeat this for each text collection, coding manual, or
+external rating provenance in your project. Note the numeric
+<strong><code>ID</code></strong> shown in the first column of the
+table—you will need it as <code>source_id</code> when uploading case
+texts via CSV (see Section 3.4.1).</li>
 </ol>
 <blockquote>
 <p><strong>Have many sources in a spreadsheet?</strong> You can upload
-them all at once with a CSV template (see Section 3.4).</p>
+them all at once with a CSV template (see Section 5.4).</p>
 </blockquote>
 <div class="figure">
 <img src="figures/06-admin-sources.png" class="r-plt" alt="Admin Console Sources Directory subtab listing scientific sources with short references, full citations, license badges, and edit controls." width="100%"><p class="caption">
@@ -326,7 +356,7 @@ corpora, citations, and coding protocol licenses.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-2-define-coding-scales-scales-management">1.3 Step 2: Define Coding Scales
+<h3 id="step-2-define-coding-scales-scales-management">3.3 Step 2: Define Coding Scales
 (<code>Scales Management</code>)<a class="anchor" aria-label="anchor" href="#step-2-define-coding-scales-scales-management"></a>
 </h3>
 <p>Next, create the rating scales that your coders will use.</p>
@@ -336,8 +366,8 @@ Management</strong> subtab (see Figure 3).</li>
 <li>Click the button to create a new scale and fill in:
 <ul>
 <li>
-<strong>Short Label</strong> (for example <code>Empathy</code> or
-<code>Arg_Quality</code>): a short label for tables and charts.</li>
+<strong>Short Label</strong> (for example <code>CogAct</code> or
+<code>Feedback</code>): a short label for tables and charts.</li>
 <li>
 <strong>Scale Name</strong>: the full title shown to coders.</li>
 <li>
@@ -370,12 +400,12 @@ coding scales, value ranges, and anchor definitions.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-3-add-case-texts-and-link-sources">1.4 Step 3: Add Case Texts and Link Sources<a class="anchor" aria-label="anchor" href="#step-3-add-case-texts-and-link-sources"></a>
+<h3 id="step-3-add-case-texts-and-link-sources">3.4 Step 3: Add Case Texts and Link Sources<a class="anchor" aria-label="anchor" href="#step-3-add-case-texts-and-link-sources"></a>
 </h3>
 <p>Now add your case texts to the database and link each text to its
 source.</p>
 <div class="section level4">
-<h4 id="adding-texts-in-bulk-via-csv-recommended">Adding Texts in Bulk via CSV (Recommended)<a class="anchor" aria-label="anchor" href="#adding-texts-in-bulk-via-csv-recommended"></a>
+<h4 id="adding-texts-in-bulk-via-csv-recommended">3.4.1 Adding Texts in Bulk via CSV (Recommended)<a class="anchor" aria-label="anchor" href="#adding-texts-in-bulk-via-csv-recommended"></a>
 </h4>
 <p>A <strong>CSV</strong> file is a simple table file that you can edit
 in Excel or LibreOffice.</p>
@@ -386,11 +416,30 @@ Import/Export</strong>.</li>
 (<code>texts</code>)</strong> and click <strong>Download CSV
 Template</strong>. This gives you an empty file with the exact column
 names (<code>text_id;text;source_id</code>).</li>
-<li>Paste your texts into the <code>text</code> column. Enter the
-matching <code>source_id</code> number from <strong>Sources
-Directory</strong> in the <code>source_id</code> column. Every text must
-have a valid <code>source_id</code>. You can also add your own
-<code>text_id</code> numbers if you want.</li>
+<li>Paste your texts into the <code>text</code> column and enter the
+matching <strong><code>source_id</code></strong> number in the
+<code>source_id</code> column. You can also add your own
+<code>text_id</code> numbers if you want.
+<ul>
+<li>
+<strong>Important (<code>source_id</code> must match an existing
+source):</strong> Every <code>source_id</code> value in your CSV file
+<strong>must exactly match the numeric <code>ID</code> of a source that
+has already been created in the database</strong>. If a
+<code>source_id</code> does not exist in the <code>sources</code> table,
+the app’s foreign-key integrity check will reject the upload to prevent
+broken links.</li>
+<li>
+<strong>Where to find the source IDs:</strong> Open <strong>Admin
+Console -&gt; Sources Directory</strong> (see Figure 2) and look at the
+very first column titled <strong><code>ID</code></strong> next to each
+registered source (for example <code>1</code>, <code>2</code>,
+<code>3</code>). Alternatively, you can download the
+<code>sources</code> table under <strong>Admin Console -&gt; Data &amp;
+Import/Export -&gt; Raw Table Backups</strong> and read the exact
+<code>source_id</code> column directly in your spreadsheet editor.</li>
+</ul>
+</li>
 <li>Save the file as <strong>UTF-8 CSV</strong> (UTF-8 keeps special
 characters like German umlauts intact) with a <strong>semicolon
 (<code>;</code>)</strong> as the column separator. Upload the file in
@@ -399,7 +448,7 @@ the same area.</li>
 </ol>
 </div>
 <div class="section level4">
-<h4 id="inspecting-texts-and-assigning-sources-in-the-table">Inspecting Texts and Assigning Sources in the Table<a class="anchor" aria-label="anchor" href="#inspecting-texts-and-assigning-sources-in-the-table"></a>
+<h4 id="inspecting-texts-and-assigning-sources-in-the-table">3.4.2 Inspecting Texts and Assigning Sources in the Table<a class="anchor" aria-label="anchor" href="#inspecting-texts-and-assigning-sources-in-the-table"></a>
 </h4>
 <ol style="list-style-type: decimal">
 <li>Open <strong>Admin Console -&gt; Case Texts &amp; Source
@@ -417,12 +466,15 @@ searchable pagination and per-case source linking.
 </div>
 </div>
 <div class="section level4">
-<h4 id="preparing-reference-cases-for-coder-training">Preparing Reference Cases for Coder Training<a class="anchor" aria-label="anchor" href="#preparing-reference-cases-for-coder-training"></a>
+<h4 id="preparing-reference-cases-for-coder-training">3.4.3 Preparing Reference Cases for Coder Training<a class="anchor" aria-label="anchor" href="#preparing-reference-cases-for-coder-training"></a>
 </h4>
-<p>To use <strong>1. Coding Training</strong>, the database needs rated
-reference texts (<strong>gold standards</strong> or finished codings)
-for that scale. Try to include at least one reference text for every
-level from <code>0</code> to <code>max_value</code>.</p>
+<p>To use <strong>1. Coding Training</strong>, the database needs
+already-coded reference cases for that category—this includes dedicated
+<strong>gold standards</strong> (<code>typ = gold_standard</code>) as
+well as completed field codings (<code>typ = kodierung</code> /
+<code>field</code>). Try to ensure at least one coded reference text
+exists for every level from <code>0</code> to
+<code>max_value</code>.</p>
 <p>You have two easy ways to add reference cases:</p>
 <ul>
 <li>
@@ -433,39 +485,42 @@ yourself.</li>
 <strong>Option B (CSV upload):</strong> Open <strong>Data &amp;
 Import/Export</strong> and download the template for <strong>Ratings
 &amp; Gold Standard (<code>user_ratings</code>)</strong>. Enter your
-reference ratings with <code>typ = gold_standard</code>, then upload the
-file.</li>
+reference ratings (making sure <code>source_id</code> matches an
+existing <code>ID</code> from <strong>Sources Directory</strong>), then
+upload the file.</li>
 </ul>
 </div>
 </div>
 <div class="section level3">
-<h3 id="part-1-checklist-ready-for-your-team">Part 1 Checklist — Ready for Your Team?<a class="anchor" aria-label="anchor" href="#part-1-checklist-ready-for-your-team"></a>
+<h3 id="part-1-checklist-ready-for-your-team">3.5 Part 1 Checklist — Ready for Your Team?<a class="anchor" aria-label="anchor" href="#part-1-checklist-ready-for-your-team"></a>
 </h3>
 <ul class="task-list">
 <li><label><input type="checkbox">Default <code>admin</code> password
 changed.</label></li>
 <li><label><input type="checkbox">At least one <strong>Text
 Source</strong> and one <strong>Coding Source</strong> created in
-<strong>Sources Directory</strong>.</label></li>
+<strong>Sources Directory</strong> (and their numeric <code>ID</code>
+values noted).</label></li>
 <li><label><input type="checkbox">All <strong>Coding Scales</strong>
 created with clear descriptions for levels <code>0</code> to
 <code>max_value</code>.</label></li>
 <li><label><input type="checkbox"><strong>Case Texts</strong> uploaded
-and linked to their sources.</label></li>
-<li><label><input type="checkbox">Reference or gold-standard ratings
-saved for scales used in training.</label></li>
+with valid <code>source_id</code> values matching <strong>Sources
+Directory</strong> and linked to their sources.</label></li>
+<li><label><input type="checkbox">Already-coded reference cases or
+gold-standard ratings saved for scales used in training.</label></li>
 </ul>
 <hr>
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-2-the-coding-process">Part 2: The Coding Process<a class="anchor" aria-label="anchor" href="#part-2-the-coding-process"></a>
+<h2 id="part-2-the-coding-process">4 Part 2: The Coding Process<a class="anchor" aria-label="anchor" href="#part-2-the-coding-process"></a>
 </h2>
 <p>Your project setup is now complete. Next, add your coders, let them
 practice in <strong>Coding Training</strong>, and start <strong>Live
 Coding</strong>.</p>
 <div class="section level3">
-<h3 id="step-1-add-new-users-and-grant-permissions-user-management">2.1 Step 1: Add New Users and Grant Permissions
+<h3 id="step-1-add-new-users-and-grant-permissions-user-management">4.1 Step 1: Add New Users and Grant Permissions
 (<code>User Management</code>)<a class="anchor" aria-label="anchor" href="#step-1-add-new-users-and-grant-permissions-user-management"></a>
 </h3>
 <p>CodingManageR has two user roles:</p>
@@ -516,22 +571,22 @@ scale/source permissions.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-2-practice-in-coding-training-and-review-the-dashboard">2.2 Step 2: Practice in Coding Training and Review the
+<h3 id="step-2-practice-in-coding-training-and-review-the-dashboard">4.2 Step 2: Practice in Coding Training and Review the
 Dashboard<a class="anchor" aria-label="anchor" href="#step-2-practice-in-coding-training-and-review-the-dashboard"></a>
 </h3>
 <p>Coders should practice in <strong>1. Coding Training</strong> before
 they code real study data. Any signed-in user can practice on any scale
-that has reference ratings.</p>
+that has already-coded reference ratings.</p>
 <div class="section level4">
-<h4 id="completing-a-training-session">Completing a Training Session<a class="anchor" aria-label="anchor" href="#completing-a-training-session"></a>
+<h4 id="completing-a-training-session">4.2.1 Completing a Training Session<a class="anchor" aria-label="anchor" href="#completing-a-training-session"></a>
 </h4>
 <ol style="list-style-type: decimal">
 <li>Sign in and open the <strong>1. Coding Training</strong> tab.</li>
 <li>Pick a <strong>Coding Dimension / Scale</strong> from the dropdown
 menu.</li>
-<li>Choose how many training cases you want to rate. The app picks a
-balanced set of reference texts covering every level (<code>0</code> to
-<code>max_value</code>).</li>
+<li>Choose how many training cases you want to rate. The app draws a
+balanced set of already-coded reference cases for that category covering
+every level (<code>0</code> to <code>max_value</code>).</li>
 <li>Optional: Click <strong>Show Criteria &amp; Examples</strong> to
 read example texts before you start.</li>
 <li>Click <strong>Start Training</strong>.</li>
@@ -546,10 +601,11 @@ without saving a finished run, click <strong>Abort
 Training</strong>.</li>
 </ul>
 </li>
-<li>At the end, the app compares your scores with the reference answers.
-You see your reliability scores and a case-by-case table. You can click
-<strong>Download Training Results (.csv)</strong> to save a copy, or
-click <strong>Start New Training</strong> to try again.</li>
+<li>At the end, the app compares your scores with the stored reference
+codings across all selected cases. You see your inter-rater reliability
+scores and a case-by-case table. You can click <strong>Download Training
+Results (.csv)</strong> to save a copy, or click <strong>Start New
+Training</strong> to try again.</li>
 </ol>
 <div class="figure">
 <img src="figures/03-coding-training.png" class="r-plt" alt="Coding Training workspace displaying a case text on the left and the ordinal rating slider with a live level definition box on the right." width="100%"><p class="caption">
@@ -559,7 +615,7 @@ case text alongside the rating slider and live level anchor definition.
 </div>
 </div>
 <div class="section level4">
-<h4 id="checking-personal-progress-on-the-dashboard">Checking Personal Progress on the <code>Dashboard</code><a class="anchor" aria-label="anchor" href="#checking-personal-progress-on-the-dashboard"></a>
+<h4 id="checking-personal-progress-on-the-dashboard">4.2.2 Checking Personal Progress on the <code>Dashboard</code><a class="anchor" aria-label="anchor" href="#checking-personal-progress-on-the-dashboard"></a>
 </h4>
 <p>Open the <strong>Dashboard</strong> tab at any time to check your
 progress (see Figure 7):</p>
@@ -599,13 +655,13 @@ progress tables.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-3-record-real-ratings-in-live-coding-2--live-coding">2.3 Step 3: Record Real Ratings in Live Coding
+<h3 id="step-3-record-real-ratings-in-live-coding-2--live-coding">4.3 Step 3: Record Real Ratings in Live Coding
 (<code>2. Live Coding</code>)<a class="anchor" aria-label="anchor" href="#step-3-record-real-ratings-in-live-coding-2--live-coding"></a>
 </h3>
 <p>When a coder finishes training and has permissions unlocked, they can
 start real data coding.</p>
 <div class="section level4">
-<h4 id="configuring-the-workspace">Configuring the Workspace<a class="anchor" aria-label="anchor" href="#configuring-the-workspace"></a>
+<h4 id="configuring-the-workspace">4.3.1 Configuring the Workspace<a class="anchor" aria-label="anchor" href="#configuring-the-workspace"></a>
 </h4>
 <ol style="list-style-type: decimal">
 <li>Open the <strong>2. Live Coding</strong> tab.</li>
@@ -628,7 +684,7 @@ under which your ratings will be saved.</li>
 </ol>
 </div>
 <div class="section level4">
-<h4 id="rating-cases">Rating Cases<a class="anchor" aria-label="anchor" href="#rating-cases"></a>
+<h4 id="rating-cases">4.3.2 Rating Cases<a class="anchor" aria-label="anchor" href="#rating-cases"></a>
 </h4>
 <ol style="list-style-type: decimal">
 <li>Read the case text on the left (see Figure 8). Check the scale and
@@ -654,7 +710,7 @@ Save &amp; Next Case controls.
 </div>
 </div>
 <div class="section level3">
-<h3 id="part-2-checklist-smooth-daily-coding">Part 2 Checklist — Smooth Daily Coding<a class="anchor" aria-label="anchor" href="#part-2-checklist-smooth-daily-coding"></a>
+<h3 id="part-2-checklist-smooth-daily-coding">4.4 Part 2 Checklist — Smooth Daily Coding<a class="anchor" aria-label="anchor" href="#part-2-checklist-smooth-daily-coding"></a>
 </h3>
 <ul class="task-list">
 <li><label><input type="checkbox">Coder account created with an access
@@ -673,13 +729,13 @@ coding source in <strong>2. Live Coding</strong> and saves ratings with
 </div>
 </div>
 <div class="section level2">
-<h2 id="part-3-further-options-for-administrators">Part 3: Further Options for Administrators<a class="anchor" aria-label="anchor" href="#part-3-further-options-for-administrators"></a>
+<h2 id="part-3-further-options-for-administrators">5 Part 3: Further Options for Administrators<a class="anchor" aria-label="anchor" href="#part-3-further-options-for-administrators"></a>
 </h2>
 <p>The <strong>Admin Console</strong> also includes five tools for
 quality checks, data fixes, exports, bulk uploads, and database
 maintenance.</p>
 <div class="section level3">
-<h3 id="monitor-team-quality-reliability-progress">3.1 Monitor Team Quality
+<h3 id="monitor-team-quality-reliability-progress">5.1 Monitor Team Quality
 (<code>Reliability &amp; Progress</code>)<a class="anchor" aria-label="anchor" href="#monitor-team-quality-reliability-progress"></a>
 </h3>
 <p>Open the <strong>Reliability &amp; Progress</strong> subtab to check
@@ -703,7 +759,7 @@ training performance and inter-rater reliability metrics across coders.
 </div>
 </div>
 <div class="section level3">
-<h3 id="find-and-correct-stored-ratings-edit-codings">3.2 Find and Correct Stored Ratings (<code>Edit Codings</code>)<a class="anchor" aria-label="anchor" href="#find-and-correct-stored-ratings-edit-codings"></a>
+<h3 id="find-and-correct-stored-ratings-edit-codings">5.2 Find and Correct Stored Ratings (<code>Edit Codings</code>)<a class="anchor" aria-label="anchor" href="#find-and-correct-stored-ratings-edit-codings"></a>
 </h3>
 <p>Mistakes happen. Sometimes a coder clicks the wrong number before
 saving.</p>
@@ -725,7 +781,7 @@ type, scale, coder, or keyword and correcting individual score values.
 </div>
 </div>
 <div class="section level3">
-<h3 id="export-research-datasets-and-backups-data-importexport">3.3 Export Research Datasets and Backups
+<h3 id="export-research-datasets-and-backups-data-importexport">5.3 Export Research Datasets and Backups
 (<code>Data &amp; Import/Export</code>)<a class="anchor" aria-label="anchor" href="#export-research-datasets-and-backups-data-importexport"></a>
 </h3>
 <p>Use this subtab when you want to analyze your data in R, SPSS, Excel,
@@ -750,7 +806,7 @@ your <code>.sqlite</code> file.</li>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="bulk-csv-uploads-with-built-in-validation-data-importexport">3.4 Bulk CSV Uploads with Built-In Validation
+<h3 id="bulk-csv-uploads-with-built-in-validation-data-importexport">5.4 Bulk CSV Uploads with Built-In Validation
 (<code>Data &amp; Import/Export</code>)<a class="anchor" aria-label="anchor" href="#bulk-csv-uploads-with-built-in-validation-data-importexport"></a>
 </h3>
 <p>You can upload or update five tables at once:
@@ -761,11 +817,17 @@ Directory</strong>, <strong>Ratings &amp; Gold Standard</strong>, and
 <ol style="list-style-type: decimal">
 <li>Click <strong>Download CSV Template</strong> next to the upload
 field. This guarantees that all column names match.</li>
+<li>When uploading <strong>Case Texts (<code>texts</code>)</strong> or
+<strong>Ratings (<code>user_ratings</code>)</strong>, verify that every
+<code>source_id</code> matches an existing numeric
+<strong><code>ID</code></strong> listed in the first column of
+<strong>Admin Console -&gt; Sources Directory</strong> (see Section
+3.4.1).</li>
 <li>Save your table as a <strong>UTF-8 CSV</strong> file (keeps special
 characters safe) with a <strong>semicolon (<code>;</code>)</strong>
 between columns, not a comma.</li>
 <li>Upload your file. The app cleans small formatting issues and checks
-every column before changing the database.</li>
+every column and foreign key before changing the database.</li>
 <li>In the confirmation window, choose <strong>append</strong> (add new
 rows) or <strong>replace</strong> (replace the whole table). If an
 append upload contains IDs that already exist, the app warns you. You
@@ -783,7 +845,7 @@ schema-validated bulk CSV uploads.
 </div>
 </div>
 <div class="section level3">
-<h3 id="check-database-health-and-integrity-db-diagnosis">3.5 Check Database Health and Integrity
+<h3 id="check-database-health-and-integrity-db-diagnosis">5.5 Check Database Health and Integrity
 (<code>DB Diagnosis</code>)<a class="anchor" aria-label="anchor" href="#check-database-health-and-integrity-db-diagnosis"></a>
 </h3>
 <p>Open <strong>DB Diagnosis</strong> after big CSV uploads or from time
@@ -809,7 +871,7 @@ across all nine database tables and relational integrity checks.
 </div>
 </div>
 <div class="section level3">
-<h3 id="administrator-quick-reference-table">Administrator Quick-Reference Table<a class="anchor" aria-label="anchor" href="#administrator-quick-reference-table"></a>
+<h3 id="administrator-quick-reference-table">5.6 Administrator Quick-Reference Table<a class="anchor" aria-label="anchor" href="#administrator-quick-reference-table"></a>
 </h3>
 <table class="table">
 <colgroup>

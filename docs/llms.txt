@@ -1,9 +1,38 @@
 # CodingManageR
 
-**CodingManageR** is a web app for qualitative text coding and coder
-training. You use it in your browser to rate texts on ordered numeric
-scales. It runs locally on one computer with a single SQLite database
-file, or on a shared web server for a whole team.
+**CodingManageR** is an R Shiny web application for qualitative text
+coding, coder calibration, and inter-rater reliability management.
+Researchers, instructors, and coding teams use it directly in a web
+browser to rate textual data—such as classroom observation transcripts,
+student essays, interview excerpts, or instructional vignettes—on custom
+ordered numeric scales without writing code during day-to-day coding
+work.
+
+From early-stage coder training to large-scale empirical data
+collection, **CodingManageR** supports two flexible deployment modes so
+it scales effortlessly with the size of your research program:
+
+- **Manage Multiple Projects Locally (SQLite):** Individual researchers
+  and small teams can run the app locally on a laptop or workstation
+  without any server administration. Each study lives in its own
+  self-contained `.sqlite` file with isolated scales, text corpora,
+  bibliographic sources, user accounts, and ratings—making it easy to
+  maintain, back up, and archive **multiple independent projects** side
+  by side.
+- **Collaborate Across Locations on Large Projects (Shiny Server +
+  MariaDB/MySQL):** For **larger multi-user studies and multi-site
+  consortia**, CodingManageR connects to a central **MariaDB or MySQL
+  server** (for example behind Open Source Shiny Server). Coders and
+  project administrators can sign in from **different sites,
+  departments, or partner universities** to work simultaneously on one
+  shared, role-protected database while tracking team-wide reliability
+  in real time.
+
+Whether you run a single local study or coordinate an international
+coding team, **CodingManageR** combines stratified gold-standard
+training pools, 16 established reliability metrics, transparent source
+and license tracking, bulk CSV import/export, and a bilingual
+(English/German) interface with an interactive in-app tour.
 
 ## Core Features
 
@@ -76,76 +105,32 @@ install.packages("remotes")
 remotes::install_github("FBerding/CodingManageR")
 ```
 
-## Quick Start
-
-### Local Single-User Mode (SQLite)
-
-Start the app with a new local SQLite database file. SQLite saves your
-whole project in one file on your computer. With `empty = TRUE`, the app
-creates only the first administrator account.
-
-``` r
-
-library(CodingManageR)
-
-# Start a clean project with a local SQLite database
-run_app(sqlite_path = "coding_portal.sqlite", empty = TRUE)
-
-# Save another independent project in a second .sqlite file
-run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
-```
-
-Each `.sqlite` file holds one separate project with its own scales,
-sources, texts, users, and ratings. Before you copy, rename, or archive
-a project file, stop the app cleanly first. Stopping the app saves
-temporary write-ahead log files (`-wal` and `-shm`) back into the main
-`.sqlite` file.
-
-Want to test the app first? Use `empty = FALSE` to load sample scales,
-example texts, reference cases, and demo accounts:
-
-``` r
-
-run_app(sqlite_path = "coding_demo.sqlite", empty = FALSE)
-```
-
-Demo mode (`empty = FALSE`) creates these accounts:
-
-| Role | Username | Access Token | Scope |
-|:---|:---|:---|:---|
-| Administrator | `admin` | `geheim123` | Full workspace and 8-tab Admin Console |
-| Coder | `user1` | `token2026` | Dashboard, Training, and Live Coding (assigned scales and sources) |
-| Locked Demo | `inaktiv_demo` | `gesperrt123` | Inactive account (`is_active = 0`) |
-
-> In clean mode (`empty = TRUE`), sign in as `admin` with token
-> `geheim123`. Change this password right away in **Admin Console -\>
-> User Management**. Click **Getting Started** in the top header at any
-> time to start the interactive tour inside the app.
-
-### Multi-User Deployment (Shiny Server + MariaDB/MySQL)
-
-To host the app for a team on Open Source Shiny Server, connect to a
-MariaDB or MySQL database. Set these environment variables (for example
-in `.Renviron`) before calling
-[`run_app()`](https://fberding.github.io/CodingManageR/reference/run_app.md):
-
-``` bash
-MYSQL_HOST=127.0.0.1
-MYSQL_PORT=3306
-MYSQL_USER=coding_portal_user
-MYSQL_PASSWORD=your_secure_password
-MYSQL_DBNAME=kodierer_portal
-```
+> **Ready to launch the app?** Step-by-step launch instructions, demo
+> credentials, and local SQLite vs. multi-user MariaDB/MySQL server
+> configuration have moved to the dedicated vignettes. Start with the
+> **[Get started
+> ↗](https://fberding.github.io/CodingManageR/articles/introduction.html)**
+> workflow guide or consult **[Installing and Launching CodingManageR
+> ↗](https://fberding.github.io/CodingManageR/articles/CodingManageR.html)**
+> for detailed setup commands.
 
 ## Documentation & Guides
 
-Two step-by-step guides for beginners and administrators come with the
-package:
+Four illustrated, step-by-step vignettes (**English** and **German**)
+ship with **CodingManageR** and are published online on the package
+website. Click any **badge** or **guide title** below to open the
+corresponding vignette directly in your browser:
 
-- **Installation & Server Setup**:
-  [`vignette("CodingManageR", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR.md)
-- **Step-by-Step Workflow Guide (Setup, Coding & Administration)**:
-  [`vignette("introduction", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/introduction.md)
+| Guide | Language | Online Vignette | What It Covers | Open in R |
+|:---|:--:|:--:|:---|:---|
+| **[Get started: Introduction to CodingManageR ↗](https://fberding.github.io/CodingManageR/articles/introduction.html)** | EN | [![Open Get Started](https://img.shields.io/badge/Read_Online-Get_Started_%E2%86%92-33418F?style=for-the-badge)](https://fberding.github.io/CodingManageR/articles/introduction.html) | Complete 3-part workflow covering initial project setup (sources, scales, texts), coder training & live coding, and team administration. | [`vignette("introduction", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/introduction.md) |
+| **[Installing and Launching CodingManageR ↗](https://fberding.github.io/CodingManageR/articles/CodingManageR.html)** | EN | [![Open Setup Guide](https://img.shields.io/badge/Read_Online-Setup_Guide_%E2%86%92-198754?style=for-the-badge)](https://fberding.github.io/CodingManageR/articles/CodingManageR.html) | Installing the package, running multiple local SQLite projects, exploring demo mode (`empty = FALSE`), and configuring Shiny Server with MariaDB/MySQL. | [`vignette("CodingManageR", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR.md) |
+| **[Einführung in CodingManageR (Deutsch) ↗](https://fberding.github.io/CodingManageR/articles/introduction-de.html)** | DE | [![Deutsch: Einführung öffnen](https://img.shields.io/badge/Online_lesen-Einf%C3%BChrung_(DE)_%E2%86%92-33418F?style=for-the-badge)](https://fberding.github.io/CodingManageR/articles/introduction-de.html) | Vollständiger 3-teiliger Leitfaden auf Deutsch: Projekteinrichtung (Quellen, Skalen, Falltexte), Kodierschulung & Feldkodierung sowie Team-Administration. | [`vignette("introduction-de", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/introduction-de.md) |
+| **[Installation und Start von CodingManageR (Deutsch) ↗](https://fberding.github.io/CodingManageR/articles/CodingManageR-de.html)** | DE | [![Deutsch: Installation öffnen](https://img.shields.io/badge/Online_lesen-Installation_(DE)_%E2%86%92-198754?style=for-the-badge)](https://fberding.github.io/CodingManageR/articles/CodingManageR-de.html) | Paketinstallation, lokale Mehrprojekt-Nutzung mit SQLite, Demo-Modus (`empty = FALSE`) sowie Mehrbenutzer-Setup mit Shiny Server und MariaDB/MySQL. | [`vignette("CodingManageR-de", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR-de.md) |
+
+> **Full Function Reference:** Browse all exported functions and
+> documentation articles on the [CodingManageR Documentation Website
+> ↗](https://fberding.github.io/CodingManageR/).
 
 ## Citation & License
 
@@ -156,6 +141,11 @@ v3.0 (GPL-3)**.
 
 citation("CodingManageR")
 ```
+
+> **AI-Assisted Development Notice:** The source code, documentation,
+> vignettes, and built-in demonstration data (example scales, sources,
+> and case texts) of **CodingManageR** were created with the assistance
+> of AI.
 
 Found a bug or have an idea for a new feature? Open an issue on [GitHub
 Issues](https://github.com/FBerding/CodingManageR/issues).
@@ -360,9 +350,16 @@ UI components.
 
 # Articles
 
-### User Guides
+### User Guides (English)
 
 - [Installing and Launching
   CodingManageR](https://fberding.github.io/CodingManageR/articles/CodingManageR.md):
 - [Introduction to
   CodingManageR](https://fberding.github.io/CodingManageR/articles/introduction.md):
+
+### Benutzerhandbücher (Deutsch)
+
+- [Installation und Start von CodingManageR
+  (Deutsch)](https://fberding.github.io/CodingManageR/articles/CodingManageR-de.md):
+- [Einführung in CodingManageR
+  (Deutsch)](https://fberding.github.io/CodingManageR/articles/introduction-de.md):

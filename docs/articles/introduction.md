@@ -1,6 +1,6 @@
 # Introduction to CodingManageR
 
-## Welcome
+## 1 Welcome
 
 **CodingManageR** helps researchers, teachers, and students run
 qualitative text coding projects in a web browser. After you open the
@@ -11,9 +11,9 @@ This guide follows the three main steps of a coding project:
 
 | Part | Focus | Main audience |
 |:---|:---|:---|
-| **Part 1: Initial Setup** | Change the admin password and add **sources**, **coding scales**, and **case texts** | Project lead / Administrator |
-| **Part 2: The Coding Process** | Add **new users**, run **coder training**, and record **live codings** | Project lead & Coders |
-| **Part 3: Further Admin Tools** | Check team quality, fix ratings, export data, upload CSV files, and check the database | Project lead / Administrator |
+| **Part 1: Initial Setup (Section 3)** | Change the admin password and add **sources**, **coding scales**, and **case texts** | Project lead / Administrator |
+| **Part 2: The Coding Process (Section 4)** | Add **new users**, run **coder training**, and record **live codings** | Project lead & Coders |
+| **Part 3: Further Admin Tools (Section 5)** | Check team quality, fix ratings, export data, upload CSV files, and check the database | Project lead / Administrator |
 
 Have you not installed CodingManageR yet? Read the installation guide
 first:
@@ -23,11 +23,16 @@ first:
 vignette("CodingManageR", package = "CodingManageR")
 ```
 
+> **AI-Assisted Development Notice:** This vignette, the
+> **CodingManageR** package source code, and all built-in demonstration
+> examples (coding scales, reference sources, and classroom case texts)
+> were generated with the assistance of AI.
+
 ------------------------------------------------------------------------
 
-## Before You Begin
+## 2 Before You Begin
 
-### Key Terms in Plain English
+### 2.1 Key Terms in Plain English
 
 If you are new to text coding, these six terms will help you understand
 the app:
@@ -35,13 +40,13 @@ the app:
 | Term in the App | Plain-English Meaning |
 |:---|:---|
 | **Coding Scale** (or *Dimension*) | A rating rule with ordered whole numbers starting at `0`. Example: `0` = not present, `1` = partly present, `2` = clearly present. |
-| **Case Text** | One single text that a coder reads and rates. Examples are a student essay, an interview part, or a clinical note. |
-| **Source** | A reference for a text or a rating rule. A **Text Source** shows where a text came from. A **Coding Source** shows which guide or study protocol was used for a rating. |
-| **Gold Standard** (Reference Case) | A case text that already has an agreed correct score. The app uses these cases to train new coders and check their agreement. |
-| **Inter-Rater Reliability** | A statistical score that shows how often two raters agree. In training, it compares a coder with the gold standard. |
+| **Case Text** | One single text that a coder reads and rates. Examples are a classroom observation transcript, a student essay, or a reflection journal entry. |
+| **Source** | A bibliographic or project reference for a text, a coding scale/manual, or a rating itself. A **Text Source** documents where a case text originated. A **Coding Source** documents not only where the coding scale, manual, or study protocol came from, but can also specify where the **coding (the rating/evaluation of a text) itself originated**—for example, an external study, expert consensus panel, or published benchmark dataset. |
+| **Gold Standard** (Reference Case) | A case text with an agreed reference score. Together with other already-coded cases for a category, these reference cases allow coders to practice and verify agreement during training. |
+| **Inter-Rater Reliability** | A statistical measure of agreement among raters (which can involve two or more coders). In CodingManageR training, reliability is calculated not only against explicit `gold_standard` entries, but across **all already-coded reference cases available for a category**. |
 | **Access Token** | The personal password that a user enters together with their username to sign in. |
 
-### Launching the App and Switching Language
+### 2.2 Launching the App and Switching Language
 
 To start a clean local project on your computer, open R or RStudio and
 run:
@@ -72,7 +77,7 @@ You can switch the language between **English** and **German** on the
 sign-in screen or in the top-right header. Your work stays safe when you
 switch.
 
-### Built-In Interactive Walkthrough (`Getting Started`)
+### 2.3 Built-In Interactive Walkthrough (`Getting Started`)
 
 You do not need to keep this guide open while you learn the app. After
 you sign in, click **Getting Started** (*Erste Schritte*) in the
@@ -93,13 +98,13 @@ app:
 
 ------------------------------------------------------------------------
 
-## Part 1: Initial Setup of the App
+## 3 Part 1: Initial Setup of the App
 
 Follow these four steps in order for every new project. Create **Sources
 -\> Scales -\> Case Texts** in this sequence so every dropdown menu is
 ready when you need it.
 
-### 1.1 Sign In as Administrator and Change the Default Password
+### 3.1 Sign In as Administrator and Change the Default Password
 
 1.  Open the sign-in screen (see Figure 1) and enter the default admin
     login:
@@ -121,11 +126,13 @@ selector.](figures/01-login.png)
 Figure 1: Sign-in screen with username and access token inputs and the
 English/German language selector in the card header.
 
-### 1.2 Step 1: Define Sources (`Sources Directory`)
+### 3.2 Step 1: Define Sources (`Sources Directory`)
 
-Before you add texts or start live coding, create at least two sources.
-Create one **Text Source** (where your texts come from) and one **Coding
-Source** (the coding guide or study protocol for your ratings).
+Before you add texts or start live coding, create at least two sources:
+one **Text Source** (where your case texts come from) and one **Coding
+Source** (which documents the coding scale/manual or study protocol
+**and/or** where the ratings/codings of the texts themselves
+originated).
 
 1.  In **Admin Console**, open the **Sources Directory** subtab (see
     Figure 2).
@@ -137,11 +144,13 @@ Source** (the coding guide or study protocol for your ratings).
     - **License / Usage Rights**: pick a standard license (such as
       `CC-BY 4.0`, `CC0`, or `GPL-3.0`), or choose custom to type your
       own license text.
-3.  Click Save. Repeat this for each text collection or coding guide in
-    your project.
+3.  Click Save. Repeat this for each text collection, coding manual, or
+    external rating provenance in your project. Note the numeric
+    **`ID`** shown in the first column of the table—you will need it as
+    `source_id` when uploading case texts via CSV (see Section 3.4.1).
 
 > **Have many sources in a spreadsheet?** You can upload them all at
-> once with a CSV template (see Section 3.4).
+> once with a CSV template (see Section 5.4).
 
 ![Admin Console Sources Directory subtab listing scientific sources with
 short references, full citations, license badges, and edit
@@ -150,14 +159,14 @@ controls.](figures/06-admin-sources.png)
 Figure 2: Admin Console — Sources Directory for adding and managing text
 corpora, citations, and coding protocol licenses.
 
-### 1.3 Step 2: Define Coding Scales (`Scales Management`)
+### 3.3 Step 2: Define Coding Scales (`Scales Management`)
 
 Next, create the rating scales that your coders will use.
 
 1.  In **Admin Console**, open the **Scales Management** subtab (see
     Figure 3).
 2.  Click the button to create a new scale and fill in:
-    - **Short Label** (for example `Empathy` or `Arg_Quality`): a short
+    - **Short Label** (for example `CogAct` or `Feedback`): a short
       label for tables and charts.
     - **Scale Name**: the full title shown to coders.
     - **General Coding Description**: a short rule explaining what
@@ -181,12 +190,12 @@ descriptions.](figures/07-admin-scales.png)
 Figure 3: Admin Console — Scales Management showing configured ordinal
 coding scales, value ranges, and anchor definitions.
 
-### 1.4 Step 3: Add Case Texts and Link Sources
+### 3.4 Step 3: Add Case Texts and Link Sources
 
 Now add your case texts to the database and link each text to its
 source.
 
-#### Adding Texts in Bulk via CSV (Recommended)
+#### 3.4.1 Adding Texts in Bulk via CSV (Recommended)
 
 A **CSV** file is a simple table file that you can edit in Excel or
 LibreOffice.
@@ -195,16 +204,28 @@ LibreOffice.
 2.  Go to the upload area for **Case Texts (`texts`)** and click
     **Download CSV Template**. This gives you an empty file with the
     exact column names (`text_id;text;source_id`).
-3.  Paste your texts into the `text` column. Enter the matching
-    `source_id` number from **Sources Directory** in the `source_id`
-    column. Every text must have a valid `source_id`. You can also add
+3.  Paste your texts into the `text` column and enter the matching
+    **`source_id`** number in the `source_id` column. You can also add
     your own `text_id` numbers if you want.
+    - **Important (`source_id` must match an existing source):** Every
+      `source_id` value in your CSV file **must exactly match the
+      numeric `ID` of a source that has already been created in the
+      database**. If a `source_id` does not exist in the `sources`
+      table, the app’s foreign-key integrity check will reject the
+      upload to prevent broken links.
+    - **Where to find the source IDs:** Open **Admin Console -\> Sources
+      Directory** (see Figure 2) and look at the very first column
+      titled **`ID`** next to each registered source (for example `1`,
+      `2`, `3`). Alternatively, you can download the `sources` table
+      under **Admin Console -\> Data & Import/Export -\> Raw Table
+      Backups** and read the exact `source_id` column directly in your
+      spreadsheet editor.
 4.  Save the file as **UTF-8 CSV** (UTF-8 keeps special characters like
     German umlauts intact) with a **semicolon (`;`)** as the column
     separator. Upload the file in the same area.
 5.  Check the preview table and confirm the import.
 
-#### Inspecting Texts and Assigning Sources in the Table
+#### 3.4.2 Inspecting Texts and Assigning Sources in the Table
 
 1.  Open **Admin Console -\> Case Texts & Source Assignment** (see
     Figure 4).
@@ -220,11 +241,13 @@ sources.](figures/08-admin-texts.png)
 Figure 4: Admin Console — Case Texts & Source Assignment with searchable
 pagination and per-case source linking.
 
-#### Preparing Reference Cases for Coder Training
+#### 3.4.3 Preparing Reference Cases for Coder Training
 
-To use **1. Coding Training**, the database needs rated reference texts
-(**gold standards** or finished codings) for that scale. Try to include
-at least one reference text for every level from `0` to `max_value`.
+To use **1. Coding Training**, the database needs already-coded
+reference cases for that category—this includes dedicated **gold
+standards** (`typ = gold_standard`) as well as completed field codings
+(`typ = kodierung` / `field`). Try to ensure at least one coded
+reference text exists for every level from `0` to `max_value`.
 
 You have two easy ways to add reference cases:
 
@@ -232,31 +255,33 @@ You have two easy ways to add reference cases:
   Coding**, and rate a starter set of example texts yourself.
 - **Option B (CSV upload):** Open **Data & Import/Export** and download
   the template for **Ratings & Gold Standard (`user_ratings`)**. Enter
-  your reference ratings with `typ = gold_standard`, then upload the
-  file.
+  your reference ratings (making sure `source_id` matches an existing
+  `ID` from **Sources Directory**), then upload the file.
 
-### Part 1 Checklist — Ready for Your Team?
+### 3.5 Part 1 Checklist — Ready for Your Team?
 
 Default `admin` password changed.
 
 At least one **Text Source** and one **Coding Source** created in
-**Sources Directory**.
+**Sources Directory** (and their numeric `ID` values noted).
 
 All **Coding Scales** created with clear descriptions for levels `0` to
 `max_value`.
 
-**Case Texts** uploaded and linked to their sources.
+**Case Texts** uploaded with valid `source_id` values matching **Sources
+Directory** and linked to their sources.
 
-Reference or gold-standard ratings saved for scales used in training.
+Already-coded reference cases or gold-standard ratings saved for scales
+used in training.
 
 ------------------------------------------------------------------------
 
-## Part 2: The Coding Process
+## 4 Part 2: The Coding Process
 
 Your project setup is now complete. Next, add your coders, let them
 practice in **Coding Training**, and start **Live Coding**.
 
-### 2.1 Step 1: Add New Users and Grant Permissions (`User Management`)
+### 4.1 Step 1: Add New Users and Grant Permissions (`User Management`)
 
 CodingManageR has two user roles:
 
@@ -294,19 +319,19 @@ Figure 5: Admin Console — User Management showing user roles, masked
 administrator and system passwords, active status toggles, and
 scale/source permissions.
 
-### 2.2 Step 2: Practice in Coding Training and Review the Dashboard
+### 4.2 Step 2: Practice in Coding Training and Review the Dashboard
 
 Coders should practice in **1. Coding Training** before they code real
 study data. Any signed-in user can practice on any scale that has
-reference ratings.
+already-coded reference ratings.
 
-#### Completing a Training Session
+#### 4.2.1 Completing a Training Session
 
 1.  Sign in and open the **1. Coding Training** tab.
 2.  Pick a **Coding Dimension / Scale** from the dropdown menu.
-3.  Choose how many training cases you want to rate. The app picks a
-    balanced set of reference texts covering every level (`0` to
-    `max_value`).
+3.  Choose how many training cases you want to rate. The app draws a
+    balanced set of already-coded reference cases for that category
+    covering every level (`0` to `max_value`).
 4.  Optional: Click **Show Criteria & Examples** to read example texts
     before you start.
 5.  Click **Start Training**.
@@ -317,9 +342,10 @@ reference ratings.
     - Click **Save & Next Case**. On the last text, click **Finish
       Training & View Results**. To stop early without saving a finished
       run, click **Abort Training**.
-7.  At the end, the app compares your scores with the reference answers.
-    You see your reliability scores and a case-by-case table. You can
-    click **Download Training Results (.csv)** to save a copy, or click
+7.  At the end, the app compares your scores with the stored reference
+    codings across all selected cases. You see your inter-rater
+    reliability scores and a case-by-case table. You can click
+    **Download Training Results (.csv)** to save a copy, or click
     **Start New Training** to try again.
 
 ![Coding Training workspace displaying a case text on the left and the
@@ -329,7 +355,7 @@ right.](figures/03-coding-training.png)
 Figure 6: Coding Training workspace displaying the current reference
 case text alongside the rating slider and live level anchor definition.
 
-#### Checking Personal Progress on the `Dashboard`
+#### 4.2.2 Checking Personal Progress on the `Dashboard`
 
 Open the **Dashboard** tab at any time to check your progress (see
 Figure 7):
@@ -356,12 +382,12 @@ Figure 7: Personal Dashboard showing coding KPI cards, longitudinal
 reliability trajectories across training sessions, and per-scale
 progress tables.
 
-### 2.3 Step 3: Record Real Ratings in Live Coding (`2. Live Coding`)
+### 4.3 Step 3: Record Real Ratings in Live Coding (`2. Live Coding`)
 
 When a coder finishes training and has permissions unlocked, they can
 start real data coding.
 
-#### Configuring the Workspace
+#### 4.3.1 Configuring the Workspace
 
 1.  Open the **2. Live Coding** tab.
 2.  Choose three settings:
@@ -373,7 +399,7 @@ start real data coding.
 3.  Check the live counter to see how many open cases remain. Then click
     **Start Coding / Load Case**.
 
-#### Rating Cases
+#### 4.3.2 Rating Cases
 
 1.  Read the case text on the left (see Figure 8). Check the scale and
     source details in the banner at the top.
@@ -397,7 +423,7 @@ Figure 8: Live Coding workspace displaying the active scale and source
 banner, case text panel, rating slider with live stage guidance, and
 Save & Next Case controls.
 
-### Part 2 Checklist — Smooth Daily Coding
+### 4.4 Part 2 Checklist — Smooth Daily Coding
 
 Coder account created with an access token in **User Management**.
 
@@ -412,12 +438,12 @@ and saves ratings with **Save & Next Case**.
 
 ------------------------------------------------------------------------
 
-## Part 3: Further Options for Administrators
+## 5 Part 3: Further Options for Administrators
 
 The **Admin Console** also includes five tools for quality checks, data
 fixes, exports, bulk uploads, and database maintenance.
 
-### 3.1 Monitor Team Quality (`Reliability & Progress`)
+### 5.1 Monitor Team Quality (`Reliability & Progress`)
 
 Open the **Reliability & Progress** subtab to check activity and
 agreement across your whole team (see Figure 9):
@@ -437,7 +463,7 @@ summary table.](figures/09-admin-reliability.png)
 Figure 9: Admin Console — Reliability & Progress comparing team training
 performance and inter-rater reliability metrics across coders.
 
-### 3.2 Find and Correct Stored Ratings (`Edit Codings`)
+### 5.2 Find and Correct Stored Ratings (`Edit Codings`)
 
 Mistakes happen. Sometimes a coder clicks the wrong number before
 saving.
@@ -457,7 +483,7 @@ buttons.](figures/10-admin-edit-codings.png)
 Figure 10: Admin Console — Edit Codings for filtering stored ratings by
 type, scale, coder, or keyword and correcting individual score values.
 
-### 3.3 Export Research Datasets and Backups (`Data & Import/Export`)
+### 5.3 Export Research Datasets and Backups (`Data & Import/Export`)
 
 Use this subtab when you want to analyze your data in R, SPSS, Excel, or
 Python, or make a backup (see Figure 11):
@@ -474,7 +500,7 @@ Python, or make a backup (see Figure 11):
   (so SQLite closes its Write-Ahead Log files), then copy your `.sqlite`
   file.
 
-### 3.4 Bulk CSV Uploads with Built-In Validation (`Data & Import/Export`)
+### 5.4 Bulk CSV Uploads with Built-In Validation (`Data & Import/Export`)
 
 You can upload or update five tables at once: **Scales**, **Case
 Texts**, **Sources Directory**, **Ratings & Gold Standard**, and
@@ -484,11 +510,15 @@ Follow these steps so your upload works on the first try:
 
 1.  Click **Download CSV Template** next to the upload field. This
     guarantees that all column names match.
-2.  Save your table as a **UTF-8 CSV** file (keeps special characters
+2.  When uploading **Case Texts (`texts`)** or **Ratings
+    (`user_ratings`)**, verify that every `source_id` matches an
+    existing numeric **`ID`** listed in the first column of **Admin
+    Console -\> Sources Directory** (see Section 3.4.1).
+3.  Save your table as a **UTF-8 CSV** file (keeps special characters
     safe) with a **semicolon (`;`)** between columns, not a comma.
-3.  Upload your file. The app cleans small formatting issues and checks
-    every column before changing the database.
-4.  In the confirmation window, choose **append** (add new rows) or
+4.  Upload your file. The app cleans small formatting issues and checks
+    every column and foreign key before changing the database.
+5.  In the confirmation window, choose **append** (add new rows) or
     **replace** (replace the whole table). If an append upload contains
     IDs that already exist, the app warns you. You can choose to skip
     those rows or update them with the new CSV values. Every import runs
@@ -503,7 +533,7 @@ Figure 11: Admin Console — Data & Import/Export for filtered
 consolidated master dataset exports, raw table backups, and
 schema-validated bulk CSV uploads.
 
-### 3.5 Check Database Health and Integrity (`DB Diagnosis`)
+### 5.5 Check Database Health and Integrity (`DB Diagnosis`)
 
 Open **DB Diagnosis** after big CSV uploads or from time to time during
 a long study (see Figure 12):
@@ -524,7 +554,7 @@ cards.](figures/12-admin-db-diagnosis.png)
 Figure 12: Admin Console — DB Diagnosis summarizing live row counts
 across all nine database tables and relational integrity checks.
 
-### Administrator Quick-Reference Table
+### 5.6 Administrator Quick-Reference Table
 
 | What do you want to do? | Open this Admin Console subtab |
 |:---|:---|

@@ -5,6 +5,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Installing and Launching CodingManageR • CodingManageR</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+<link rel="icon" sizes="any" href="../favicon.ico">
+<link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -32,8 +37,13 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-guides" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Guides</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-guides">
-<li><a class="dropdown-item" href="../articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
+<li><h6 class="dropdown-header" data-toc-skip>English</h6></li>
+    <li><a class="dropdown-item" href="../articles/CodingManageR.html">Installing and Launching CodingManageR</a></li>
     <li><a class="dropdown-item" href="../articles/introduction.html">Introduction to CodingManageR (3-Part Workflow)</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Deutsch</h6></li>
+    <li><a class="dropdown-item" href="../articles/CodingManageR-de.html">Installation und Start von CodingManageR (Deutsch)</a></li>
+    <li><a class="dropdown-item" href="../articles/introduction-de.html">Einführung in CodingManageR (Deutsch)</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -55,8 +65,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Installing and Launching CodingManageR</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Installing and Launching CodingManageR</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/FBerding/CodingManageR/blob/master/vignettes/CodingManageR.Rmd" class="external-link"><code>vignettes/CodingManageR.Rmd</code></a></small>
@@ -83,7 +92,7 @@
 }
 </style>
 <div class="section level2">
-<h2 id="welcome">Welcome<a class="anchor" aria-label="anchor" href="#welcome"></a>
+<h2 id="welcome">1 Welcome<a class="anchor" aria-label="anchor" href="#welcome"></a>
 </h2>
 <p><strong>CodingManageR</strong> is a web app for qualitative text
 coding and coder training. You do not need to write code to use it.
@@ -99,7 +108,7 @@ web browser.</p>
 Linux server for a team.</li>
 </ol>
 <div class="section level3">
-<h3 id="which-setup-do-you-need">Which Setup Do You Need?<a class="anchor" aria-label="anchor" href="#which-setup-do-you-need"></a>
+<h3 id="which-setup-do-you-need">1.1 Which Setup Do You Need?<a class="anchor" aria-label="anchor" href="#which-setup-do-you-need"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -119,36 +128,42 @@ PC</td>
 <td align="left">
 <strong>Local Mode (SQLite)</strong> — no database
 server needed</td>
-<td align="left">Sections 1 and 2</td>
+<td align="left">Sections 2 and 3</td>
 </tr>
 <tr class="even">
 <td align="left">Several coders sign in at the same time via a web
 link</td>
 <td align="left"><strong>Multi-User Server Mode (Shiny Server +
 MariaDB)</strong></td>
-<td align="left">Sections 1 and 3</td>
+<td align="left">Sections 2 and 4</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level3">
-<h3 id="before-you-start">Before You Start<a class="anchor" aria-label="anchor" href="#before-you-start"></a>
+<h3 id="before-you-start">1.2 Before You Start<a class="anchor" aria-label="anchor" href="#before-you-start"></a>
 </h3>
 <p>Install <strong>R (version 4.1.0 or newer)</strong> on your computer
 first. If you are new to R, also install <strong>RStudio
 Desktop</strong> (free). RStudio gives you a simple console window. You
 can paste the commands below into that window and press
 <strong>Enter</strong>.</p>
+<blockquote>
+<p><strong>AI-Assisted Development Notice:</strong> This vignette, the
+<strong>CodingManageR</strong> package source code, and all built-in
+demonstration examples (coding scales, reference sources, and classroom
+case texts) were generated with the assistance of AI.</p>
+</blockquote>
 <hr>
 </div>
 </div>
 <div class="section level2">
-<h2 id="installing-codingmanager">1. Installing CodingManageR<a class="anchor" aria-label="anchor" href="#installing-codingmanager"></a>
+<h2 id="installing-codingmanager">2 Installing CodingManageR<a class="anchor" aria-label="anchor" href="#installing-codingmanager"></a>
 </h2>
 <p>Open R or RStudio. Choose <strong>one</strong> of the two methods
 below. You only need to install the package once per computer.</p>
 <div class="section level3">
-<h3 id="option-1-install-from-cran-recommended">Option 1: Install from CRAN (Recommended)<a class="anchor" aria-label="anchor" href="#option-1-install-from-cran-recommended"></a>
+<h3 id="option-1-install-from-cran-recommended">2.1 Option 1: Install from CRAN (Recommended)<a class="anchor" aria-label="anchor" href="#option-1-install-from-cran-recommended"></a>
 </h3>
 <p>CRAN offers the official stable version. This is the easiest and
 safest choice for most users:</p>
@@ -158,7 +173,7 @@ safest choice for most users:</p>
 install can take a few minutes.</p>
 </div>
 <div class="section level3">
-<h3 id="option-2-install-the-development-version-from-github">Option 2: Install the Development Version from GitHub<a class="anchor" aria-label="anchor" href="#option-2-install-the-development-version-from-github"></a>
+<h3 id="option-2-install-the-development-version-from-github">2.2 Option 2: Install the Development Version from GitHub<a class="anchor" aria-label="anchor" href="#option-2-install-the-development-version-from-github"></a>
 </h3>
 <p>Want the newest features before the next CRAN release? Install the
 app from GitHub using <code>pak</code> (recommended) or
@@ -180,14 +195,14 @@ older packages. Pressing <strong>Enter</strong> or choosing
 </div>
 </div>
 <div class="section level2">
-<h2 id="launching-on-your-own-computer-local-mode">2. Launching on Your Own Computer (Local Mode)<a class="anchor" aria-label="anchor" href="#launching-on-your-own-computer-local-mode"></a>
+<h2 id="launching-on-your-own-computer-local-mode">3 Launching on Your Own Computer (Local Mode)<a class="anchor" aria-label="anchor" href="#launching-on-your-own-computer-local-mode"></a>
 </h2>
 <p>In Local Mode, the app uses <strong>SQLite</strong>. SQLite is a
 simple database saved as a single file on your computer. It holds all
 your scales, texts, sources, users, and ratings. You do not need a
 separate database server.</p>
 <div class="section level3">
-<h3 id="step-1-start-a-clean-project">Step 1: Start a Clean Project<a class="anchor" aria-label="anchor" href="#step-1-start-a-clean-project"></a>
+<h3 id="step-1-start-a-clean-project">3.1 Step 1: Start a Clean Project<a class="anchor" aria-label="anchor" href="#step-1-start-a-clean-project"></a>
 </h3>
 <p>Paste this command into the R console and press
 <strong>Enter</strong>:</p>
@@ -208,7 +223,7 @@ Pass the path with <code>sqlite_path</code>, or set the
 <code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"my_coding_project.sqlite"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-2-optional-try-the-app-with-built-in-sample-data">Step 2: Optional — Try the App with Built-In Sample Data<a class="anchor" aria-label="anchor" href="#step-2-optional-try-the-app-with-built-in-sample-data"></a>
+<h3 id="step-2-optional-try-the-app-with-built-in-sample-data">3.2 Step 2: Optional — Try the App with Built-In Sample Data<a class="anchor" aria-label="anchor" href="#step-2-optional-try-the-app-with-built-in-sample-data"></a>
 </h3>
 <p>Are you using <strong>CodingManageR</strong> for the first time? You
 can try a demo database before you build your own project. Demo mode
@@ -224,7 +239,7 @@ scales, texts, sources, reference ratings, and a sample coder
 </ul>
 </div>
 <div class="section level3">
-<h3 id="step-3-sign-in-and-change-the-default-password">Step 3: Sign In and Change the Default Password<a class="anchor" aria-label="anchor" href="#step-3-sign-in-and-change-the-default-password"></a>
+<h3 id="step-3-sign-in-and-change-the-default-password">3.3 Step 3: Sign In and Change the Default Password<a class="anchor" aria-label="anchor" href="#step-3-sign-in-and-change-the-default-password"></a>
 </h3>
 <p>When you start a new database for the first time, the app creates one
 administrator account:</p>
@@ -254,7 +269,7 @@ progress chart.
 </div>
 </div>
 <div class="section level3">
-<h3 id="step-4-managing-multiple-local-projects">Step 4: Managing Multiple Local Projects<a class="anchor" aria-label="anchor" href="#step-4-managing-multiple-local-projects"></a>
+<h3 id="step-4-managing-multiple-local-projects">3.4 Step 4: Managing Multiple Local Projects<a class="anchor" aria-label="anchor" href="#step-4-managing-multiple-local-projects"></a>
 </h3>
 <p>In Local Mode, <strong>one <code>.sqlite</code> file is one separate
 project</strong>. Each file keeps its own scales, sources, case texts,
@@ -279,7 +294,7 @@ already exist:</p>
 <code>sqlite_path</code>. All saved scales, texts, and ratings will be
 there.</p>
 <div class="section level4">
-<h4 id="backing-up-renaming-moving-and-archiving-projects">Backing Up, Renaming, Moving, and Archiving Projects<a class="anchor" aria-label="anchor" href="#backing-up-renaming-moving-and-archiving-projects"></a>
+<h4 id="backing-up-renaming-moving-and-archiving-projects">3.4.1 Backing Up, Renaming, Moving, and Archiving Projects<a class="anchor" aria-label="anchor" href="#backing-up-renaming-moving-and-archiving-projects"></a>
 </h4>
 <p>Each project lives in one <code>.sqlite</code> file, so backups are
 easy. Follow one important rule first:</p>
@@ -317,7 +332,7 @@ below for teams.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="optional-multi-user-server-setup-for-it-administrators">3. Optional: Multi-User Server Setup (For IT Administrators)<a class="anchor" aria-label="anchor" href="#optional-multi-user-server-setup-for-it-administrators"></a>
+<h2 id="optional-multi-user-server-setup-for-it-administrators">4 Optional: Multi-User Server Setup (For IT Administrators)<a class="anchor" aria-label="anchor" href="#optional-multi-user-server-setup-for-it-administrators"></a>
 </h2>
 <blockquote>
 <p><strong>Note:</strong> Skip this section if you only use
@@ -328,7 +343,7 @@ Source</strong> (the web server) and <strong>MariaDB/MySQL</strong> (the
 shared database).</p>
 </blockquote>
 <div class="section level3">
-<h3 id="step-1-install-system-packages-and-mariadb">Step 1: Install System Packages and MariaDB<a class="anchor" aria-label="anchor" href="#step-1-install-system-packages-and-mariadb"></a>
+<h3 id="step-1-install-system-packages-and-mariadb">4.1 Step 1: Install System Packages and MariaDB<a class="anchor" aria-label="anchor" href="#step-1-install-system-packages-and-mariadb"></a>
 </h3>
 <p>Run these commands on the server with <code>sudo</code> rights:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
@@ -339,7 +354,7 @@ shared database).</p>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">sudo</span> mariadb-secure-installation</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-2-install-codingmanager-and-rmariadb-system-wide">Step 2: Install CodingManageR and RMariaDB System-Wide<a class="anchor" aria-label="anchor" href="#step-2-install-codingmanager-and-rmariadb-system-wide"></a>
+<h3 id="step-2-install-codingmanager-and-rmariadb-system-wide">4.2 Step 2: Install CodingManageR and RMariaDB System-Wide<a class="anchor" aria-label="anchor" href="#step-2-install-codingmanager-and-rmariadb-system-wide"></a>
 </h3>
 <p>Install both packages into the system library. This lets the
 <code>shiny</code> service user load them.</p>
@@ -349,7 +364,7 @@ shared database).</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">sudo</span> R <span class="at">-e</span> <span class="st">'install.packages(c("remotes", "RMariaDB"), repos = "https://cloud.r-project.org"); remotes::install_github("FBerding/CodingManageR")'</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-3-create-the-database-and-database-user">Step 3: Create the Database and Database User<a class="anchor" aria-label="anchor" href="#step-3-create-the-database-and-database-user"></a>
+<h3 id="step-3-create-the-database-and-database-user">4.3 Step 3: Create the Database and Database User<a class="anchor" aria-label="anchor" href="#step-3-create-the-database-and-database-user"></a>
 </h3>
 <p>Open the MariaDB command line:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">sudo</span> mariadb</span></code></pre></div>
@@ -365,7 +380,7 @@ shared database).</p>
 <span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>EXIT;</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-4-install-shiny-server-open-source">Step 4: Install Shiny Server Open Source<a class="anchor" aria-label="anchor" href="#step-4-install-shiny-server-open-source"></a>
+<h3 id="step-4-install-shiny-server-open-source">4.4 Step 4: Install Shiny Server Open Source<a class="anchor" aria-label="anchor" href="#step-4-install-shiny-server-open-source"></a>
 </h3>
 <p>Download and install Shiny Server. You can check the Posit website
 for a newer version number if needed:</p>
@@ -373,7 +388,7 @@ for a newer version number if needed:</p>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">sudo</span> gdebi shiny-server-1.5.22.1017-amd64.deb</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-5-deploy-the-application-entrypoint">Step 5: Deploy the Application Entrypoint<a class="anchor" aria-label="anchor" href="#step-5-deploy-the-application-entrypoint"></a>
+<h3 id="step-5-deploy-the-application-entrypoint">4.5 Step 5: Deploy the Application Entrypoint<a class="anchor" aria-label="anchor" href="#step-5-deploy-the-application-entrypoint"></a>
 </h3>
 <p>Create a folder inside <code>/srv/shiny-server/</code>. Copy the
 ready-to-use <code>app.R</code> launcher from
@@ -383,12 +398,12 @@ ready-to-use <code>app.R</code> launcher from
 <span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">sudo</span> chown <span class="at">-R</span> shiny:shiny /srv/shiny-server/codingmanager</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-6-configure-database-credentials-and-restart">Step 6: Configure Database Credentials and Restart<a class="anchor" aria-label="anchor" href="#step-6-configure-database-credentials-and-restart"></a>
+<h3 id="step-6-configure-database-credentials-and-restart">4.6 Step 6: Configure Database Credentials and Restart<a class="anchor" aria-label="anchor" href="#step-6-configure-database-credentials-and-restart"></a>
 </h3>
 <p>Create an <code>.Renviron</code> file inside the app folder. This
 tells CodingManageR to connect to MariaDB instead of SQLite:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">sudo</span> nano /srv/shiny-server/codingmanager/.Renviron</span></code></pre></div>
-<p>Paste these lines and enter the password from Step 3:</p>
+<p>Paste these lines and enter the password from Section 4.3:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="dt">MYSQL_HOST</span><span class="ot">=</span><span class="st">127.0.0.1</span></span>
 <span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="dt">MYSQL_PORT</span><span class="ot">=</span><span class="dv">3306</span></span>
 <span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="dt">MYSQL_USER</span><span class="ot">=</span><span class="st">shiny_user</span></span>
@@ -408,7 +423,7 @@ password right away.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="next-steps">5 Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <p>Now that CodingManageR is running, open the step-by-step workflow
 guide. It shows how to set up scales, texts, sources, coders, training
