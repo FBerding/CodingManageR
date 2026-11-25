@@ -147,13 +147,21 @@ capture_view <- function(app, out_dir, filename, delay_s = 0.4) {
   Sys.sleep(delay_s)
 
   dest <- file.path(out_dir, filename)
+  tmp_file <- tempfile(pattern = "cm_shot_", fileext = ".png")
+  on.exit(unlink(tmp_file, force = TRUE), add = TRUE)
+
   app$get_screenshot(
-    file = dest,
+    file = tmp_file,
     screenshot_args = list(cliprect = "viewport", scale = 1)
   )
 
-  if (!file.exists(dest) || isTRUE(file.info(dest)$size == 0)) {
+  if (!file.exists(tmp_file) || isTRUE(file.info(tmp_file)$size == 0)) {
     stop("Failed to capture screenshot: ", dest, call. = FALSE)
+  }
+
+  ok <- file.copy(tmp_file, dest, overwrite = TRUE)
+  if (!isTRUE(ok) || !file.exists(dest) || isTRUE(file.info(dest)$size == 0)) {
+    stop("Failed to write screenshot to destination: ", dest, call. = FALSE)
   }
 
   kb <- file.info(dest)$size / 1024
@@ -236,7 +244,7 @@ main <- function() {
   ))
 
   # Database is pre-seeded above; pass empty = TRUE to avoid existing-file warning.
-  shiny_app <- CodingManageR::run_app(sqlite_path = db_path, empty = TRUE)
+  shiny_app <- CodingManageR::run_app_local(sqlite_path = db_path, empty = TRUE)
 
   app <- shinytest2::AppDriver$new(
     app_dir = shiny_app,

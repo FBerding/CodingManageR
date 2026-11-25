@@ -35,6 +35,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
   ns <- ctx$ns
   db_con <- ctx$db_con
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   aktiver_admin <- ctx$aktiver_admin
   aktiver_admin_id <- ctx$aktiver_admin_id
   user_table_trigger <- ctx$user_table_trigger
@@ -336,7 +337,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
           tags$strong(u_name),
           if (is_self) tags$span(class = "badge bg-secondary ms-1", tr("admin.users.badge_currently_logged_in", lang))
         ),
-        tags$td(style = "vertical-align: middle; font-family: monospace;", token_cell),
+        tags$td(style = "vertical-align: middle; font-family: var(--cm-font-mono);", token_cell),
         tags$td(style = "vertical-align: middle;", role_badge),
         tags$td(style = "vertical-align: middle;", status_widget),
         tags$td(style = "vertical-align: middle;", sources_widget),
@@ -369,6 +370,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
 
   # 1-click active status toggle by user_id
   observeEvent(input$trigger_toggle_user_status, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- input$trigger_toggle_user_status
     req(u_target)
@@ -406,6 +408,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
 
   # Manage source permissions by user_id
   observeEvent(input$trigger_manage_user_sources, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- input$trigger_manage_user_sources
     req(u_target)
@@ -526,6 +529,7 @@ admin_register_users_table_server <- function(input, output, session, ctx) {
 
   # Save both source permission types
   observeEvent(input$btn_save_user_sources, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_info <- target_user_for_sources()
     req(u_info)
@@ -580,6 +584,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
   ns <- ctx$ns
   db_con <- ctx$db_con
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   aktiver_admin <- ctx$aktiver_admin
   aktiver_admin_id <- ctx$aktiver_admin_id
   user_table_trigger <- ctx$user_table_trigger
@@ -596,6 +601,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
   target_user_for_scales <- reactiveVal(NULL)
 
   observeEvent(input$trigger_manage_user_scales, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- input$trigger_manage_user_scales
     req(u_target)
@@ -677,6 +683,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
 
   # Save scale permissions
   observeEvent(input$btn_save_user_scales, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_info <- target_user_for_scales()
     req(u_info)
@@ -705,6 +712,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
 
   # Modal: Create new user
   observeEvent(input$btn_open_add_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     zufall <- generiere_zufalls_token(10)
     role_choices <- setNames(c("user", "admin"), c(tr("admin.users.opt_user_desc", lang), tr("admin.users.opt_admin_desc", lang)))
@@ -750,6 +758,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_new_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_name <- trimws(input$new_username)
     u_token <- trimws(input$new_token)
@@ -797,6 +806,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
 
   # Modal: Edit user by user_id
   observeEvent(input$trigger_edit_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- input$trigger_edit_user
     req(u_target)
@@ -897,6 +907,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_edited_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     row <- user_to_edit()
     req(row)
@@ -940,6 +951,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
 
   # Modal: Delete user by user_id
   observeEvent(input$trigger_delete_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- input$trigger_delete_user
     req(u_target)
@@ -990,6 +1002,7 @@ admin_register_users_crud_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_confirm_delete_user, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_info <- user_to_delete()
     req(u_info)

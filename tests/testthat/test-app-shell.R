@@ -2,7 +2,8 @@
 
 # ==============================================================================
 # Application Shell & Authentication Server Tests
-# Covers: R/app.R (coding_manager_ui, coding_manager_server, run_app)
+# Covers: R/app.R (coding_manager_ui, coding_manager_server, run_app_local,
+#         run_app_server, run_app) and inst/shiny/app.R
 # ==============================================================================
 
 test_that("coding_manager_ui and run_app construct valid Shiny UI and shiny.appobj objects", {
@@ -11,6 +12,8 @@ test_that("coding_manager_ui and run_app construct valid Shiny UI and shiny.appo
   ui_html <- ui_to_html(coding_manager_ui())
   expect_match(ui_html, "page_content")
   expect_match(ui_html, "browser_lang")
+  expect_match(ui_html, "shiny:connected")
+  expect_match(ui_html, "cm-login-card")
 
   tmp_sqlite <- tempfile(fileext = ".sqlite")
   withr::defer(unlink(c(tmp_sqlite, paste0(tmp_sqlite, "-wal"), paste0(tmp_sqlite, "-shm")), force = TRUE))
@@ -62,14 +65,18 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
   shiny::testServer(
     coding_manager_server,
     {
-      # 1. Initial unauthenticated screen shows login controls and bundled hex logo
+      # 1. Initial unauthenticated screen shows login controls, bundled hex logo, and dynamic package version
       session$flushReact()
       expect_false(logged_in())
       login_html <- ui_to_html(output$page_content)
+      pkg_ver <- CodingManageR:::coding_manager_version()
+      expect_true(nzchar(pkg_ver))
       expect_match(login_html, "login_username")
       expect_match(login_html, "btn_login")
       expect_match(login_html, "cm-assets/logo\\.png")
       expect_match(login_html, "cm-brand-logo--login")
+      expect_match(login_html, "cm-login-version")
+      expect_match(login_html, paste0("CodingManageR Version ", gsub("\\.", "\\\\.", pkg_ver)))
 
       # 2a. Missing credentials error
       session$setInputs(login_username = "", login_token = "", btn_login = 1L)
@@ -194,10 +201,21 @@ test_that("university platform theme and bundled CSS define explicit offline tok
     expect_null(bslib::theme_bootswatch(theme))
   }
 
-  theme_vars <- bslib::bs_get_variables(theme, c("primary", "secondary", "body-bg"))
+  theme_vars <- bslib::bs_get_variables(
+    theme,
+    c("primary", "secondary", "body-bg", "font-family-sans-serif", "font-family-monospace")
+  )
   expect_match(theme_vars[["primary"]], "^#33418f$", ignore.case = TRUE)
   expect_match(theme_vars[["secondary"]], "^#525b70$", ignore.case = TRUE)
   expect_match(theme_vars[["body-bg"]], "^#f6f7fb$", ignore.case = TRUE)
+  expect_match(theme_vars[["font-family-sans-serif"]], "system-ui")
+  expect_match(theme_vars[["font-family-sans-serif"]], "Segoe UI")
+  expect_match(theme_vars[["font-family-sans-serif"]], "Liberation Sans")
+  expect_match(theme_vars[["font-family-sans-serif"]], "DejaVu Sans")
+  expect_match(theme_vars[["font-family-monospace"]], "ui-monospace")
+  expect_match(theme_vars[["font-family-monospace"]], "Consolas")
+  expect_match(theme_vars[["font-family-monospace"]], "DejaVu Sans Mono")
+  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(theme_vars, collapse = " "), ignore.case = TRUE))
 
   css_html <- ui_to_html(CodingManageR:::coding_manager_css())
   expect_match(css_html, "<style")
@@ -205,6 +223,12 @@ test_that("university platform theme and bundled CSS define explicit offline tok
   expect_match(css_html, "--cm-navy:\\s*#33418F")
   expect_match(css_html, "--cm-bg-canvas:\\s*#F6F7FB")
   expect_match(css_html, "--cm-max-width:\\s*1280px")
+  expect_match(css_html, "--cm-font-sans:[^;]*system-ui")
+  expect_match(css_html, "--cm-font-sans:[^;]*Segoe UI")
+  expect_match(css_html, "--cm-font-sans:[^;]*DejaVu Sans")
+  expect_match(css_html, "--cm-font-mono:[^;]*ui-monospace")
+  expect_match(css_html, "--cm-font-mono:[^;]*Consolas")
+  expect_match(css_html, "--cm-font-mono:[^;]*DejaVu Sans Mono")
   expect_match(css_html, "\\.cm-shell")
   expect_match(css_html, "\\.cm-header")
   expect_match(css_html, "\\.cm-brand-logo")
@@ -212,7 +236,7 @@ test_that("university platform theme and bundled CSS define explicit offline tok
   expect_match(css_html, "\\.cm-case-text")
   expect_match(css_html, "\\.cm-session-banner")
   expect_match(css_html, "\\.nav-tabs")
-  expect_false(grepl("https?://|fonts\\.googleapis|@import\\s+url", css_html, ignore.case = TRUE))
+  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic|@import\\s+url|@font-face", css_html, ignore.case = TRUE))
 
   root_html <- ui_to_html(coding_manager_ui())
   expect_match(root_html, "cm-assets/favicon\\.png")
@@ -220,7 +244,47 @@ test_that("university platform theme and bundled CSS define explicit offline tok
   expect_match(root_html, "cm-app")
   expect_match(root_html, "cm-shell")
   expect_match(root_html, "cm_start_tutorial")
-  expect_false(grepl("fonts\\.googleapis", root_html, ignore.case = TRUE))
+  expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|@font-face", root_html, ignore.case = TRUE))
+})
+
+test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts without font downloads", {
+  fonts <- CodingManageR:::coding_manager_font_stacks()
+  expect_true(all(c(
+    "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI",
+    "Ubuntu", "Noto Sans", "Liberation Sans", "DejaVu Sans", "sans-serif"
+  ) %in% fonts$sans))
+  expect_true(all(c(
+    "ui-monospace", "SFMono-Regular", "SF Mono", "Menlo", "Consolas",
+    "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "monospace"
+  ) %in% fonts$mono))
+  expect_equal(fonts$plot_family, "sans")
+  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(fonts$sans_css, fonts$mono_css), ignore.case = TRUE))
+
+  plot_theme <- CodingManageR:::coding_manager_plot_theme(base_size = 12)
+  expect_s3_class(plot_theme, "theme")
+  expect_equal(plot_theme$text$family, "sans")
+
+  theme_deps <- bslib::bs_theme_dependencies(CodingManageR:::coding_manager_theme())
+  dep_summary <- paste(vapply(theme_deps, function(dep) {
+    paste(
+      if (is.null(dep$name)) "" else dep$name,
+      if (is.list(dep$src)) paste(unlist(dep$src), collapse = " ") else "",
+      paste(unlist(dep$stylesheet), collapse = " "),
+      paste(unlist(dep$head), collapse = " "),
+      collapse = " "
+    )
+  }, character(1)), collapse = "\n")
+  expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|font_google|https?://", dep_summary, ignore.case = TRUE))
+
+  pkgdown_path <- testthat::test_path("..", "..", "_pkgdown.yml")
+  if (file.exists(pkgdown_path)) {
+    pkgdown_txt <- paste(readLines(pkgdown_path, warn = FALSE), collapse = "\n")
+    expect_match(pkgdown_txt, "font-family-sans-serif:")
+    expect_match(pkgdown_txt, "font-family-monospace:")
+    expect_match(pkgdown_txt, "Segoe UI")
+    expect_match(pkgdown_txt, "DejaVu Sans")
+    expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|\\bgoogle:", pkgdown_txt, ignore.case = TRUE))
+  }
 })
 
 test_that("getting started tutorial builds role-aware bilingual tracks and offline spotlight assets", {
@@ -512,6 +576,219 @@ test_that("run_app(empty = FALSE) never writes sample data into an existing SQLi
     )
   )
 })
+
+test_that("run_app_local exposes minimal parameters and stays isolated in SQLite even when MYSQL_* env vars exist", {
+  # Verifies:
+  # 1) Formal parameter list is strictly limited to (sqlite_path = NULL, empty = TRUE)
+  # 2) Returns a valid shiny.appobj with 3 GB shiny.maxRequestSize managed via onStart
+  # 3) Ignores ambient MYSQL_HOST / MYSQL_USER environment variables and uses SQLite exclusively
+  # 4) Protects existing SQLite files when empty = FALSE
+  fmls <- formals(run_app_local)
+  expect_identical(names(fmls), c("sqlite_path", "empty"))
+  expect_null(fmls$sqlite_path)
+  expect_true(isTRUE(fmls$empty))
+
+  tmp_local <- tempfile(pattern = "cm_local_isolated_", fileext = ".sqlite")
+  withr::defer(unlink(c(tmp_local, paste0(tmp_local, "-wal"), paste0(tmp_local, "-shm")), force = TRUE))
+
+  withr::local_options(list(
+    shiny.maxRequestSize = NULL,
+    CodingManageR.db_con = NULL,
+    CodingManageR.db_config = NULL,
+    CodingManageR.sqlite_path = NULL,
+    CodingManageR.seed_empty = NULL
+  ))
+
+  app_local <- run_app_local(sqlite_path = tmp_local, empty = TRUE)
+  expect_s3_class(app_local, "shiny.appobj")
+  dereg <- app_local$onStart()
+  if (is.function(dereg)) withr::defer(dereg())
+  expect_equal(getOption("shiny.maxRequestSize"), 3 * 1024^3)
+
+  # Even with MYSQL_HOST and MYSQL_USER set to an unreachable host, run_app_local() uses SQLite
+  withr::with_envvar(
+    c(
+      MYSQL_HOST = "192.0.2.1",
+      MYSQL_PORT = "3306",
+      MYSQL_USER = "ambient_user",
+      MYSQL_PASSWORD = "ambient_password",
+      MYSQL_DBNAME = "ambient_db",
+      SQLITE_PATH = ""
+    ),
+    {
+      expect_no_error(
+        suppressMessages(
+          shiny::testServer(
+            app_local$serverFuncSource(),
+            {
+              session$flushReact()
+              expect_true(owns_connection)
+              expect_false(is_mysql_connection(active_con))
+            }
+          )
+        )
+      )
+      expect_true(file.exists(tmp_local))
+
+      # Reopening the existing SQLite file with empty = FALSE protects existing data
+      app_local_demo <- run_app_local(sqlite_path = tmp_local, empty = FALSE)
+      expect_warning(
+        suppressMessages(
+          shiny::testServer(
+            app_local_demo$serverFuncSource(),
+            {
+              session$flushReact()
+            }
+          )
+        ),
+        regexp = "Existing SQLite database file detected"
+      )
+    }
+  )
+})
+
+test_that("run_app_server enforces strict MySQL/MariaDB mode without SQLite fallback and reads .Renviron options", {
+  # Verifies:
+  # 1) Returns a valid shiny.appobj and honors CODINGMANAGER_MAX_UPLOAD_GB & CODINGMANAGER_EMPTY
+  # 2) Explicit arguments override .Renviron values and invalid env values warn and fall back cleanly
+  # 3) Missing MySQL/MariaDB credentials stop with an actionable error and NEVER create a SQLite file
+  #    (even if SQLITE_PATH is set in the environment)
+  forbidden_sqlite <- tempfile(pattern = "cm_server_no_sqlite_", fileext = ".sqlite")
+  withr::defer(unlink(c(forbidden_sqlite, paste0(forbidden_sqlite, "-wal"), paste0(forbidden_sqlite, "-shm")), force = TRUE))
+
+  withr::local_options(list(
+    shiny.maxRequestSize = NULL,
+    CodingManageR.db_con = NULL,
+    CodingManageR.db_config = NULL,
+    CodingManageR.sqlite_path = NULL,
+    CodingManageR.seed_empty = NULL
+  ))
+
+  # Default env-driven upload limit (3 GB) and custom CODINGMANAGER_MAX_UPLOAD_GB
+  withr::with_envvar(c(CODINGMANAGER_MAX_UPLOAD_GB = "2.5", CODINGMANAGER_EMPTY = "FALSE"), {
+    app_env <- run_app_server()
+    expect_s3_class(app_env, "shiny.appobj")
+    dereg_env <- app_env$onStart()
+    if (is.function(dereg_env)) withr::defer(dereg_env())
+    expect_equal(getOption("shiny.maxRequestSize"), 2.5 * 1024^3)
+
+    # Explicit argument overrides env var
+    app_explicit <- run_app_server(max_upload_size_gb = 4)
+    dereg_exp <- app_explicit$onStart()
+    if (is.function(dereg_exp)) withr::defer(dereg_exp())
+    expect_equal(getOption("shiny.maxRequestSize"), 4 * 1024^3)
+  })
+
+  # CODINGMANAGER_MAX_UPLOAD_GB = "null" leaves shiny.maxRequestSize untouched
+  options(shiny.maxRequestSize = 54321)
+  withr::with_envvar(c(CODINGMANAGER_MAX_UPLOAD_GB = "null"), {
+    app_null_env <- run_app_server()
+    app_null_env$onStart()
+    expect_equal(getOption("shiny.maxRequestSize"), 54321)
+  })
+
+  # Invalid env values emit clear warnings and fall back to safe defaults
+  withr::with_envvar(c(CODINGMANAGER_EMPTY = "maybe", CODINGMANAGER_MAX_UPLOAD_GB = ""), {
+    expect_warning(
+      app_invalid_empty <- run_app_server(),
+      regexp = "CODINGMANAGER_EMPTY"
+    )
+    expect_s3_class(app_invalid_empty, "shiny.appobj")
+  })
+
+  withr::with_envvar(c(CODINGMANAGER_EMPTY = "", CODINGMANAGER_MAX_UPLOAD_GB = "-5"), {
+    expect_warning(
+      app_invalid_upload <- run_app_server(),
+      regexp = "CODINGMANAGER_MAX_UPLOAD_GB"
+    )
+    dereg_inv <- app_invalid_upload$onStart()
+    if (is.function(dereg_inv)) withr::defer(dereg_inv())
+    expect_equal(getOption("shiny.maxRequestSize"), 3 * 1024^3)
+  })
+
+  # Strict MySQL enforcement: missing credentials must stop cleanly without creating SQLite
+  withr::with_envvar(
+    c(
+      MYSQL_HOST = "",
+      MYSQL_DB_HOST = "",
+      MYSQL_USER = "",
+      MYSQL_DB_USER = "",
+      SQLITE_PATH = forbidden_sqlite
+    ),
+    {
+      app_srv <- run_app_server()
+      expect_error(
+        shiny::testServer(
+          app_srv$serverFuncSource(),
+          {
+            session$flushReact()
+          }
+        ),
+        regexp = "MYSQL_HOST.*SQLite fallback is disabled"
+      )
+      expect_false(file.exists(forbidden_sqlite))
+    }
+  )
+})
+
+test_that("bundled inst/shiny/app.R is a minimal set-once entrypoint calling run_app_server()", {
+  # Verifies that the packaged Shiny Server entrypoint parses cleanly, invokes
+  # CodingManageR::run_app_server() with no hardcoded arguments, and does not
+  # reference SQLITE_PATH or sqlite_path.
+  app_r_path <- system.file("shiny", "app.R", package = "CodingManageR")
+  if (!nzchar(app_r_path)) {
+    app_r_path <- testthat::test_path("..", "..", "inst", "shiny", "app.R")
+  }
+  expect_true(file.exists(app_r_path))
+
+  exprs <- parse(file = app_r_path)
+  expect_gte(length(exprs), 2L)
+
+  src <- paste(readLines(app_r_path, warn = FALSE), collapse = "\n")
+  expect_match(src, "CodingManageR::run_app_server\\(\\)")
+  expect_false(grepl("SQLITE_PATH|sqlite_path|lokale_datenbank", src))
+})
+
+test_that("login screen renders dynamic CodingManageR version under subtitle exclusively before sign-in", {
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+  withr::local_options(list(CodingManageR.db_con = con))
+
+  ver <- CodingManageR:::coding_manager_version()
+  expect_match(ver, "^[0-9]+\\.[0-9]+")
+
+  shiny::testServer(
+    coding_manager_server,
+    {
+      # Unauthenticated DE screen: version appears directly after subtitle inside login body
+      session$flushReact()
+      de_login <- ui_to_html(output$page_content)
+      expect_match(de_login, "cm-login-version")
+      expect_match(de_login, paste0("CodingManageR Version ", gsub("\\.", "\\\\.", ver)))
+      sub_pos <- regexpr("Authentifizierung", de_login, fixed = TRUE)[1]
+      ver_pos <- regexpr("cm-login-version", de_login, fixed = TRUE)[1]
+      usr_pos <- regexpr("login_username", de_login, fixed = TRUE)[1]
+      expect_true(sub_pos > 0L && ver_pos > sub_pos && usr_pos > ver_pos)
+
+      # Unauthenticated EN screen preserves version label cleanly
+      session$setInputs(selected_ui_lang = "en")
+      session$flushReact()
+      en_login <- ui_to_html(output$page_content)
+      expect_match(en_login, "Authentication via relational database")
+      expect_match(en_login, paste0("CodingManageR Version ", gsub("\\.", "\\\\.", ver)))
+
+      # After admin sign-in: version badge is NOT shown in authenticated workspace, and Admin tab uses FA icon
+      session$setInputs(login_username = "admin", login_token = "admin2026", btn_login = 1L)
+      session$flushReact()
+      expect_true(logged_in())
+      authed_html <- ui_to_html(output$page_content)
+      expect_false(grepl("cm-login-version", authed_html, fixed = TRUE))
+      expect_match(authed_html, "fa-wrench")
+      expect_match(authed_html, "Admin Console")
+    }
+  )
+})
+
 
 
 

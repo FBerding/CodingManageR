@@ -11,7 +11,8 @@ coding_manager_server(
   db_con = NULL,
   sqlite_path = NULL,
   config = NULL,
-  seed_empty = NULL
+  seed_empty = NULL,
+  fallback_to_sqlite = TRUE
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ Defaults to \code{TRUE} (minimal admin account) unless overridden via options or
 When \code{FALSE}, demonstration data is only seeded into a brand-new, empty
 database; existing SQLite files or populated databases are protected and
 emit a warning instead.}
+
+\item{fallback_to_sqlite}{Logical passed to \code{\link[=get_db_pool]{get_db_pool()}}. Defaults to \code{TRUE}.
+Set to \code{FALSE} (used by \code{\link[=run_app_server]{run_app_server()}}) to enforce strict MySQL/MariaDB
+connectivity without silently falling back to a local SQLite file.}
 }
 \value{
 Invisibly returns \code{NULL}.

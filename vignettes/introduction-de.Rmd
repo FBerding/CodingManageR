@@ -92,15 +92,15 @@ Wenn Sie neu in der qualitativen Textkodierung sind, helfen diese sechs Begriffe
 Um ein neues, leeres lokales Projekt auf Ihrem Computer zu starten, öffnen Sie R oder RStudio und führen folgenden Befehl aus:
 
 ```{r}
-CodingManageR::run_app(sqlite_path = "mein_projekt.sqlite")
+CodingManageR::run_app_local(sqlite_path = "mein_projekt.sqlite")
 ```
 
 Wird CodingManageR an Ihrer Hochschule oder in Ihrem Team auf einem Server betrieben, öffnen Sie einfach den Weblink Ihrer Administration im Browser.
 
 > **Schnell-Tipp — erst einmal ausprobieren?** Testen Sie die Anwendung mit vorkonfigurierten Beispielskalen, Falltexten und Demokonten, bevor Sie Ihr eigenes Projekt aufbauen:
-> `CodingManageR::run_app(sqlite_path = "demo_projekt.sqlite", empty = FALSE)`
+> `CodingManageR::run_app_local(sqlite_path = "demo_projekt.sqlite", empty = FALSE)`
 
-> **Mehrere lokale Projekte parallel verwalten?** Im lokalen Modus speichert die App jedes Projekt in einer eigenen **SQLite**-Datei auf Ihrem Computer. Verwenden Sie pro Studie einen eigenen Dateinamen, etwa `CodingManageR::run_app(sqlite_path = "studie_a.sqlite")` und `CodingManageR::run_app(sqlite_path = "studie_b.sqlite")`. Beenden Sie die App immer zuerst, bevor Sie eine `.sqlite`-Datei kopieren, umbenennen oder archivieren. Weitere Tipps zu Ordnern und Backups finden Sie in `vignette("CodingManageR-de", package = "CodingManageR")`.
+> **Mehrere lokale Projekte parallel verwalten?** Im lokalen Modus speichert die App jedes Projekt in einer eigenen **SQLite**-Datei auf Ihrem Computer. Verwenden Sie pro Studie einen eigenen Dateinamen, etwa `CodingManageR::run_app_local(sqlite_path = "studie_a.sqlite")` und `CodingManageR::run_app_local(sqlite_path = "studie_b.sqlite")`. Beenden Sie die App immer zuerst, bevor Sie eine `.sqlite`-Datei kopieren, umbenennen oder archivieren. Weitere Tipps zu Ordnern und Backups finden Sie in `vignette("CodingManageR-de", package = "CodingManageR")`.
 
 Die Sprache der Oberfläche lässt sich jederzeit zwischen **Deutsch** und **Englisch** umschalten — sowohl direkt auf der Anmeldeseite als auch oben rechts in der Kopfleiste. Ihre laufende Arbeit bleibt beim Sprachwechsel vollständig erhalten.
 
@@ -141,7 +141,7 @@ Bevor Sie Falltexte einspielen oder Kodierungen starten, legen Sie mindestens zw
 
 1. Öffnen Sie im **Admin-Bereich** den Untertab **Quellenverwaltung** (siehe Abbildung 2).
 2. Klicken Sie auf **Neue Quelle hinzufügen** und füllen Sie die drei Pflichtfelder aus:
-   - **Kurzreferenz** (z. B. `StudieA_2026` oder `Manual_v1`): kompakter Bezeichner für Auswahlmenüs und Badges.
+   - **Kurzreferenz** (z. B. `Example1` oder `Example2`): kompakter Bezeichner für Auswahlmenüs und Badges.
    - **Vollständige Referenz / Zitation**: vollständige bibliografische Angabe oder Projektbeschreibung.
    - **Lizenz / Nutzungsrechte**: wählen Sie eine Standardlizenz (z. B. `CC-BY 4.0`, `CC0 1.0` oder `Eigene Datenerhebung`) oder geben Sie eine individuelle Lizenzbezeichnung ein.
 3. Klicken Sie auf **Quelle speichern**. Wiederholen Sie den Vorgang für alle Textkorpora, Kodierleitfäden und externen Bewertungsquellen Ihres Projekts. Merken Sie sich die numerische **`ID`** aus der ersten Tabellenspalte — Sie benötigen diese als `source_id` beim CSV-Upload von Falltexten (siehe Abschnitt 3.4.1).

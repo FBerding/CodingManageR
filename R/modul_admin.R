@@ -609,6 +609,11 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
 #'   definitions are added or modified so other modules refresh dynamically.
 #' @param current_lang Reactive expression or character scalar providing the
 #'   active UI language code (`"de"` or `"en"`).
+#' @param current_role Optional reactive expression or character scalar
+#'   identifying the active user's role (`"admin"` or `"user"`). When provided
+#'   (e.g., by [coding_manager_server()]), server-side admin handlers enforce
+#'   that the role equals `"admin"`. Defaults to `NULL` for backward
+#'   compatibility with standalone module invocations and tests.
 #'
 #' @return The return value of `shiny::moduleServer()`.
 #'
@@ -624,12 +629,19 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
 #' }
 #'
 #' @export
-adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL, scales_trigger = NULL, current_lang = reactiveVal("de")) {
+adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL, scales_trigger = NULL, current_lang = reactiveVal("de"), current_role = NULL) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     get_lang <- function() {
       if (is.reactive(current_lang) || is.function(current_lang)) current_lang() else as.character(current_lang)
+    }
+
+    is_admin_authorized <- function() {
+      if (is.null(current_role)) return(TRUE)
+      role_val <- if (is.reactive(current_role) || is.function(current_role)) current_role() else current_role
+      if (is.null(role_val) || length(role_val) == 0L || is.na(role_val[1])) return(FALSE)
+      identical(tolower(trimws(as.character(role_val[1]))), "admin")
     }
 
     # Shared cross-tab reactive triggers
@@ -703,6 +715,7 @@ adminServer <- function(id, db_con, current_user = NULL, current_user_id = NULL,
       db_con                     = db_con,
       scales_trigger             = scales_trigger,
       get_lang                   = get_lang,
+      is_admin_authorized        = is_admin_authorized,
       aktiver_admin              = aktiver_admin,
       aktiver_admin_id           = aktiver_admin_id,
       user_table_trigger         = user_table_trigger,

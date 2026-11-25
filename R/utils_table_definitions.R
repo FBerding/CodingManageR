@@ -454,29 +454,29 @@ seed_initial_data <- function(con, empty = TRUE) {
       sources_data <- list(
         list(
           id = 1,
-          kurz = "Klieme2024",
-          ref = "Klieme, E., Praetorius, A.-K., & Herbert, B. (2024). Dimensions of Teaching Quality in Classroom Observation Studies. Educational Research Press. https://doi.org/10.1007/s11618-024-01234-5 [Note: Fictional demonstration source generated with the assistance of AI.]",
+          kurz = "Example1",
+          ref = "Example 1. Title 1. [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "CC-BY 4.0",
           erfasst = "2026-10-15 09:30:00"
         ),
         list(
           id = 2,
-          kurz = "HattieTimperley2025",
-          ref = "Hattie, J., & Timperley, H. (2025). Formative Feedback in Teaching and Learning: Coding Frameworks for Classroom Discourse. International Journal of Educational Assessment. [Note: Fictional demonstration source generated with the assistance of AI.]",
+          kurz = "Example2",
+          ref = "Example 2. Title 2. [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "ODC-By",
           erfasst = "2026-10-16 11:20:00"
         ),
         list(
           id = 3,
-          kurz = "ClassroomCorpus_2025",
-          ref = "Center for Research on Teaching and Learning (2025). Anonymized Classroom Transcripts and Instructional Vignettes for Qualitative Coder Training. [Note: Fictional demonstration source generated with the assistance of AI.]",
+          kurz = "Example3",
+          ref = "Example 3. Title 3. [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "Institutional Internal",
           erfasst = "2026-10-18 14:15:00"
         ),
         list(
           id = 4,
-          kurz = "AIF-Edu-Report",
-          ref = "Berding, F., Pargmann, J., & Riebenbauer, E. (2023). aifeducation: Artificial Intelligence for Education and Rater Reliability. Comprehensive R Archive Network. [Note: Demonstration source entry generated with the assistance of AI.]",
+          kurz = "Example4",
+          ref = "Example 4. Title 4. [Note: Fictional demonstration source generated with the assistance of AI.]",
           lizenz = "GPL-3.0",
           erfasst = "2026-10-22 16:45:00"
         )

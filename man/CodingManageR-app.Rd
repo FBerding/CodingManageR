@@ -5,7 +5,9 @@
 \title{CodingManageR Shiny Application Entrypoint}
 \description{
 Provides CRAN-compliant exported functions \code{\link[=coding_manager_ui]{coding_manager_ui()}},
-\code{\link[=coding_manager_server]{coding_manager_server()}}, and \code{\link[=run_app]{run_app()}} to launch the multi-user
-qualitative coding and training portal without top-level side effects.
+\code{\link[=coding_manager_server]{coding_manager_server()}}, \code{\link[=run_app_local]{run_app_local()}}, \code{\link[=run_app_server]{run_app_server()}}, and
+\code{\link[=run_app]{run_app()}} to launch the qualitative coding and training portal either
+locally (SQLite) or on a multi-user server (MySQL/MariaDB) without top-level
+side effects.
 }
 \keyword{internal}

@@ -140,13 +140,12 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
   password <- if (!is.null(config$password)) as.character(config$password) else Sys.getenv("MYSQL_PASSWORD", unset = Sys.getenv("MYSQL_DB_PASSWORD", unset = ""))
   dbname   <- if (!is.null(config$dbname) && nzchar(as.character(config$dbname))) as.character(config$dbname) else Sys.getenv("MYSQL_DBNAME", unset = Sys.getenv("MYSQL_DB_NAME", unset = "kodierer_portal"))
 
-  sqlite_f <- resolve_sqlite_path(config = config, check_option = FALSE, create_dir = TRUE)
-
   min_size     <- if (!is.null(config$minSize)) as.integer(config$minSize) else 2L
   max_size     <- if (!is.null(config$maxSize)) as.integer(config$maxSize) else 15L
   idle_timeout <- if (!is.null(config$idleTimeout)) as.integer(config$idleTimeout) else 3600000L # 1 hour in ms
 
-  use_mysql <- nzchar(host) && nzchar(user)
+  force_sqlite <- isTRUE(config$force_sqlite)
+  use_mysql <- !force_sqlite && nzchar(host) && nzchar(user)
 
   # 2. Attempt 1: MySQL / MariaDB (central server database for multi-user deployments)
   # nocov start
@@ -244,6 +243,8 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
 
   # 3. Attempt 2: SQLite (strictly intended for local single-user sessions)
   if (fallback_to_sqlite) {
+    sqlite_f <- resolve_sqlite_path(config = config, check_option = FALSE, create_dir = TRUE)
+
     message("--------------------------------------------------------------------------------")
     message("[DB-Manager] NOTICE: SQLite mode active (path: '", sqlite_f, "').")
     message("[DB-Manager] SQLite is designed for a SINGLE local user on a workstation.")
@@ -293,7 +294,36 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
     return(con)
   }
 
-  stop("[DB-Manager] No database connection available and SQLite fallback is disabled.")
+  if (!use_mysql) {
+    missing_vars <- c(if (!nzchar(host)) "MYSQL_HOST", if (!nzchar(user)) "MYSQL_USER")
+    stop(
+      "[DB-Manager] MySQL/MariaDB server configuration is incomplete (missing ",
+      paste(missing_vars, collapse = ", "),
+      " in .Renviron or config) and SQLite fallback is disabled. ",
+      "Configure MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and MYSQL_DBNAME ",
+      "(or use CodingManageR::run_app_local() for single-user local SQLite sessions).",
+      call. = FALSE
+    )
+  }
+
+  # nocov start
+  has_mysql_drv <- requireNamespace("RMariaDB", quietly = TRUE) ||
+    requireNamespace("RMySQL", quietly = TRUE)
+  if (!has_mysql_drv) {
+    stop(
+      "[DB-Manager] Neither 'RMariaDB' nor 'RMySQL' is installed and SQLite fallback is disabled. ",
+      "Install 'RMariaDB' system-wide (install.packages(\"RMariaDB\")) to connect to MySQL/MariaDB.",
+      call. = FALSE
+    )
+  }
+
+  stop(
+    "[DB-Manager] Failed to connect to MySQL/MariaDB at '", host, ":", port,
+    "' (database '", dbname, "') and SQLite fallback is disabled. ",
+    "Check that the MySQL/MariaDB service is running and verify your credentials in .Renviron.",
+    call. = FALSE
+  )
+  # nocov end
 }
 
 #' Open a Database Connection (Backward-Compatible Wrapper)

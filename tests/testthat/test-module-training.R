@@ -188,7 +188,7 @@ test_that("schulungServer examples modal displays reference cases, handles empty
       session$flushReact()
       ex_ok <- ui_to_html(output$modal_beispiel_content)
       expect_match(ex_ok, "bg-warning|bg-primary")
-      expect_match(ex_ok, "Klieme2024|HattieTimperley2025")
+      expect_match(ex_ok, "Example1|Example2")
 
       # Empty level (level 0 on scale 1 has no gold_standard/kodierung ratings)
       session$setInputs(modal_gewaehlte_stufe = "0")

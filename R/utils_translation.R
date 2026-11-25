@@ -102,11 +102,11 @@ load_translations <- function(force_reload = FALSE) {
     return(list(
       de = list(
         common = list(refresh = "Ansicht aktualisieren", logout = "Abmelden", language = "Sprache"),
-        auth = list(login_title = "Anmeldung", username = "Benutzername:", token = "Zugangs-Token:", login_btn = "Einloggen")
+        auth = list(login_title = "Anmeldung", username = "Benutzername:", token = "Zugangs-Token:", login_btn = "Einloggen", version_label = "CodingManageR Version %s")
       ),
       en = list(
         common = list(refresh = "Refresh View", logout = "Log Out", language = "Language"),
-        auth = list(login_title = "Sign In", username = "Username:", token = "Access Token:", login_btn = "Sign In")
+        auth = list(login_title = "Sign In", username = "Username:", token = "Access Token:", login_btn = "Sign In", version_label = "CodingManageR Version %s")
       )
     ))
   }

@@ -242,7 +242,7 @@ test_that("adminServer Subtabs 2, 3, and 4 (Texts, Sources, Scales): CRUD, pagin
       session$setInputs(source_search_query = "")
       session$flushReact()
       expect_match(ui_to_html(output$sources_counter_text), "4")
-      expect_match(ui_to_html(output$sources_table_container), "Klieme2024")
+      expect_match(ui_to_html(output$sources_table_container), "Example1")
 
       session$setInputs(btn_open_add_source = 1L, new_lizenz_select = "__custom__")
       session$flushReact()
@@ -478,7 +478,7 @@ test_that("adminServer Subtabs 7 & 8 (Import/Export Modals, CSV Downloads/Upload
 
   csv_sources_valid <- write_temp_csv(data.frame(
     source_id = c(4L, 50L),
-    Kurzreferenz = c("AIF-Edu-Report", "UploadedSrc50"),
+    Kurzreferenz = c("Example4", "UploadedSrc50"),
     Referenz = c("Updated Ref", "New Source Ref 50"),
     Lizenz = c("GPL-3.0", "CC-BY 4.0"),
     erfasst_am = c("", ""),
@@ -768,9 +768,9 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$flushReact()
 
       # --- SOURCES SEARCH, VALIDATION ERRORS & BLOCKED DELETE CONFIRMATION ---
-      session$setInputs(source_search_query = "Klieme2024")
+      session$setInputs(source_search_query = "Example1")
       session$flushReact()
-      expect_match(ui_to_html(output$sources_table_container), "Klieme2024")
+      expect_match(ui_to_html(output$sources_table_container), "Example1")
 
       session$setInputs(source_search_query = "zzz_no_source_999")
       session$flushReact()
@@ -786,18 +786,18 @@ test_that("adminServer handles coordinator fallbacks, user self-edit/permissions
       session$flushReact()
       expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
 
-      session$setInputs(new_kurzreferenz = "Klieme2024", new_referenz = "Full valid citation 2026", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 3L)
+      session$setInputs(new_kurzreferenz = "Example1", new_referenz = "Full valid citation 2026", new_lizenz_select = "CC-BY 4.0", btn_save_new_source = 3L)
       session$flushReact()
       expect_match(ui_to_html(output$add_source_feedback), "alert-danger")
 
-      # Edit source #2: short ref too short & duplicate of #1 ('Klieme2024')
+      # Edit source #2: short ref too short & duplicate of #1 ('Example1')
       session$setInputs(trigger_edit_source = 2L)
       session$flushReact()
       session$setInputs(edit_kurzreferenz = "x", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 1L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
 
-      session$setInputs(edit_kurzreferenz = "Klieme2024", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 2L)
+      session$setInputs(edit_kurzreferenz = "Example1", edit_referenz = "Valid Citation", edit_lizenz_select = "CC-BY 4.0", btn_save_edit_source = 2L)
       session$flushReact()
       expect_match(ui_to_html(output$edit_source_feedback), "alert-danger")
 
@@ -913,9 +913,9 @@ test_that("adminServer covers export filter modal searches, zero-selection warni
       session$setInputs(input_modal_scales_search = "")
       session$flushReact()
 
-      session$setInputs(input_modal_sources_search = "Klieme")
+      session$setInputs(input_modal_sources_search = "Example1")
       session$flushReact()
-      expect_match(ui_to_html(output$modal_sources_page_ui), "Klieme2024")
+      expect_match(ui_to_html(output$modal_sources_page_ui), "Example1")
       session$setInputs(input_modal_sources_search = "zzz_none")
       session$flushReact()
       expect_match(ui_to_html(output$modal_sources_page_ui), "text-muted")
@@ -1109,10 +1109,83 @@ test_that("adminServer covers all 16 reliability metrics, zero-session fallbacks
       session$flushReact()
       rep_missing <- db_diagnostics_report()
       expect_equal(rep_missing$existing_tables_count, 8L)
-      expect_match(ui_to_html(output$db_diag_summary_cards), "bg-danger")
-      expect_match(ui_to_html(output$db_diag_tables_overview), "bg-danger")
-      expect_match(ui_to_html(output$db_diag_integrity_audit), "bg-warning")
+      summary_html <- ui_to_html(output$db_diag_summary_cards)
+      tables_html <- ui_to_html(output$db_diag_tables_overview)
+      audit_html <- ui_to_html(output$db_diag_integrity_audit)
+      expect_match(summary_html, "bg-danger")
+      expect_match(summary_html, "cm-kpi-title")
+      expect_false(grepl("cm-kpi-label", summary_html, fixed = TRUE))
+      expect_match(tables_html, "bg-danger")
+      expect_match(tables_html, "Schema incomplete \\(8/9 tables\\)")
+      expect_false(grepl("Schema 100 percent complete", tables_html, fixed = TRUE))
+      expect_match(audit_html, "bg-warning")
+      expect_false(grepl("shadow-2xs", audit_html, fixed = TRUE))
     }
   )
 })
+
+test_that("adminServer enforces server-side RBAC for non-admin roles and audits coding_source_permissions orphans", {
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+
+  # 1. Server-side RBAC: non-admin role cannot mutate users or read diagnostics
+  n_users_before <- DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM user_tokens")$n[1]
+  user1_id <- DBI::dbGetQuery(con, "SELECT user_id FROM user_tokens WHERE username = 'user1'")$user_id[1]
+  user1_active_before <- DBI::dbGetQuery(con, "SELECT is_active FROM user_tokens WHERE user_id = ?", params = list(user1_id))$is_active[1]
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con,
+      current_user = shiny::reactiveVal("user1"),
+      current_user_id = shiny::reactiveVal(user1_id),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en"),
+      current_role = shiny::reactiveVal("user")
+    ),
+    {
+      session$setInputs(
+        new_username = "rogue_admin",
+        new_token = "rogue_token_123",
+        new_permissions = "admin",
+        btn_save_new_user = 1L,
+        trigger_toggle_user_status = user1_id
+      )
+      session$flushReact()
+      expect_null(db_diagnostics_report())
+    }
+  )
+
+  expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM user_tokens")$n[1], n_users_before)
+  expect_equal(
+    DBI::dbGetQuery(con, "SELECT is_active FROM user_tokens WHERE user_id = ?", params = list(user1_id))$is_active[1],
+    user1_active_before
+  )
+
+  # 2. Diagnostics 7th orphan check detects orphaned rows in user_coding_source_permissions
+  DBI::dbExecute(con, "PRAGMA foreign_keys = OFF;")
+  DBI::dbExecute(con, "INSERT INTO user_coding_source_permissions (user_id, source_id) VALUES (99999, 1);")
+  DBI::dbExecute(con, "PRAGMA foreign_keys = ON;")
+
+  shiny::testServer(
+    adminServer,
+    args = list(
+      db_con = con,
+      current_user = shiny::reactiveVal("admin"),
+      current_user_id = shiny::reactiveVal(1L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en"),
+      current_role = shiny::reactiveVal("admin")
+    ),
+    {
+      session$flushReact()
+      rep <- db_diagnostics_report()
+      expect_true("coding_source_permissions" %in% names(rep$orphan_audits))
+      expect_equal(rep$orphan_audits$coding_source_permissions$violations, 1L)
+      expect_gte(rep$total_violations, 1L)
+      expect_match(ui_to_html(output$db_diag_integrity_audit), "user_coding_source_permissions")
+    }
+  )
+})
+
 

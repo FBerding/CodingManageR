@@ -306,8 +306,14 @@ jobs:
             if [ "${{ inputs.update_pkgdown }}" = "true" ] && [ -f docs/pkgdown.yml ]; then
               echo "### pkgdown GitHub Pages Build (\`docs/\`)"
               echo ""
-              n_en="$(find docs/articles/figures -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
-              n_de="$(find docs/articles/figures-de -maxdepth 1 -type f -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
+              n_en="0"
+              n_de="0"
+              if [ -d docs/articles/figures ]; then
+                n_en="$(find docs/articles/figures -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
+              fi
+              if [ -d docs/articles/figures-de ]; then
+                n_de="$(find docs/articles/figures-de -maxdepth 1 -type f -name '*.png' | wc -l | tr -d ' ')"
+              fi
               echo "- Rebuilt \`docs/\` successfully with **${n_en}** EN PNGs (\`docs/articles/figures/\`) and **${n_de}** DE PNGs (\`docs/articles/figures-de/\`)."
             fi
           } >> "$GITHUB_STEP_SUMMARY"

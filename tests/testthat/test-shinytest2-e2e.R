@@ -50,7 +50,7 @@ local_e2e_app <- function(name = "codingmanager_e2e", seed_gold_scale = NULL, en
   }
   DBI::dbDisconnect(con)
 
-  shiny_app <- run_app(sqlite_path = db_path, empty = FALSE)
+  shiny_app <- run_app_local(sqlite_path = db_path, empty = TRUE)
   driver <- shinytest2::AppDriver$new(
     app_dir = shiny_app,
     name = name,

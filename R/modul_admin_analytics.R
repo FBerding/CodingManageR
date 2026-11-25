@@ -26,6 +26,7 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   scales_trigger <- ctx$scales_trigger
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   scales_table_trigger <- ctx$scales_table_trigger
   ratings_edit_trigger <- ctx$ratings_edit_trigger
@@ -365,11 +366,12 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
   # ggplot2 comparison chart
   output$admin_reliability_comparison_plot <- renderPlot({
     lang <- get_lang()
+    plot_font <- coding_manager_font_stacks()$plot_family
     df <- user_reliability_data()
     if (nrow(df) == 0) {
       p <- ggplot() +
-        annotate("text", x = 1, y = 0.5, label = tr("admin.reliability.chart_no_users", lang), size = 5, color = "gray50") +
-        theme_void()
+        annotate("text", x = 1, y = 0.5, label = tr("admin.reliability.chart_no_users", lang), size = 5, color = "gray50", family = plot_font) +
+        theme_void(base_family = plot_font)
       return(p)
     }
 
@@ -432,13 +434,13 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
       geom_hline(yintercept = bench_gut, linetype = "dashed", color = "#166534", linewidth = 0.6) +
       annotate("text", x = 0.7, y = bench_moderat,
                label = paste0(tr("metrics.bench_mod_short", lang), " (", bench_moderat, if (is_pct) "%" else "", ")"),
-               color = "#92400E", size = 3.2, hjust = 1.05) +
+               color = "#92400E", size = 3.2, hjust = 1.05, family = plot_font) +
       annotate("text", x = 0.7, y = bench_gut,
                label = paste0(tr("metrics.bench_good_short", lang), " (", bench_gut, if (is_pct) "%" else "", ")"),
-               color = "#166534", size = 3.2, hjust = 1.05) +
+               color = "#166534", size = 3.2, hjust = 1.05, family = plot_font) +
       geom_text(aes(label = ifelse(is.na(val), tr("common.no_data", lang),
                                    if (is_pct) paste0(sprintf("%.1f", val), " %") else sprintf("%.3f", val))),
-                hjust = -0.15, size = 3.3, fontface = "bold", color = "#1C234A") +
+                hjust = -0.15, size = 3.3, fontface = "bold", color = "#1C234A", family = plot_font) +
       scale_fill_manual(values = color_map, name = tr("admin.reliability.legend_classification", lang)) +
       coord_flip(ylim = c(0, if (is_pct) 115 else 1.18)) +
       labs(
@@ -446,7 +448,7 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
         y = tr("admin.reliability.yaxis_aggregated", lang, metric_label),
         title = NULL
       ) +
-      theme_minimal(base_size = 12) +
+      coding_manager_plot_theme(base_size = 12) +
       theme(
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
@@ -534,7 +536,7 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
     })
 
     tags$div(class = "table-responsive mt-3",
-      tags$table(class = "table table-hover align-middle table-bordered bg-white shadow-xs text-center",
+      tags$table(class = "table table-hover align-middle table-bordered bg-white shadow-sm text-center",
         tags$thead(class = "table-light text-muted small text-uppercase",
           tags$tr(
             tags$th(rowspan = 2, class = "text-start align-middle", style = "min-width: 130px;", tr("admin.reliability.col_coder", lang)),
@@ -563,6 +565,7 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
 
   # Drilldown detail modal for an individual coder
   observeEvent(input$trigger_rel_user_detail, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     u_target <- as.integer(input$trigger_rel_user_detail)
     req(u_target)
@@ -600,7 +603,8 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
 
       tabsetPanel(
         type = "tabs",
-        tabPanel(tr("admin.reliability.modal_tab_trainings_title", lang),
+        tabPanel(
+          title = tagList(icon("graduation-cap"), " ", tr("admin.reliability.modal_tab_trainings_title", lang)),
           br(),
           if (nrow(history_df) == 0) {
             div(class = "alert alert-info text-center", tr("admin.reliability.modal_no_trainings", lang))
@@ -647,7 +651,8 @@ admin_register_reliability_server <- function(input, output, session, ctx) {
             )
           }
         ),
-        tabPanel(tr("admin.reliability.modal_tab_codings_title", lang),
+        tabPanel(
+          title = tagList(icon("pen-to-square"), " ", tr("admin.reliability.modal_tab_codings_title", lang)),
           br(),
           if (nrow(real_codings_detail) == 0) {
             div(class = "alert alert-info text-center", tr("admin.reliability.modal_no_codings", lang))
@@ -705,6 +710,7 @@ admin_register_coding_search_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   scales_trigger <- ctx$scales_trigger
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   texts_table_trigger <- ctx$texts_table_trigger
   scales_table_trigger <- ctx$scales_table_trigger
@@ -874,6 +880,7 @@ admin_register_coding_search_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$trigger_edit_coding_rating, {
+    if (!is_admin_authorized()) return()
     r_id <- suppressWarnings(as.integer(input$trigger_edit_coding_rating))
     req(r_id)
     detail <- get_coding_detail_db(db_con, r_id)
@@ -886,6 +893,7 @@ admin_register_coding_search_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_confirm_edit_coding, {
+    if (!is_admin_authorized()) return()
     r_id <- coding_to_edit_id()
     req(r_id, input$edit_coding_new_value)
     new_val <- suppressWarnings(as.integer(input$edit_coding_new_value))
@@ -925,14 +933,17 @@ admin_register_coding_search_server <- function(input, output, session, ctx) {
 admin_register_diagnostics_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   texts_table_trigger <- ctx$texts_table_trigger
   sources_trigger <- ctx$sources_trigger
+  scales_table_trigger <- ctx$scales_table_trigger
   ratings_edit_trigger <- ctx$ratings_edit_trigger
 
   diagnostics_trigger <- reactiveVal(0)
 
   observeEvent(input$btn_refresh_diagnostics, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     diagnostics_trigger(diagnostics_trigger() + 1)
     showNotification(tr("admin.diag_notif_refreshed", lang), type = "message", duration = 3)
@@ -940,12 +951,14 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
 
   # Run full diagnostics across all 9 tables and relational integrity checks
   db_diagnostics_report <- reactive({
+    if (!is_admin_authorized()) return(NULL)
     lang <- get_lang()
     diagnostics_trigger()
     ratings_edit_trigger()
     user_table_trigger()
     texts_table_trigger()
     sources_trigger()
+    scales_table_trigger()
 
     is_pool <- if (exists("is_pool_connection", mode = "function")) is_pool_connection(db_con) else inherits(db_con, "Pool")
     is_mysql <- if (exists("is_mysql_connection", mode = "function")) is_mysql_connection(db_con) else (inherits(db_con, "MariaDBConnection") || inherits(db_con, "MySQLConnection"))
@@ -1100,6 +1113,22 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
       }, error = function(e) -1L)
     )
 
+    orphan_audits[["coding_source_permissions"]] <- list(
+      title = tr("admin.diag_audit_7_title", lang),
+      description = tr("admin.diag_audit_7_desc", lang),
+      violations = tryCatch({
+        res1 <- dbGetQuery(db_con, "
+          SELECT COUNT(*) AS n FROM user_coding_source_permissions p
+          LEFT JOIN user_tokens u ON p.user_id = u.user_id WHERE u.user_id IS NULL;
+        ")
+        res2 <- dbGetQuery(db_con, "
+          SELECT COUNT(*) AS n FROM user_coding_source_permissions p
+          LEFT JOIN sources s ON p.source_id = s.source_id WHERE s.source_id IS NULL;
+        ")
+        as.integer(res1$n[1]) + as.integer(res2$n[1])
+      }, error = function(e) -1L)
+    )
+
     total_violations <- sum(sapply(orphan_audits, function(x) max(0L, x$violations)))
 
     list(
@@ -1121,36 +1150,37 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
   output$db_diag_summary_cards <- renderUI({
     lang <- get_lang()
     rep <- db_diagnostics_report()
+    req(rep)
 
-    status_color <- if (rep$total_violations == 0 && rep$existing_tables_count == 9) "success" else "warning"
-    status_text  <- if (rep$total_violations == 0 && rep$existing_tables_count == 9) tr("admin.diag_status_consistent", lang) else tr("admin.diag_status_violations", lang, rep$total_violations)
+    status_color <- if (rep$total_violations == 0 && rep$existing_tables_count == rep$total_tables) "success" else "warning"
+    status_text  <- if (rep$total_violations == 0 && rep$existing_tables_count == rep$total_tables) tr("admin.diag_status_consistent", lang) else tr("admin.diag_status_violations", lang, rep$total_violations)
 
     fluidRow(
       column(width = 3,
         div(class = "card cm-kpi-card bg-primary mb-2",
-          div(class = "cm-kpi-label", tr("admin.diag_engine_label", lang)),
+          div(class = "cm-kpi-title", tr("admin.diag_engine_label", lang)),
           h5(class = "mt-1 mb-0 text-dark", rep$engine),
           span(class = "text-muted small", tr("admin.diag_checked_at", lang, rep$timestamp))
         )
       ),
       column(width = 3,
-        div(class = paste0("card cm-kpi-card mb-2 bg-", if (rep$existing_tables_count == 9) "success" else "danger"),
-          div(class = "cm-kpi-label", tr("admin.diag_schema_9_title", lang)),
-          h5(class = paste0("mt-1 mb-0 text-", if (rep$existing_tables_count == 9) "success" else "danger"),
+        div(class = paste0("card cm-kpi-card mb-2 bg-", if (rep$existing_tables_count == rep$total_tables) "success" else "danger"),
+          div(class = "cm-kpi-title", tr("admin.diag_schema_9_title", lang)),
+          h5(class = paste0("mt-1 mb-0 text-", if (rep$existing_tables_count == rep$total_tables) "success" else "danger"),
              tr("admin.diag_tables_active", lang, rep$existing_tables_count, rep$total_tables)),
           span(class = "text-muted small", tr("admin.diag_all_9_checked", lang))
         )
       ),
       column(width = 3,
         div(class = "card cm-kpi-card bg-secondary mb-2",
-          div(class = "cm-kpi-label", tr("admin.diag_card_records", lang)),
+          div(class = "cm-kpi-title", tr("admin.diag_card_records", lang)),
           h5(class = "mt-1 mb-0 text-dark font-monospace", format_int_locale(rep$total_records, lang)),
           span(class = "text-muted small", tr("admin.diag_summed_all", lang))
         )
       ),
       column(width = 3,
         div(class = paste0("card cm-kpi-card mb-2 bg-", status_color),
-          div(class = paste0("cm-kpi-label text-", status_color), tr("admin.diag_card_integrity", lang)),
+          div(class = paste0("cm-kpi-title text-", status_color), tr("admin.diag_card_integrity", lang)),
           h5(class = paste0("mt-1 mb-0 text-", status_color), status_text),
           span(class = "small text-muted", if (rep$foreign_keys_active) tr("admin.diag_fk_on", lang) else tr("admin.diag_fk_off", lang))
         )
@@ -1162,6 +1192,18 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
   output$db_diag_tables_overview <- renderUI({
     lang <- get_lang()
     rep <- db_diagnostics_report()
+    req(rep)
+
+    schema_is_complete <- isTRUE(rep$existing_tables_count == rep$total_tables)
+    schema_footer_cell <- if (schema_is_complete) {
+      tags$td(class = "text-success", icon("check-circle", class = "me-1"), tr("admin.diag_schema_complete_100", lang))
+    } else {
+      tags$td(
+        class = "text-danger",
+        icon("exclamation-triangle", class = "me-1"),
+        tr("admin.diag_schema_incomplete", lang, as.integer(rep$existing_tables_count), as.integer(rep$total_tables))
+      )
+    }
 
     tags$div(class = "table-responsive",
       tags$table(class = "table table-sm table-hover table-bordered align-middle text-center",
@@ -1198,7 +1240,7 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
           tags$tr(
             tags$td(colspan = 4, class = "text-start", tr("admin.diag_sum_tables", lang, as.integer(rep$total_tables))),
             tags$td(class = "font-monospace", format_int_locale(rep$total_records, lang)),
-            tags$td(class = "text-success", icon("check-circle", class = "me-1"), tr("admin.diag_schema_complete_100", lang))
+            schema_footer_cell
           )
         )
       )
@@ -1209,8 +1251,9 @@ admin_register_diagnostics_server <- function(input, output, session, ctx) {
   output$db_diag_integrity_audit <- renderUI({
     lang <- get_lang()
     rep <- db_diagnostics_report()
+    req(rep)
 
-    tags$div(class = "list-group shadow-2xs mb-3",
+    tags$div(class = "list-group shadow-sm mb-3",
       lapply(seq_along(rep$orphan_audits), function(idx) {
         audit <- rep$orphan_audits[[idx]]
         is_ok <- audit$violations == 0

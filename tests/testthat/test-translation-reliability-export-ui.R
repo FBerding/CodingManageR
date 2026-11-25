@@ -259,7 +259,7 @@ test_that("export helpers sanitize BOM columns, map all 9 PKs, validate schemas,
 
   csv_sources <- export_table_to_csv(db$con, "sources")
   expect_match(csv_sources, "Kurzreferenz")
-  expect_match(csv_sources, "Klieme2024")
+  expect_match(csv_sources, "Example1")
 
   db_empty <- local_test_db(seeded = TRUE, empty = TRUE)
   csv_empty_sources <- export_table_to_csv(db_empty$con, "sources")

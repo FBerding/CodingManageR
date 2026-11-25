@@ -10,7 +10,8 @@ adminServer(
   current_user = NULL,
   current_user_id = NULL,
   scales_trigger = NULL,
-  current_lang = reactiveVal("de")
+  current_lang = reactiveVal("de"),
+  current_role = NULL
 )
 }
 \arguments{
@@ -29,6 +30,12 @@ definitions are added or modified so other modules refresh dynamically.}
 
 \item{current_lang}{Reactive expression or character scalar providing the
 active UI language code (\code{"de"} or \code{"en"}).}
+
+\item{current_role}{Optional reactive expression or character scalar
+identifying the active user's role (\code{"admin"} or \code{"user"}). When provided
+(e.g., by \code{\link[=coding_manager_server]{coding_manager_server()}}), server-side admin handlers enforce
+that the role equals \code{"admin"}. Defaults to \code{NULL} for backward
+compatibility with standalone module invocations and tests.}
 }
 \value{
 The return value of \code{shiny::moduleServer()}.

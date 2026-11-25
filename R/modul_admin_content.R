@@ -24,6 +24,7 @@ admin_register_texts_server <- function(input, output, session, ctx) {
   ns <- ctx$ns
   db_con <- ctx$db_con
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   texts_table_trigger <- ctx$texts_table_trigger
   current_page_texts <- ctx$current_page_texts
   text_to_assign_source <- reactiveVal(NULL)
@@ -192,7 +193,7 @@ admin_register_texts_server <- function(input, output, session, ctx) {
 
       tags$tr(
         tags$td(
-          style = "font-family: monospace; font-weight: bold;",
+          style = "font-family: var(--cm-font-mono); font-weight: bold;",
           tags$span(class = "badge bg-light text-dark border", paste0("#", t_id))
         ),
         tags$td(
@@ -234,6 +235,7 @@ admin_register_texts_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$trigger_assign_text_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     t_id <- as.integer(input$trigger_assign_text_source)
     req(t_id)
@@ -270,6 +272,7 @@ admin_register_texts_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_assigned_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     t_id <- text_to_assign_source()
     new_s_id <- as.integer(input$select_new_source_id)
@@ -305,6 +308,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
   ns <- ctx$ns
   db_con <- ctx$db_con
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   texts_table_trigger <- ctx$texts_table_trigger
   sources_trigger <- ctx$sources_trigger
@@ -390,13 +394,13 @@ admin_register_sources_server <- function(input, output, session, ctx) {
 
       lizenz_badge <- tags$span(
         class = "badge bg-light text-dark border",
-        style = "font-size: 0.85em; font-family: monospace; padding: 4px 8px;",
+        style = "font-size: 0.85em; font-family: var(--cm-font-mono); padding: 4px 8px;",
         s_liz
       )
 
       tags$tr(
         tags$td(
-          style = "vertical-align: middle; width: 8%; font-family: monospace; font-weight: bold; color: #495057;",
+          style = "vertical-align: middle; width: 8%; font-family: var(--cm-font-mono); font-weight: bold; color: #495057;",
           tags$span(
             style = "background-color: #f1f3f5; padding: 3px 7px; border-radius: 4px; border: 1px solid #dee2e6;",
             paste0("#", s_id)
@@ -445,6 +449,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
 
   # Modal: Add new source
   observeEvent(input$btn_open_add_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     showModal(modalDialog(
       title = div(icon("plus-circle", class = "me-2 text-success"), tr("admin.sources.modal_add_title", lang)),
@@ -484,6 +489,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_new_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     kurz <- trimws(input$new_kurzreferenz)
     ref  <- trimws(input$new_referenz)
@@ -541,6 +547,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
 
   # Modal: Edit source
   observeEvent(input$trigger_edit_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     s_id <- as.integer(input$trigger_edit_source)
     req(s_id)
@@ -597,6 +604,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_edit_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     row <- source_to_edit()
     req(row)
@@ -644,6 +652,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
 
   # Modal: Delete source
   observeEvent(input$trigger_delete_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     s_id <- as.integer(input$trigger_delete_source)
     req(s_id)
@@ -686,6 +695,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_confirm_delete_source, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     row <- source_to_delete()
     req(row)
@@ -739,6 +749,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   scales_trigger <- ctx$scales_trigger
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   scales_table_trigger <- ctx$scales_table_trigger
   scale_to_edit <- reactiveVal(NULL)
 
@@ -860,7 +871,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
 
       tags$tr(
         tags$td(
-          style = "vertical-align: middle; width: 7%; font-family: monospace; font-weight: bold; color: #495057;",
+          style = "vertical-align: middle; width: 7%; font-family: var(--cm-font-mono); font-weight: bold; color: #495057;",
           tags$span(
             style = "background-color: #f1f3f5; padding: 3px 7px; border-radius: 4px; border: 1px solid #dee2e6;",
             paste0("#", s_id)
@@ -878,7 +889,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
           style = "vertical-align: middle; width: 12%;",
           tags$span(
             class = "badge bg-secondary",
-            style = "font-size: 0.85em; font-family: monospace;",
+            style = "font-size: 0.85em; font-family: var(--cm-font-mono);",
             tr("admin.scales.range_text", lang, s_max)
           ),
           tags$div(class = "text-muted small", style = "font-size: 0.75em;", tr("admin.scales.steps_count", lang, s_max + 1))
@@ -947,6 +958,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
 
   # Modal: Create new scale definition
   observeEvent(input$btn_open_add_scale, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     showModal(modalDialog(
       title = div(icon("plus-circle", class = "me-2 text-success"), tr("admin.scales.modal_add_title", lang)),
@@ -1030,6 +1042,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_new_scale, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     safe_trim <- function(x) {
       if (is.null(x) || length(x) == 0 || is.na(x[1])) "" else trimws(as.character(x[1]))
@@ -1095,6 +1108,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
 
   # Modal: Edit scale definition (max_value is strictly immutable/locked)
   observeEvent(input$trigger_edit_scale, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     s_id <- as.integer(input$trigger_edit_scale)
     req(s_id)
@@ -1205,6 +1219,7 @@ admin_register_scales_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$btn_save_edit_scale, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     row <- scale_to_edit()
     req(row)

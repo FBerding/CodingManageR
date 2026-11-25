@@ -16,6 +16,8 @@ template:
     navbar-light-color: "#525B70"
     navbar-light-hover-color: "#33418F"
     navbar-light-active-color: "#33418F"
+    font-family-sans-serif: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu", "Noto Sans", "Liberation Sans", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif'
+    font-family-monospace: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", monospace'
 
 home:
   title: "CodingManageR: Multi-User Qualitative Coding Portal & Training Manager"
@@ -65,6 +67,8 @@ reference:
   - title: Launching the Application
     desc: Entrypoints for running CodingManageR locally (SQLite) or on Shiny Server (MariaDB/MySQL).
     contents:
+      - run_app_local
+      - run_app_server
       - run_app
       - coding_manager_ui
       - coding_manager_server

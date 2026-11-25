@@ -32,19 +32,93 @@ coding_manager_register_assets <- function() {
   invisible("cm-assets")
 }
 
+#' Return Native Cross-Platform OS System Font Stacks
+#'
+#' Defines the single source of truth for zero-download operating-system font
+#' stacks covering Windows (Segoe UI / Consolas), macOS (San Francisco / SF
+#' Mono / Menlo), and Linux (Ubuntu / Noto Sans / Liberation Sans / DejaVu Sans
+#' and matching monospace families), plus the built-in R device family (`"sans"`)
+#' for `ggplot2` charts.
+#'
+#' @return Named list with elements `sans`, `mono`, `sans_css`, `mono_css`, and
+#'   `plot_family`.
+#' @keywords internal
+#' @noRd
+coding_manager_font_stacks <- function() {
+  sans <- c(
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Ubuntu",
+    "Noto Sans",
+    "Liberation Sans",
+    "DejaVu Sans",
+    "Helvetica Neue",
+    "Arial",
+    "sans-serif"
+  )
+  mono <- c(
+    "ui-monospace",
+    "SFMono-Regular",
+    "SF Mono",
+    "Menlo",
+    "Consolas",
+    "Ubuntu Mono",
+    "Liberation Mono",
+    "DejaVu Sans Mono",
+    "monospace"
+  )
+
+  format_css_stack <- function(families) {
+    quoted <- vapply(families, function(f) {
+      if (grepl("\\s", f)) paste0("'", f, "'") else f
+    }, character(1))
+    paste(quoted, collapse = ", ")
+  }
+
+  list(
+    sans = sans,
+    mono = mono,
+    sans_css = format_css_stack(sans),
+    mono_css = format_css_stack(mono),
+    plot_family = "sans"
+  )
+}
+
+#' Build Explicit Offline ggplot2 Theme Using Native OS Device Fonts
+#'
+#' Wraps `ggplot2::theme_minimal()` with `base_family = "sans"` so all plots
+#' render directly with the operating system's native sans-serif device font
+#' across Windows, macOS, and Linux without downloading any external fonts.
+#'
+#' @param base_size Base font size in points. Defaults to `12`.
+#'
+#' @return A `ggplot2` theme object.
+#' @keywords internal
+#' @noRd
+coding_manager_plot_theme <- function(base_size = 12) {
+  ggplot2::theme_minimal(
+    base_size = base_size,
+    base_family = coding_manager_font_stacks()$plot_family
+  )
+}
+
 #' Build Explicit Bootstrap 5 University Platform Theme
 #'
 #' Constructs a deterministic `bslib::bs_theme()` pinned to Scholarly Indigo
-#' (`#33418F`) and Cool Indigo Slate (`#F6F7FB` / `#FFFFFF`) tokens using an
-#' offline cross-platform system font stack and `bootswatch = NULL` so local
-#' and web deployments render identically.
+#' (`#33418F`) and Cool Indigo Slate (`#F6F7FB` / `#FFFFFF`) tokens using pure
+#' cross-platform operating-system font collections (`bslib::font_collection()`,
+#' strictly without `font_google()` or remote font downloads) and
+#' `bootswatch = NULL` so local and server deployments render identically offline.
 #'
 #' @return A `bslib` theme object passed to `shiny::fluidPage(theme = ...)`.
 #' @keywords internal
 #' @noRd
 coding_manager_theme <- function() {
-  sans_stack <- '-apple-system, BlinkMacSystemFont, "Segoe UI", "Liberation Sans", "Helvetica Neue", Arial, sans-serif'
-  mono_stack <- 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
+  fonts <- coding_manager_font_stacks()
+  sans_collection <- do.call(bslib::font_collection, as.list(fonts$sans))
+  mono_collection <- do.call(bslib::font_collection, as.list(fonts$mono))
 
   bslib::bs_theme(
     version = 5,
@@ -59,9 +133,9 @@ coding_manager_theme <- function() {
     danger = "#991B1B",
     light = "#EEF0F6",
     dark = "#33418F",
-    base_font = sans_stack,
-    heading_font = sans_stack,
-    code_font = mono_stack,
+    base_font = sans_collection,
+    heading_font = sans_collection,
+    code_font = mono_collection,
     "font-size-base" = "0.9375rem",
     "line-height-base" = "1.55",
     "border-radius" = "0.375rem",
@@ -91,7 +165,8 @@ coding_manager_theme <- function() {
 #' @keywords internal
 #' @noRd
 coding_manager_css <- function() {
-  shiny::tags$style(shiny::HTML("
+  fonts <- coding_manager_font_stacks()
+  css_text <- paste0("
     :root {
       --cm-bg-canvas: #F6F7FB;
       --cm-bg-surface: #FFFFFF;
@@ -124,8 +199,8 @@ coding_manager_css <- function() {
       --cm-radius-sm: 4px;
       --cm-shadow-xs: 0 1px 2px rgba(28, 35, 74, 0.04);
       --cm-max-width: 1280px;
-      --cm-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Liberation Sans', 'Helvetica Neue', Arial, sans-serif;
-      --cm-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+      --cm-font-sans: ", fonts$sans_css, ";
+      --cm-font-mono: ", fonts$mono_css, ";
     }
 
     *, *::before, *::after {
@@ -188,6 +263,10 @@ coding_manager_css <- function() {
     .cm-app h4 { font-size: 1.05rem; line-height: 1.4; margin-bottom: 0.25rem; }
     .cm-app h5 { font-size: 0.95rem; line-height: 1.4; margin-bottom: 0.25rem; }
 
+    .cm-app .font-monospace {
+      font-family: var(--cm-font-mono) !important;
+    }
+
     .cm-app .font-monospace,
     .cm-app code,
     .cm-app .cm-kpi-value,
@@ -238,6 +317,18 @@ coding_manager_css <- function() {
 
     .cm-login-body {
       padding: 24px;
+    }
+
+    .cm-login-version {
+      display: inline-block;
+      font-size: 0.78rem;
+      color: var(--cm-ink-muted);
+      background-color: var(--cm-bg-subtle);
+      border: 1px solid var(--cm-border);
+      border-radius: var(--cm-radius-sm);
+      padding: 0.15rem 0.5rem;
+      margin-top: 0.35rem;
+      margin-bottom: 1.25rem;
     }
 
     /* Institutional Top Header */
@@ -696,5 +787,6 @@ coding_manager_css <- function() {
         animation: none !important;
       }
     }
-  "))
+  ")
+  shiny::tags$style(shiny::HTML(css_text))
 }

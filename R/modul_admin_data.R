@@ -25,6 +25,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   scales_trigger <- ctx$scales_trigger
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   texts_table_trigger <- ctx$texts_table_trigger
   sources_trigger <- ctx$sources_trigger
@@ -147,6 +148,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   }
 
   observeEvent(input$btn_confirm_append_table, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(pending_import())
     target <- pending_import()
@@ -219,6 +221,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$upload_scales_file, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(input$upload_scales_file)
     tryCatch({
@@ -229,6 +232,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$upload_texts_file, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(input$upload_texts_file)
     tryCatch({
@@ -260,6 +264,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$upload_sources_file, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(input$upload_sources_file)
     tryCatch({
@@ -282,6 +287,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$upload_ratings_file, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(input$upload_ratings_file)
     tryCatch({
@@ -292,6 +298,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
   })
 
   observeEvent(input$upload_training_file, {
+    if (!is_admin_authorized()) return()
     lang <- get_lang()
     req(input$upload_training_file)
     tryCatch({
@@ -305,6 +312,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
     downloadHandler(
       filename = function() { paste0(tabellen_name, "_export_", Sys.Date(), ".csv") },
       content = function(file) {
+        if (!is_admin_authorized()) stop("Unauthorized export request.", call. = FALSE)
         data <- dbReadTable(db_con, tabellen_name)
         write.csv2(data, file, row.names = FALSE, fileEncoding = "UTF-8")
       }
@@ -330,6 +338,7 @@ admin_register_import_export_server <- function(input, output, session, ctx) {
             "coding_training" = c("training_id", "user_id", "kategorie", "datum", "anzahl_einheiten", "accuracy", "balanced_accuracy", "iota_index", "avg_iota2", "cohens_kappa", "kappa_linear", "kappa_squared", "fleiss_kappa", "kendall_w", "alpha_nominal", "alpha_ordinal", "gwet_ac1", "gwet_ac2_quadratic", "macro_precision", "macro_recall", "macro_f1", "zeitstempel"),
             "user_source_permissions" = c("user_id", "source_id", "erstellt_am"),
             "user_coding_source_permissions" = c("user_id", "source_id", "erstellt_am"),
+            "user_scale_permissions" = c("user_id", "scale_id", "erstellt_am"),
             character(0)
           )
         }
@@ -380,6 +389,7 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
   db_con <- ctx$db_con
   scales_trigger <- ctx$scales_trigger
   get_lang <- ctx$get_lang
+  is_admin_authorized <- if (is.function(ctx$is_admin_authorized)) ctx$is_admin_authorized else function() TRUE
   user_table_trigger <- ctx$user_table_trigger
   sources_trigger <- ctx$sources_trigger
   scales_table_trigger <- ctx$scales_table_trigger
@@ -994,6 +1004,7 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
       paste0(tr("admin.master_export_filename_prefix", lang), "_", Sys.Date(), ".csv")
     },
     content = function(file) {
+      if (!is_admin_authorized()) stop("Unauthorized export request.", call. = FALSE)
       lang <- get_lang()
       sel_scales  <- selected_export_scales()
       sel_sources <- selected_export_sources()

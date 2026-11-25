@@ -1,15 +1,24 @@
 # Note: This file was generated with the assistance of AI.
 
-# Shiny Server Open Source / Deployment Entrypoint for CodingManageR
-if (requireNamespace("CodingManageR", quietly = TRUE)) {
-  CodingManageR::run_app(
-    sqlite_path = Sys.getenv("SQLITE_PATH", unset = "lokale_datenbank.sqlite")
+# ==============================================================================
+# CodingManageR - Shiny Server Open Source Entrypoint (Create Once)
+# ==============================================================================
+# Place this file once in your Shiny Server app directory (for example:
+# /srv/shiny-server/codingmanager/app.R) together with a .Renviron file
+# containing your MySQL/MariaDB credentials (MYSQL_HOST, MYSQL_PORT,
+# MYSQL_USER, MYSQL_PASSWORD, MYSQL_DBNAME).
+#
+# Because all application logic and runtime options live inside the installed
+# CodingManageR package and .Renviron, future package updates do not require
+# editing or re-copying this file -- simply update CodingManageR in R and
+# restart Shiny Server.
+# ==============================================================================
+
+if (!requireNamespace("CodingManageR", quietly = TRUE)) {
+  stop(
+    "Package 'CodingManageR' must be installed system-wide to run this Shiny Server application.",
+    call. = FALSE
   )
-} else if (requireNamespace("pkgload", quietly = TRUE) && file.exists(file.path("..", "..", "DESCRIPTION"))) {
-  pkgload::load_all(file.path("..", ".."), quiet = TRUE)
-  run_app(
-    sqlite_path = Sys.getenv("SQLITE_PATH", unset = "lokale_datenbank.sqlite")
-  )
-} else {
-  stop("Package 'CodingManageR' must be installed to launch the Shiny application.")
 }
+
+CodingManageR::run_app_server()

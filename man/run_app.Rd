@@ -2,7 +2,7 @@
 % Please edit documentation in R/app.R
 \name{run_app}
 \alias{run_app}
-\title{Launch the CodingManageR Shiny Application}
+\title{Launch the CodingManageR Shiny Application (Backward-Compatible Wrapper)}
 \usage{
 run_app(
   sqlite_path = NULL,
@@ -42,28 +42,27 @@ A \code{shiny.appobj} object that launches the Shiny portal when printed
 or returned from \code{app.R}.
 }
 \description{
-Constructs and returns a \code{shiny.appobj} configured for either local
-single-user SQLite storage or pooled MySQL/MariaDB server deployments.
+Constructs and returns a \code{shiny.appobj} configured automatically for either
+pooled MySQL/MariaDB storage (when MySQL credentials are supplied) or local
+single-user SQLite storage (with automatic fallback).
 }
 \details{
-To manage multiple independent local projects on one computer, supply a
-distinct \code{sqlite_path} file for each study (each \code{.sqlite} file stores its
-own scales, sources, case texts, user accounts, ratings, and training logs).
-Re-passing the same \code{sqlite_path} reopens that project. When \code{sqlite_path}
-is \code{NULL} (and no \code{SQLITE_PATH} or MySQL environment variables are set), a
-single default database is stored under
-\code{tools::R_user_dir("CodingManageR", which = "data")}. Always stop the
-running Shiny app before copying, renaming, moving, or archiving a \code{.sqlite}
-file so SQLite merges its Write-Ahead Log (\code{-wal}/\code{-shm}) cleanly.
+For new scripts and deployments, prefer the explicit entrypoints
+\code{\link[=run_app_local]{run_app_local()}} (minimal local SQLite launcher) and \code{\link[=run_app_server]{run_app_server()}}
+(strict MySQL/MariaDB server launcher without SQLite fallback). \code{run_app()}
+is retained for full backward compatibility with existing code.
 }
 \examples{
 \dontrun{
-# Launch separate local projects in isolated SQLite files
-run_app(sqlite_path = "study_a.sqlite", empty = TRUE)
-run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
+# Preferred explicit launchers:
+run_app_local(sqlite_path = "study_a.sqlite")
+run_app_server()
 
-# Launch a temporary demo session with sample data
+# Backward-compatible wrapper:
 app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
 app
 }
+}
+\seealso{
+\code{\link[=run_app_local]{run_app_local()}}, \code{\link[=run_app_server]{run_app_server()}}
 }

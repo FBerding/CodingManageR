@@ -325,28 +325,28 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       # 5-KPI card layout: 4 core KPIs + 1 active metric
       div(class = "row g-2 mb-3",
         div(class = "col",
-            div(class = "card h-100 bg-light border p-2 text-center shadow-xs",
+            div(class = "card h-100 bg-light border p-2 text-center shadow-sm",
                 tags$small(class = "text-muted fw-bold", tr("admin.reliability.kpi_mean_prefix", lang, tr("metrics.cohens_kappa.short", lang))),
                 tags$h4(class = "mb-0 text-primary fw-bold mt-1", format_metric_display(df$avg_kappa[1])),
                 tags$small(class = "text-muted", tr("metrics.group_nominal", lang))
             )
         ),
         div(class = "col",
-            div(class = "card h-100 bg-light border p-2 text-center shadow-xs",
+            div(class = "card h-100 bg-light border p-2 text-center shadow-sm",
                 tags$small(class = "text-muted fw-bold", tr("admin.reliability.kpi_mean_prefix", lang, tr("metrics.alpha_nominal.short", lang))),
                 tags$h4(class = "mb-0 text-success fw-bold mt-1", format_metric_display(df$avg_alpha[1])),
                 tags$small(class = "text-muted", tr("metrics.alpha_nominal.short", lang))
             )
         ),
         div(class = "col",
-            div(class = "card h-100 bg-light border p-2 text-center shadow-xs",
+            div(class = "card h-100 bg-light border p-2 text-center shadow-sm",
                 tags$small(class = "text-muted fw-bold", tr("admin.reliability.kpi_mean_prefix", lang, tr("metrics.avg_iota2.short", lang))),
                 tags$h4(class = "mb-0 text-warning fw-bold mt-1", format_metric_display(df$avg_iota[1])),
                 tags$small(class = "text-muted", tr("admin.reliability.group_iota", lang))
             )
         ),
         div(class = "col",
-            div(class = "card h-100 bg-light border p-2 text-center shadow-xs",
+            div(class = "card h-100 bg-light border p-2 text-center shadow-sm",
                 tags$small(class = "text-muted fw-bold", tr("admin.reliability.kpi_mean_prefix", lang, tr("metrics.balanced_accuracy.short", lang))),
                 tags$h4(class = "mb-0 text-info fw-bold mt-1", format_metric_display(df$avg_bal_acc[1], is_percentage = TRUE)),
                 tags$small(class = "text-muted", tr("metrics.balanced_accuracy.short", lang))
@@ -383,11 +383,13 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
         ORDER BY training_id ASC
       ", params = list(u_info$id, kat_sel))
 
+      plot_font <- coding_manager_font_stacks()$plot_family
+
       if (nrow(df) == 0) {
         empty_lbl <- paste0(tr("dashboard.chart_empty_msg", lang), "\n", tr("dashboard.chart_empty_hint", lang, 16L))
         p <- ggplot() +
-          annotate("text", x = 1, y = 0.5, label = empty_lbl, size = 5, color = "gray50", hjust = 0.5) +
-          theme_void()
+          annotate("text", x = 1, y = 0.5, label = empty_lbl, size = 5, color = "gray50", hjust = 0.5, family = plot_font) +
+          theme_void(base_family = plot_font)
         return(p)
       }
 
@@ -421,9 +423,9 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
           geom_hline(yintercept = 0.80, linetype = "dashed", color = "#166534", alpha = 0.55, linewidth = 0.55) +
           geom_hline(yintercept = 0.60, linetype = "dashed", color = "#B45309", alpha = 0.55, linewidth = 0.55) +
           geom_hline(yintercept = 0.40, linetype = "dashed", color = "#991B1B", alpha = 0.55, linewidth = 0.55) +
-          annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#166534", size = 3.2, hjust = 0) +
-          annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#B45309", size = 3.2, hjust = 0) +
-          annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#991B1B", size = 3.2, hjust = 0) +
+          annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#166534", size = 3.2, hjust = 0, family = plot_font) +
+          annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#B45309", size = 3.2, hjust = 0, family = plot_font) +
+          annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#991B1B", size = 3.2, hjust = 0, family = plot_font) +
           geom_line(linewidth = 1.1) +
           geom_point(size = 3.5) +
           scale_color_manual(name = paste0(tr("dashboard.chart_legend_metric", lang), ":"), values = color_palette) +
@@ -446,8 +448,8 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
           p <- ggplot(df, aes(x = sitzung_nr, y = val)) +
             geom_hline(yintercept = 80, linetype = "dashed", color = "#27ae60", alpha = 0.6, linewidth = 0.6) +
             geom_hline(yintercept = 60, linetype = "dashed", color = "#f39c12", alpha = 0.6, linewidth = 0.6) +
-            annotate("text", x = 0.55, y = 82, label = tr("dashboard.chart_bench_good_pct", lang), color = "#27ae60", size = 3.3, hjust = 0) +
-            annotate("text", x = 0.55, y = 62, label = tr("dashboard.chart_bench_mod_pct", lang), color = "#f39c12", size = 3.3, hjust = 0) +
+            annotate("text", x = 0.55, y = 82, label = tr("dashboard.chart_bench_good_pct", lang), color = "#27ae60", size = 3.3, hjust = 0, family = plot_font) +
+            annotate("text", x = 0.55, y = 62, label = tr("dashboard.chart_bench_mod_pct", lang), color = "#f39c12", size = 3.3, hjust = 0, family = plot_font) +
             geom_line(color = cur_meta$color, linewidth = 1.3) +
             geom_point(color = cur_meta$color, size = 4) +
             scale_y_continuous(limits = c(y_lower, 105), breaks = seq(0, 100, 20), labels = function(x) paste0(x, " %")) +
@@ -465,9 +467,9 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
             geom_hline(yintercept = 0.80, linetype = "dashed", color = "#27ae60", alpha = 0.6, linewidth = 0.6) +
             geom_hline(yintercept = 0.60, linetype = "dashed", color = "#f39c12", alpha = 0.6, linewidth = 0.6) +
             geom_hline(yintercept = 0.40, linetype = "dashed", color = "#e74c3c", alpha = 0.6, linewidth = 0.6) +
-            annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#27ae60", size = 3.3, hjust = 0) +
-            annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#f39c12", size = 3.3, hjust = 0) +
-            annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#e74c3c", size = 3.3, hjust = 0) +
+            annotate("text", x = 0.55, y = 0.82, label = tr("dashboard.chart_bench_good_dec", lang), color = "#27ae60", size = 3.3, hjust = 0, family = plot_font) +
+            annotate("text", x = 0.55, y = 0.62, label = tr("dashboard.chart_bench_mod_dec", lang), color = "#f39c12", size = 3.3, hjust = 0, family = plot_font) +
+            annotate("text", x = 0.55, y = 0.42, label = tr("metrics.bench_moderate", lang), color = "#e74c3c", size = 3.3, hjust = 0, family = plot_font) +
             geom_line(color = cur_meta$color, linewidth = 1.3) +
             geom_point(color = cur_meta$color, size = 4) +
             scale_y_continuous(limits = c(y_lower, 1.05), breaks = seq(0, 1, 0.2)) +
@@ -481,7 +483,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
 
         if (n_sitzungen <= 15) {
           val_labels <- if (is_pct) sprintf("%.1f%%", df$val) else sprintf("%.3f", df$val)
-          p <- p + geom_text(aes(label = val_labels), vjust = -1.2, size = 3.3, fontface = "bold", color = cur_meta$color)
+          p <- p + geom_text(aes(label = val_labels), vjust = -1.2, size = 3.3, fontface = "bold", color = cur_meta$color, family = plot_font)
         }
       }
 
@@ -490,7 +492,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
 
       p <- p +
         scale_x_continuous(breaks = x_breaks, labels = x_labels, limits = c(0.5, max(1.5, n_sitzungen + 0.5))) +
-        theme_minimal(base_size = 12) +
+        coding_manager_plot_theme(base_size = 12) +
         theme(
           plot.title = element_text(face = "bold", size = 13, color = "#1C234A", margin = margin(b = 4)),
           plot.subtitle = element_text(size = 10.5, color = "#525B70", margin = margin(b = 10)),
@@ -561,7 +563,7 @@ dashboardServer <- function(id, db_con, user_id_reactive = NULL, username_reacti
       })
 
       tags$div(class = "table-responsive mt-2",
-        tags$table(class = "table table-hover align-middle table-bordered bg-white shadow-xs text-center",
+        tags$table(class = "table table-hover align-middle table-bordered bg-white shadow-sm text-center",
           tags$thead(class = "table-light text-muted small text-uppercase",
             tags$tr(
               tags$th(rowspan = 2, class = "text-center align-middle", style = "min-width: 80px;", "#"),

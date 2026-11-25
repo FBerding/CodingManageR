@@ -3,12 +3,44 @@
 #' CodingManageR Shiny Application Entrypoint
 #'
 #' Provides CRAN-compliant exported functions [coding_manager_ui()],
-#' [coding_manager_server()], and [run_app()] to launch the multi-user
-#' qualitative coding and training portal without top-level side effects.
+#' [coding_manager_server()], [run_app_local()], [run_app_server()], and
+#' [run_app()] to launch the qualitative coding and training portal either
+#' locally (SQLite) or on a multi-user server (MySQL/MariaDB) without top-level
+#' side effects.
 #'
 #' @name CodingManageR-app
 #' @keywords internal
 NULL
+
+#' Resolve Active CodingManageR Package Version
+#'
+#' Dynamically retrieves the installed `CodingManageR` package version via
+#' `utils::packageVersion()`, falling back to reading a local `DESCRIPTION`
+#' file during source/development sessions so the login screen never relies on
+#' hardcoded release strings.
+#'
+#' @return Character scalar package version (e.g., `"1.0.0"`).
+#' @keywords internal
+#' @noRd
+coding_manager_version <- function() {
+  ver <- tryCatch(
+    as.character(utils::packageVersion("CodingManageR")),
+    error = function(e) ""
+  )
+  if (nzchar(ver)) {
+    return(ver)
+  }
+
+  desc_path <- "DESCRIPTION"
+  if (file.exists(desc_path)) {
+    dcf <- tryCatch(read.dcf(desc_path, fields = "Version"), error = function(e) NULL)
+    if (!is.null(dcf) && length(dcf) > 0L && !is.na(dcf[1, 1]) && nzchar(trimws(dcf[1, 1]))) {
+      return(trimws(as.character(dcf[1, 1])))
+    }
+  }
+
+  "dev"
+}
 
 #' Build the Root Shiny UI for CodingManageR
 #'
@@ -38,14 +70,32 @@ coding_manager_ui <- function(lang = "de") {
       coding_manager_css(),
       coding_manager_tutorial_assets(),
       tags$script(HTML("
-        document.addEventListener('DOMContentLoaded', function() {
-          if (window.Shiny) {
-            var navLang = (navigator.language || navigator.userLanguage || 'en');
-            if (Shiny.setInputValue) {
+        (function() {
+          function sendBrowserLang() {
+            if (window.Shiny && typeof Shiny.setInputValue === 'function') {
+              var navLang = (navigator.language || navigator.userLanguage || 'en');
               Shiny.setInputValue('browser_lang', navLang, {priority: 'event'});
             }
           }
-        });
+          document.addEventListener('shiny:connected', sendBrowserLang);
+          document.addEventListener('DOMContentLoaded', function() {
+            if (window.Shiny && Shiny.shinyapp && Shiny.shinyapp.isConnected && Shiny.shinyapp.isConnected()) {
+              sendBrowserLang();
+            }
+          });
+          document.addEventListener('keydown', function(evt) {
+            if (evt.key !== 'Enter') return;
+            var target = evt.target;
+            if (!target || !target.closest || !target.closest('.cm-login-card')) return;
+            if (target.id === 'login_username' || target.id === 'login_token') {
+              var loginBtn = document.getElementById('btn_login');
+              if (loginBtn) {
+                evt.preventDefault();
+                loginBtn.click();
+              }
+            }
+          });
+        })();
       "))
     ),
     div(
@@ -84,6 +134,9 @@ coding_manager_ui <- function(lang = "de") {
 #'   When `FALSE`, demonstration data is only seeded into a brand-new, empty
 #'   database; existing SQLite files or populated databases are protected and
 #'   emit a warning instead.
+#' @param fallback_to_sqlite Logical passed to [get_db_pool()]. Defaults to `TRUE`.
+#'   Set to `FALSE` (used by [run_app_server()]) to enforce strict MySQL/MariaDB
+#'   connectivity without silently falling back to a local SQLite file.
 #'
 #' @return Invisibly returns `NULL`.
 #' @examples
@@ -95,8 +148,9 @@ coding_manager_server <- function(input, output, session,
                                   db_con = NULL,
                                   sqlite_path = NULL,
                                   config = NULL,
-                                  seed_empty = NULL) {
-  # Resolve database connection (injected for testing, passed via run_app options, or created fresh)
+                                  seed_empty = NULL,
+                                  fallback_to_sqlite = TRUE) {
+  # Resolve database connection (injected for testing, passed via launcher options, or created fresh)
   opt_con <- getOption("CodingManageR.db_con", default = NULL)
   owns_connection <- FALSE
 
@@ -106,24 +160,30 @@ coding_manager_server <- function(input, output, session,
     opt_con
   } else {
     cfg <- if (!is.null(config)) config else getOption("CodingManageR.db_config", default = list())
-    eff_sqlite <- if (!is.null(sqlite_path) && length(sqlite_path) > 0L && nzchar(as.character(sqlite_path)[1])) {
-      as.character(sqlite_path)[1]
-    } else if (!is.null(cfg$sqlite_path) && length(cfg$sqlite_path) > 0L && nzchar(as.character(cfg$sqlite_path)[1])) {
-      as.character(cfg$sqlite_path)[1]
-    } else if (!is.null(cfg$sqlite_f) && length(cfg$sqlite_f) > 0L && nzchar(as.character(cfg$sqlite_f)[1])) {
-      as.character(cfg$sqlite_f)[1]
-    } else {
-      getOption("CodingManageR.sqlite_path", default = Sys.getenv("SQLITE_PATH", unset = ""))
+    if (is.null(cfg)) cfg <- list()
+    eff_fallback <- isTRUE(fallback_to_sqlite)
+    resolved_sqlite <- ""
+    sqlite_file_existed <- FALSE
+    if (eff_fallback) {
+      eff_sqlite <- if (!is.null(sqlite_path) && length(sqlite_path) > 0L && nzchar(as.character(sqlite_path)[1])) {
+        as.character(sqlite_path)[1]
+      } else if (!is.null(cfg$sqlite_path) && length(cfg$sqlite_path) > 0L && nzchar(as.character(cfg$sqlite_path)[1])) {
+        as.character(cfg$sqlite_path)[1]
+      } else if (!is.null(cfg$sqlite_f) && length(cfg$sqlite_f) > 0L && nzchar(as.character(cfg$sqlite_f)[1])) {
+        as.character(cfg$sqlite_f)[1]
+      } else {
+        getOption("CodingManageR.sqlite_path", default = Sys.getenv("SQLITE_PATH", unset = ""))
+      }
+      if (nzchar(eff_sqlite)) {
+        cfg$sqlite_path <- eff_sqlite
+      }
+      resolved_sqlite <- resolve_sqlite_path(config = cfg, check_option = FALSE, create_dir = FALSE)
+      sqlite_file_existed <- nzchar(resolved_sqlite) &&
+        !identical(resolved_sqlite, ":memory:") &&
+        file.exists(resolved_sqlite)
     }
-    if (nzchar(eff_sqlite)) {
-      cfg$sqlite_path <- eff_sqlite
-    }
-    resolved_sqlite <- resolve_sqlite_path(config = cfg, check_option = FALSE, create_dir = FALSE)
-    sqlite_file_existed <- nzchar(resolved_sqlite) &&
-      !identical(resolved_sqlite, ":memory:") &&
-      file.exists(resolved_sqlite)
     owns_connection <- TRUE
-    con_new <- get_db_pool(config = cfg, fallback_to_sqlite = TRUE, force_pool = TRUE)
+    con_new <- get_db_pool(config = cfg, fallback_to_sqlite = eff_fallback, force_pool = TRUE)
     create_all_tables(con_new, verbose = FALSE)
     eff_empty <- if (!is.null(seed_empty)) {
       isTRUE(seed_empty)
@@ -395,7 +455,8 @@ coding_manager_server <- function(input, output, session,
     current_user = current_user,
     current_user_id = current_user_id,
     scales_trigger = scales_trigger,
-    current_lang = current_lang
+    current_lang = current_lang,
+    current_role = current_role
   )
 
   # Main root page router (Login Screen vs Authenticated Workspace)
@@ -424,7 +485,11 @@ coding_manager_server <- function(input, output, session,
             div(
               class = "cm-login-body",
               h4(class = "mb-1", tr("auth.login_title", lang)),
-              p(class = "text-muted small mb-4", tr("auth.subtitle", lang)),
+              p(class = "text-muted small mb-1", tr("auth.subtitle", lang)),
+              p(
+                class = "cm-login-version font-monospace",
+                tr("auth.version_label", lang, coding_manager_version())
+              ),
               textInput(
                 "login_username",
                 label = tr("auth.username", lang),
@@ -481,7 +546,7 @@ coding_manager_server <- function(input, output, session,
 
     if (is_admin) {
       tabs[[length(tabs) + 1L]] <- tabPanel(
-        title = tr("nav.admin", lang),
+        title = tagList(icon("wrench"), " ", tr("nav.admin", lang)),
         value = "tab_admin",
         adminUI("mod_admin", lang = lang)
       )
@@ -545,58 +610,74 @@ coding_manager_server <- function(input, output, session,
   invisible(NULL)
 }
 
-#' Launch the CodingManageR Shiny Application
+#' Parse Optional Logical Environment Variable
 #'
-#' Constructs and returns a `shiny.appobj` configured for either local
-#' single-user SQLite storage or pooled MySQL/MariaDB server deployments.
+#' @param var_name Name of the environment variable to inspect.
+#' @param default Logical fallback returned when unset or invalid.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+parse_env_logical <- function(var_name, default = TRUE) {
+  raw <- trimws(Sys.getenv(var_name, unset = ""))
+  if (!nzchar(raw)) return(isTRUE(default))
+  low <- tolower(raw)
+  if (low %in% c("false", "0", "no", "f", "off")) return(FALSE)
+  if (low %in% c("true", "1", "yes", "t", "on")) return(TRUE)
+  warning(
+    sprintf(
+      "[CodingManageR] Ignoring invalid value '%s' for environment variable '%s'; using default (%s).",
+      raw, var_name, as.character(isTRUE(default))
+    ),
+    call. = FALSE
+  )
+  isTRUE(default)
+}
+
+#' Parse Optional Upload Limit Environment Variable (in GB)
 #'
-#' To manage multiple independent local projects on one computer, supply a
-#' distinct `sqlite_path` file for each study (each `.sqlite` file stores its
-#' own scales, sources, case texts, user accounts, ratings, and training logs).
-#' Re-passing the same `sqlite_path` reopens that project. When `sqlite_path`
-#' is `NULL` (and no `SQLITE_PATH` or MySQL environment variables are set), a
-#' single default database is stored under
-#' `tools::R_user_dir("CodingManageR", which = "data")`. Always stop the
-#' running Shiny app before copying, renaming, moving, or archiving a `.sqlite`
-#' file so SQLite merges its Write-Ahead Log (`-wal`/`-shm`) cleanly.
+#' @param var_name Name of the environment variable to inspect.
+#' @param default Numeric fallback (in GB) returned when unset or invalid.
+#' @return Positive numeric scalar or `NULL`.
+#' @keywords internal
+#' @noRd
+parse_env_upload_gb <- function(var_name, default = 3) {
+  raw <- trimws(Sys.getenv(var_name, unset = ""))
+  if (!nzchar(raw)) return(default)
+  low <- tolower(raw)
+  if (low %in% c("null", "none", "off")) return(NULL)
+  val <- suppressWarnings(as.numeric(raw))
+  if (!is.na(val) && is.finite(val) && val > 0) {
+    return(val)
+  }
+  warning(
+    sprintf(
+      "[CodingManageR] Ignoring invalid value '%s' for environment variable '%s'; using default (%s GB).",
+      raw, var_name, as.character(default)
+    ),
+    call. = FALSE
+  )
+  default
+}
+
+#' Internal Shiny App Factory Shared by All Launchers
 #'
-#' @param sqlite_path Optional file path to a local SQLite database. Passing a
-#'   different `.sqlite` path creates or reopens a separate, isolated project;
-#'   the parent directory must already exist.
-#' @param config Optional named list of database configuration parameters passed
-#'   to [get_db_pool()].
-#' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
-#'   database. Defaults to `TRUE` (creates only the default `admin` and
-#'   `historic_user` accounts). When `FALSE`, demonstration data is only inserted
-#'   into a brand-new, empty database; existing SQLite files or databases that
-#'   already contain rows are left untouched and trigger a warning.
-#' @param max_upload_size_gb Positive numeric maximum file upload size in
-#'   gigabytes applied via `options(shiny.maxRequestSize = ...)` while the app
-#'   runs (restored cleanly on app shutdown). Defaults to `3` (3 GB). Set to
-#'   `NULL` to leave the session's existing `shiny.maxRequestSize` option
-#'   unchanged.
-#' @param options Optional list of options forwarded to `shiny::shinyApp()`.
+#' @param sqlite_path Optional SQLite file path.
+#' @param config Optional database configuration list.
+#' @param empty Logical passed to [seed_initial_data()].
+#' @param max_upload_size_gb Positive numeric upload limit in GB or `NULL`.
+#' @param fallback_to_sqlite Logical controlling SQLite fallback.
+#' @param options Optional list forwarded to `shiny::shinyApp()`.
 #' @param ... Additional arguments forwarded to `shiny::shinyApp()`.
-#'
-#' @return A `shiny.appobj` object that launches the Shiny portal when printed
-#'   or returned from `app.R`.
-#' @examples
-#' \dontrun{
-#' # Launch separate local projects in isolated SQLite files
-#' run_app(sqlite_path = "study_a.sqlite", empty = TRUE)
-#' run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
-#'
-#' # Launch a temporary demo session with sample data
-#' app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
-#' app
-#' }
-#' @export
-run_app <- function(sqlite_path = NULL,
-                    config = NULL,
-                    empty = TRUE,
-                    max_upload_size_gb = 3,
-                    options = list(),
-                    ...) {
+#' @return A `shiny.appobj` object.
+#' @keywords internal
+#' @noRd
+build_coding_manager_app <- function(sqlite_path = NULL,
+                                     config = NULL,
+                                     empty = TRUE,
+                                     max_upload_size_gb = 3,
+                                     fallback_to_sqlite = TRUE,
+                                     options = list(),
+                                     ...) {
   app_server <- function(input, output, session) {
     coding_manager_server(
       input = input,
@@ -604,7 +685,8 @@ run_app <- function(sqlite_path = NULL,
       session = session,
       sqlite_path = sqlite_path,
       config = config,
-      seed_empty = empty
+      seed_empty = empty,
+      fallback_to_sqlite = fallback_to_sqlite
     )
   }
 
@@ -642,5 +724,216 @@ run_app <- function(sqlite_path = NULL,
       ),
       dots
     )
+  )
+}
+
+#' Launch CodingManageR Locally (Single-User SQLite Mode)
+#'
+#' Constructs and returns a `shiny.appobj` strictly configured for local,
+#' single-user workstation use with a local SQLite database file. Any
+#' `MYSQL_HOST` or `MYSQL_USER` environment variables present on the machine
+#' are ignored so local sessions never connect accidentally to a remote server.
+#'
+#' To manage multiple independent local projects on one computer, supply a
+#' distinct `sqlite_path` file for each study (each `.sqlite` file stores its
+#' own scales, sources, case texts, user accounts, ratings, and training logs).
+#' Re-passing the same `sqlite_path` reopens that project. When `sqlite_path`
+#' is `NULL` (and no `SQLITE_PATH` environment variable is set), a single
+#' default database is stored under
+#' `tools::R_user_dir("CodingManageR", which = "data")`. Always stop the
+#' running Shiny app before copying, renaming, moving, or archiving a `.sqlite`
+#' file so SQLite merges its Write-Ahead Log (`-wal`/`-shm`) cleanly.
+#'
+#' For multi-user server deployments backed by MySQL/MariaDB, use
+#' [run_app_server()] instead.
+#'
+#' @param sqlite_path Optional file path to a local SQLite database. Passing a
+#'   different `.sqlite` path creates or reopens a separate, isolated project;
+#'   the parent directory must already exist.
+#' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
+#'   database. Defaults to `TRUE` (creates only the default `admin` and
+#'   `historic_user` accounts). When `FALSE`, demonstration data is only inserted
+#'   into a brand-new, empty database; existing SQLite files or databases that
+#'   already contain rows are left untouched and trigger a warning.
+#'
+#' @return A `shiny.appobj` object that launches the local Shiny portal when
+#'   printed or run interactively.
+#' @seealso [run_app_server()], [run_app()]
+#' @examples
+#' \dontrun{
+#' # Launch the default local SQLite project
+#' run_app_local()
+#'
+#' # Launch separate local projects in isolated SQLite files
+#' run_app_local(sqlite_path = "study_a.sqlite")
+#' run_app_local(sqlite_path = "study_b.sqlite")
+#'
+#' # Launch a temporary demo session with sample data
+#' run_app_local(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
+#' }
+#' @export
+run_app_local <- function(sqlite_path = NULL, empty = TRUE) {
+  build_coding_manager_app(
+    sqlite_path = sqlite_path,
+    config = list(force_sqlite = TRUE),
+    empty = isTRUE(empty),
+    max_upload_size_gb = 3,
+    fallback_to_sqlite = TRUE,
+    options = list()
+  )
+}
+
+#' Launch CodingManageR on a Multi-User Server (MySQL/MariaDB Mode)
+#'
+#' Constructs and returns a `shiny.appobj` configured strictly for multi-user
+#' server deployments (such as Shiny Server Open Source) backed by a central
+#' MySQL or MariaDB database pool.
+#'
+#' Unlike [run_app_local()] and [run_app()], `run_app_server()` permanently
+#' disables the SQLite fallback (`fallback_to_sqlite = FALSE`). If MySQL/MariaDB
+#' credentials are missing or the database server cannot be reached, startup
+#' stops with an actionable error message rather than silently creating a local
+#' SQLite file on the server.
+#'
+#' On Shiny Server, create your `app.R` entrypoint **once** with a zero-argument
+#' call to `CodingManageR::run_app_server()` (or copy the bundled file via
+#' `system.file("shiny", "app.R", package = "CodingManageR")`) and store all
+#' database and runtime settings in `.Renviron`:
+#'
+#' - Required database variables: `MYSQL_HOST`, `MYSQL_USER` (plus `MYSQL_PORT`,
+#'   `MYSQL_PASSWORD`, and `MYSQL_DBNAME`).
+#' - Optional runtime variables: `CODINGMANAGER_EMPTY` (`TRUE`/`FALSE`, default
+#'   `TRUE`) and `CODINGMANAGER_MAX_UPLOAD_GB` (positive number in GB or
+#'   `"null"`, default `3`).
+#'
+#' Because all configuration resides in `.Renviron` and all logic resides inside
+#' the package, future updates of **CodingManageR** require only updating the R
+#' package and restarting Shiny Server -- no manual edits to `app.R` are needed.
+#'
+#' @param config Optional named list of MySQL/MariaDB connection parameters
+#'   passed to [get_db_pool()] (`host`, `port`, `user`, `password`, `dbname`,
+#'   `minSize`, `maxSize`, `idleTimeout`). When `NULL` (default, recommended for
+#'   server deployments), credentials are read from `.Renviron`.
+#' @param empty Logical passed to [seed_initial_data()] when initializing a
+#'   brand-new database. Defaults to `TRUE`. When omitted, the optional
+#'   `CODINGMANAGER_EMPTY` environment variable is consulted before falling back
+#'   to `TRUE`.
+#' @param max_upload_size_gb Positive numeric maximum file upload size in
+#'   gigabytes applied via `options(shiny.maxRequestSize = ...)` while the app
+#'   runs (restored cleanly on app shutdown). Defaults to `3` (3 GB). When
+#'   omitted, the optional `CODINGMANAGER_MAX_UPLOAD_GB` environment variable is
+#'   consulted before falling back to `3`. Set to `NULL` to leave the existing
+#'   `shiny.maxRequestSize` option unchanged.
+#' @param options Optional list of options forwarded to `shiny::shinyApp()`.
+#' @param ... Additional arguments forwarded to `shiny::shinyApp()`.
+#'
+#' @return A `shiny.appobj` object suitable for returning from a Shiny Server
+#'   `app.R` entrypoint.
+#' @seealso [run_app_local()], [run_app()]
+#' @examples
+#' \dontrun{
+#' # Minimal, set-once Shiny Server app.R (reads credentials from .Renviron)
+#' CodingManageR::run_app_server()
+#'
+#' # Explicit programmatic MySQL/MariaDB configuration
+#' CodingManageR::run_app_server(
+#'   config = list(
+#'     host = "127.0.0.1",
+#'     port = 3306L,
+#'     user = "shiny_user",
+#'     password = "secret",
+#'     dbname = "kodierer_portal"
+#'   )
+#' )
+#' }
+#' @export
+run_app_server <- function(config = NULL,
+                           empty = TRUE,
+                           max_upload_size_gb = 3,
+                           options = list(),
+                           ...) {
+  eff_empty <- if (missing(empty)) {
+    parse_env_logical("CODINGMANAGER_EMPTY", default = empty)
+  } else {
+    isTRUE(empty)
+  }
+
+  eff_upload_gb <- if (missing(max_upload_size_gb)) {
+    parse_env_upload_gb("CODINGMANAGER_MAX_UPLOAD_GB", default = max_upload_size_gb)
+  } else {
+    max_upload_size_gb
+  }
+
+  cfg <- if (is.null(config)) list() else as.list(config)
+  cfg$force_sqlite <- FALSE
+
+  build_coding_manager_app(
+    sqlite_path = NULL,
+    config = cfg,
+    empty = eff_empty,
+    max_upload_size_gb = eff_upload_gb,
+    fallback_to_sqlite = FALSE,
+    options = options,
+    ...
+  )
+}
+
+#' Launch the CodingManageR Shiny Application (Backward-Compatible Wrapper)
+#'
+#' Constructs and returns a `shiny.appobj` configured automatically for either
+#' pooled MySQL/MariaDB storage (when MySQL credentials are supplied) or local
+#' single-user SQLite storage (with automatic fallback).
+#'
+#' For new scripts and deployments, prefer the explicit entrypoints
+#' [run_app_local()] (minimal local SQLite launcher) and [run_app_server()]
+#' (strict MySQL/MariaDB server launcher without SQLite fallback). `run_app()`
+#' is retained for full backward compatibility with existing code.
+#'
+#' @param sqlite_path Optional file path to a local SQLite database. Passing a
+#'   different `.sqlite` path creates or reopens a separate, isolated project;
+#'   the parent directory must already exist.
+#' @param config Optional named list of database configuration parameters passed
+#'   to [get_db_pool()].
+#' @param empty Logical passed to [seed_initial_data()] when initializing a fresh
+#'   database. Defaults to `TRUE` (creates only the default `admin` and
+#'   `historic_user` accounts). When `FALSE`, demonstration data is only inserted
+#'   into a brand-new, empty database; existing SQLite files or databases that
+#'   already contain rows are left untouched and trigger a warning.
+#' @param max_upload_size_gb Positive numeric maximum file upload size in
+#'   gigabytes applied via `options(shiny.maxRequestSize = ...)` while the app
+#'   runs (restored cleanly on app shutdown). Defaults to `3` (3 GB). Set to
+#'   `NULL` to leave the session's existing `shiny.maxRequestSize` option
+#'   unchanged.
+#' @param options Optional list of options forwarded to `shiny::shinyApp()`.
+#' @param ... Additional arguments forwarded to `shiny::shinyApp()`.
+#'
+#' @return A `shiny.appobj` object that launches the Shiny portal when printed
+#'   or returned from `app.R`.
+#' @seealso [run_app_local()], [run_app_server()]
+#' @examples
+#' \dontrun{
+#' # Preferred explicit launchers:
+#' run_app_local(sqlite_path = "study_a.sqlite")
+#' run_app_server()
+#'
+#' # Backward-compatible wrapper:
+#' app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
+#' app
+#' }
+#' @export
+run_app <- function(sqlite_path = NULL,
+                    config = NULL,
+                    empty = TRUE,
+                    max_upload_size_gb = 3,
+                    options = list(),
+                    ...) {
+  build_coding_manager_app(
+    sqlite_path = sqlite_path,
+    config = config,
+    empty = empty,
+    max_upload_size_gb = max_upload_size_gb,
+    fallback_to_sqlite = TRUE,
+    options = options,
+    ...
   )
 }
