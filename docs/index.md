@@ -12,21 +12,24 @@ From early-stage coder training to large-scale empirical data
 collection, **CodingManageR** supports two flexible deployment modes so
 it scales effortlessly with the size of your research program:
 
-- **Manage Multiple Projects Locally (SQLite):** Individual researchers
-  and small teams can run the app locally on a laptop or workstation
-  without any server administration. Each study lives in its own
-  self-contained `.sqlite` file with isolated scales, text corpora,
-  bibliographic sources, user accounts, and ratings—making it easy to
-  maintain, back up, and archive **multiple independent projects** side
-  by side.
+- **Manage Multiple Projects Locally (SQLite —
+  [`run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md)):**
+  Individual researchers and small teams can run the app locally on a
+  laptop or workstation without any server administration. Each study
+  lives in its own self-contained `.sqlite` file with isolated scales,
+  text corpora, bibliographic sources, user accounts, and ratings—making
+  it easy to maintain, back up, and archive **multiple independent
+  projects** side by side.
 - **Collaborate Across Locations on Large Projects (Shiny Server +
-  MariaDB/MySQL):** For **larger multi-user studies and multi-site
-  consortia**, CodingManageR connects to a central **MariaDB or MySQL
-  server** (for example behind Open Source Shiny Server). Coders and
-  project administrators can sign in from **different sites,
-  departments, or partner universities** to work simultaneously on one
-  shared, role-protected database while tracking team-wide reliability
-  in real time.
+  MariaDB/MySQL —
+  [`run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)):**
+  For **larger multi-user studies and multi-site consortia**,
+  CodingManageR connects strictly to a central **MariaDB or MySQL
+  server** (for example behind Open Source Shiny Server) via a set-once
+  `app.R` entrypoint. Coders and project administrators can sign in from
+  **different sites, departments, or partner universities** to work
+  simultaneously on one shared, role-protected database while tracking
+  team-wide reliability in real time.
 
 Whether you run a single local study or coordinate an international
 coding team, **CodingManageR** combines stratified gold-standard

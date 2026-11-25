@@ -86,7 +86,7 @@ Paste this command into the R console and press **Enter**:
 
 ``` r
 
-CodingManageR::run_app()
+CodingManageR::run_app_local()
 ```
 
 Your browser or RStudio viewer opens automatically. You will see the
@@ -105,8 +105,13 @@ variable:
 
 ``` r
 
-CodingManageR::run_app(sqlite_path = "my_coding_project.sqlite")
+CodingManageR::run_app_local(sqlite_path = "my_coding_project.sqlite")
 ```
+
+[`run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md)
+accepts only two parameters (`sqlite_path` and `empty`) and always stays
+isolated in local SQLite mode—even if `MYSQL_HOST` or `MYSQL_USER`
+environment variables are set on your computer for other projects.
 
 ### 3.2 Step 2: Optional — Try the App with Built-In Sample Data
 
@@ -116,7 +121,7 @@ scales, example texts, and test accounts:
 
 ``` r
 
-CodingManageR::run_app(sqlite_path = "coding_demo.sqlite", empty = FALSE)
+CodingManageR::run_app_local(sqlite_path = "coding_demo.sqlite", empty = FALSE)
 ```
 
 - Clean project start (`empty = TRUE`, default): creates empty tables
@@ -155,7 +160,7 @@ keeps its own scales, sources, case texts, user accounts, ratings, and
 training history.
 
 If you run
-[`CodingManageR::run_app()`](https://fberding.github.io/CodingManageR/reference/run_app.md)
+[`CodingManageR::run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md)
 without `sqlite_path`, the app always opens the same default file in
 your R user folder. To keep different studies or courses separate, use a
 different `sqlite_path` for each project:
@@ -163,10 +168,10 @@ different `sqlite_path` for each project:
 ``` r
 
 # Project A: creates (or opens) "study_a.sqlite" in your working folder
-CodingManageR::run_app(sqlite_path = "study_a.sqlite")
+CodingManageR::run_app_local(sqlite_path = "study_a.sqlite")
 
 # Project B: creates (or opens) a second, separate database
-CodingManageR::run_app(sqlite_path = "study_b.sqlite")
+CodingManageR::run_app_local(sqlite_path = "study_b.sqlite")
 ```
 
 Want to store a project in its own subfolder? Create the folder first.
@@ -176,7 +181,7 @@ exist:
 ``` r
 
 dir.create("projects/study_2026", recursive = TRUE, showWarnings = FALSE)
-CodingManageR::run_app(sqlite_path = "projects/study_2026/study_2026.sqlite")
+CodingManageR::run_app_local(sqlite_path = "projects/study_2026/study_2026.sqlite")
 ```
 
 To open the same project again later, run the command with the same
@@ -197,7 +202,7 @@ one important rule first:
     `study_a_backup_2026-11-22.sqlite`).
 3.  **Rename or move a project:** Rename or move the `.sqlite` file in
     your file explorer. Then open it with the new path:
-    `CodingManageR::run_app(sqlite_path = "new_folder/renamed_project.sqlite")`.
+    `CodingManageR::run_app_local(sqlite_path = "new_folder/renamed_project.sqlite")`.
 4.  **Long-term research archiving:** Also export your data as **CSV**
     files (simple table files for Excel, R, or SPSS). You can download
     them in **Admin Console -\> Data & Import/Export**.
@@ -282,10 +287,11 @@ wget https://download3.rstudio.org/ubuntu-20.04/x86_64/shiny-server-1.5.22.1017-
 sudo gdebi shiny-server-1.5.22.1017-amd64.deb
 ```
 
-### 4.5 Step 5: Deploy the Application Entrypoint
+### 4.5 Step 5: Create the Set-Once Application Entrypoint
 
-Create a folder inside `/srv/shiny-server/`. Copy the ready-to-use
-`app.R` launcher from **CodingManageR** into that folder:
+Create a folder inside `/srv/shiny-server/` and place the minimal
+`app.R` launcher inside it once. You can copy the bundled entrypoint
+directly from **CodingManageR**:
 
 ``` bash
 sudo mkdir -p /srv/shiny-server/codingmanager
@@ -293,10 +299,23 @@ sudo R -e 'file.copy(system.file("shiny", "app.R", package = "CodingManageR"), "
 sudo chown -R shiny:shiny /srv/shiny-server/codingmanager
 ```
 
-### 4.6 Step 6: Configure Database Credentials and Restart
+Internally, this `app.R` contains nothing more than a package check and
+a zero-argument call to
+[`CodingManageR::run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md).
+You only need to create this file **once**—it stays valid across future
+**CodingManageR** package updates without manual edits.
 
-Create an `.Renviron` file inside the app folder. This tells
-CodingManageR to connect to MariaDB instead of SQLite:
+> **Safe multi-user behavior:**
+> [`CodingManageR::run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)
+> strictly enforces MySQL/MariaDB and disables SQLite fallback
+> completely. If credentials are missing or MariaDB is unreachable, the
+> app stops with a clear error message in the Shiny Server logs instead
+> of silently creating a local SQLite file.
+
+### 4.6 Step 6: Configure `.Renviron` and Restart
+
+Create an `.Renviron` file inside `/srv/shiny-server/codingmanager/` to
+store your database credentials and any optional runtime settings:
 
 ``` bash
 sudo nano /srv/shiny-server/codingmanager/.Renviron
@@ -310,6 +329,10 @@ MYSQL_PORT=3306
 MYSQL_USER=shiny_user
 MYSQL_PASSWORD=ChooseAStrongPassword
 MYSQL_DBNAME=kodierer_portal
+
+# Optional runtime settings (defaults shown; omit if not needed):
+# CODINGMANAGER_MAX_UPLOAD_GB=3
+# CODINGMANAGER_EMPTY=TRUE
 ```
 
 Lock the file permissions so only the `shiny` user can read the
@@ -325,6 +348,24 @@ Open `http://<server-ip>:3838/codingmanager/` in a web browser. On the
 first visit, CodingManageR creates all 9 database tables in MariaDB
 automatically. It also creates the `admin` account with token
 `geheim123`. Sign in and change that password right away.
+
+### 4.7 Upgrading CodingManageR on the Server (Zero Entrypoint Edits)
+
+Because `/srv/shiny-server/codingmanager/app.R` only calls
+[`CodingManageR::run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)
+and all credentials live in `.Renviron`, updating the server to a newer
+release of **CodingManageR** never requires editing or re-copying
+`app.R`. Simply install the updated package and restart Shiny Server:
+
+``` bash
+# Update from CRAN:
+sudo R -e 'install.packages("CodingManageR", repos = "https://cloud.r-project.org")'
+sudo systemctl restart shiny-server
+
+# Or update from GitHub:
+# sudo R -e 'remotes::install_github("FBerding/CodingManageR")'
+# sudo systemctl restart shiny-server
+```
 
 ------------------------------------------------------------------------
 

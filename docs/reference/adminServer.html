@@ -63,7 +63,8 @@ import/export, and relational database integrity diagnostics.</p>
 <span>  current_user <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  current_user_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scales_trigger <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  current_lang <span class="op">=</span> <span class="fu">reactiveVal</span><span class="op">(</span><span class="st">"de"</span><span class="op">)</span></span>
+<span>  current_lang <span class="op">=</span> <span class="fu">reactiveVal</span><span class="op">(</span><span class="st">"de"</span><span class="op">)</span>,</span>
+<span>  current_role <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,6 +98,14 @@ definitions are added or modified so other modules refresh dynamically.</p></dd>
 <dt id="arg-current-lang">current_lang<a class="anchor" aria-label="anchor" href="#arg-current-lang"></a></dt>
 <dd><p>Reactive expression or character scalar providing the
 active UI language code (<code>"de"</code> or <code>"en"</code>).</p></dd>
+
+
+<dt id="arg-current-role">current_role<a class="anchor" aria-label="anchor" href="#arg-current-role"></a></dt>
+<dd><p>Optional reactive expression or character scalar
+identifying the active user's role (<code>"admin"</code> or <code>"user"</code>). When provided
+(e.g., by <code><a href="coding_manager_server.html">coding_manager_server()</a></code>), server-side admin handlers enforce
+that the role equals <code>"admin"</code>. Defaults to <code>NULL</code> for backward
+compatibility with standalone module invocations and tests.</p></dd>
 
 </dl></div>
     <div class="section level2">

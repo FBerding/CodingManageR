@@ -1,7 +1,8 @@
-# Launch the CodingManageR Shiny Application
+# Launch the CodingManageR Shiny Application (Backward-Compatible Wrapper)
 
-Constructs and returns a `shiny.appobj` configured for either local
-single-user SQLite storage or pooled MySQL/MariaDB server deployments.
+Constructs and returns a `shiny.appobj` configured automatically for
+either pooled MySQL/MariaDB storage (when MySQL credentials are
+supplied) or local single-user SQLite storage (with automatic fallback).
 
 ## Usage
 
@@ -63,26 +64,28 @@ returned from `app.R`.
 
 ## Details
 
-To manage multiple independent local projects on one computer, supply a
-distinct `sqlite_path` file for each study (each `.sqlite` file stores
-its own scales, sources, case texts, user accounts, ratings, and
-training logs). Re-passing the same `sqlite_path` reopens that project.
-When `sqlite_path` is `NULL` (and no `SQLITE_PATH` or MySQL environment
-variables are set), a single default database is stored under
-`tools::R_user_dir("CodingManageR", which = "data")`. Always stop the
-running Shiny app before copying, renaming, moving, or archiving a
-`.sqlite` file so SQLite merges its Write-Ahead Log (`-wal`/`-shm`)
-cleanly.
+For new scripts and deployments, prefer the explicit entrypoints
+[`run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md)
+(minimal local SQLite launcher) and
+[`run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)
+(strict MySQL/MariaDB server launcher without SQLite fallback).
+`run_app()` is retained for full backward compatibility with existing
+code.
+
+## See also
+
+[`run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md),
+[`run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Launch separate local projects in isolated SQLite files
-run_app(sqlite_path = "study_a.sqlite", empty = TRUE)
-run_app(sqlite_path = "study_b.sqlite", empty = TRUE)
+# Preferred explicit launchers:
+run_app_local(sqlite_path = "study_a.sqlite")
+run_app_server()
 
-# Launch a temporary demo session with sample data
+# Backward-compatible wrapper:
 app <- run_app(sqlite_path = tempfile(fileext = ".sqlite"), empty = FALSE)
 app
 } # }

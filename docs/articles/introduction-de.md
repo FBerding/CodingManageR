@@ -60,7 +60,7 @@ Um ein neues, leeres lokales Projekt auf Ihrem Computer zu starten,
 
 ``` r
 
-CodingManageR::run_app(sqlite_path = "mein_projekt.sqlite")
+CodingManageR::run_app_local(sqlite_path = "mein_projekt.sqlite")
 ```
 
 Wird CodingManageR an Ihrer Hochschule oder in Ihrem Team auf einem
@@ -70,16 +70,16 @@ Browser.
 > **Schnell-Tipp — erst einmal ausprobieren?** Testen Sie die Anwendung
 > mit vorkonfigurierten Beispielskalen, Falltexten und Demokonten, bevor
 > Sie Ihr eigenes Projekt aufbauen:
-> `CodingManageR::run_app(sqlite_path = "demo_projekt.sqlite", empty = FALSE)`
+> `CodingManageR::run_app_local(sqlite_path = "demo_projekt.sqlite", empty = FALSE)`
 
 > **Mehrere lokale Projekte parallel verwalten?** Im lokalen Modus
 > speichert die App jedes Projekt in einer eigenen **SQLite**-Datei auf
 > Ihrem Computer. Verwenden Sie pro Studie einen eigenen Dateinamen,
-> etwa `CodingManageR::run_app(sqlite_path = "studie_a.sqlite")` und
-> `CodingManageR::run_app(sqlite_path = "studie_b.sqlite")`. Beenden Sie
-> die App immer zuerst, bevor Sie eine `.sqlite`-Datei kopieren,
-> umbenennen oder archivieren. Weitere Tipps zu Ordnern und Backups
-> finden Sie in
+> etwa `CodingManageR::run_app_local(sqlite_path = "studie_a.sqlite")`
+> und `CodingManageR::run_app_local(sqlite_path = "studie_b.sqlite")`.
+> Beenden Sie die App immer zuerst, bevor Sie eine `.sqlite`-Datei
+> kopieren, umbenennen oder archivieren. Weitere Tipps zu Ordnern und
+> Backups finden Sie in
 > [`vignette("CodingManageR-de", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR-de.md).
 
 Die Sprache der Oberfläche lässt sich jederzeit zwischen **Deutsch** und
@@ -153,8 +153,8 @@ Bewertungen selbst).
     (siehe Abbildung 2).
 2.  Klicken Sie auf **Neue Quelle hinzufügen** und füllen Sie die drei
     Pflichtfelder aus:
-    - **Kurzreferenz** (z. B. `StudieA_2026` oder `Manual_v1`):
-      kompakter Bezeichner für Auswahlmenüs und Badges.
+    - **Kurzreferenz** (z. B. `Example1` oder `Example2`): kompakter
+      Bezeichner für Auswahlmenüs und Badges.
     - **Vollständige Referenz / Zitation**: vollständige bibliografische
       Angabe oder Projektbeschreibung.
     - **Lizenz / Nutzungsrechte**: wählen Sie eine Standardlizenz (z. B.

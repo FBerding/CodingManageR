@@ -53,7 +53,7 @@ run:
 
 ``` r
 
-CodingManageR::run_app(sqlite_path = "my_project.sqlite")
+CodingManageR::run_app_local(sqlite_path = "my_project.sqlite")
 ```
 
 If your university or team hosts CodingManageR on a server, open the web
@@ -62,14 +62,14 @@ link from your administrator in a browser.
 > **Quick Tip — Want to Practice First?** You can test the app with
 > sample scales, example texts, and demo accounts before you start your
 > own project. Run:
-> `CodingManageR::run_app(sqlite_path = "demo_project.sqlite", empty = FALSE)`
+> `CodingManageR::run_app_local(sqlite_path = "demo_project.sqlite", empty = FALSE)`
 
 > **Working on Multiple Local Projects?** In Local Mode, the app stores
 > each project in its own **SQLite** file (a single local database file
 > on your computer). Use a different file name for each study, such as
-> `CodingManageR::run_app(sqlite_path = "study_a.sqlite")` and
-> `CodingManageR::run_app(sqlite_path = "study_b.sqlite")`. Always stop
-> the app before you copy, rename, or archive a `.sqlite` file. See
+> `CodingManageR::run_app_local(sqlite_path = "study_a.sqlite")` and
+> `CodingManageR::run_app_local(sqlite_path = "study_b.sqlite")`. Always
+> stop the app before you copy, rename, or archive a `.sqlite` file. See
 > [`vignette("CodingManageR", package = "CodingManageR")`](https://fberding.github.io/CodingManageR/articles/CodingManageR.md)
 > for folder and backup tips.
 
@@ -137,7 +137,7 @@ originated).
 1.  In **Admin Console**, open the **Sources Directory** subtab (see
     Figure 2).
 2.  Click the button to add a new source and fill in three fields:
-    - **Short Reference** (for example `StudyA_2026` or `Manual_v1`): a
+    - **Short Reference** (for example `Example1` or `Example2`): a
       short name for dropdown menus and badges.
     - **Full Reference / Citation**: the full citation or project
       description.

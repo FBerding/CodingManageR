@@ -14,7 +14,8 @@ adminServer(
   current_user = NULL,
   current_user_id = NULL,
   scales_trigger = NULL,
-  current_lang = reactiveVal("de")
+  current_lang = reactiveVal("de"),
+  current_role = NULL
 )
 ```
 
@@ -49,6 +50,15 @@ adminServer(
 
   Reactive expression or character scalar providing the active UI
   language code (`"de"` or `"en"`).
+
+- current_role:
+
+  Optional reactive expression or character scalar identifying the
+  active user's role (`"admin"` or `"user"`). When provided (e.g., by
+  [`coding_manager_server()`](https://fberding.github.io/CodingManageR/reference/coding_manager_server.md)),
+  server-side admin handlers enforce that the role equals `"admin"`.
+  Defaults to `NULL` for backward compatibility with standalone module
+  invocations and tests.
 
 ## Value
 

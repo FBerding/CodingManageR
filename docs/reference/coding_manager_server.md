@@ -17,7 +17,8 @@ coding_manager_server(
   db_con = NULL,
   sqlite_path = NULL,
   config = NULL,
-  seed_empty = NULL
+  seed_empty = NULL,
+  fallback_to_sqlite = TRUE
 )
 ```
 
@@ -62,6 +63,15 @@ coding_manager_server(
   overridden via options or argument. When `FALSE`, demonstration data
   is only seeded into a brand-new, empty database; existing SQLite files
   or populated databases are protected and emit a warning instead.
+
+- fallback_to_sqlite:
+
+  Logical passed to
+  [`get_db_pool()`](https://fberding.github.io/CodingManageR/reference/get_db_pool.md).
+  Defaults to `TRUE`. Set to `FALSE` (used by
+  [`run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md))
+  to enforce strict MySQL/MariaDB connectivity without silently falling
+  back to a local SQLite file.
 
 ## Value
 

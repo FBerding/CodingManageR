@@ -5,8 +5,13 @@
 Entrypoints for running CodingManageR locally (SQLite) or on Shiny
 Server (MariaDB/MySQL).
 
+- [`run_app_local()`](https://fberding.github.io/CodingManageR/reference/run_app_local.md)
+  : Launch CodingManageR Locally (Single-User SQLite Mode)
+- [`run_app_server()`](https://fberding.github.io/CodingManageR/reference/run_app_server.md)
+  : Launch CodingManageR on a Multi-User Server (MySQL/MariaDB Mode)
 - [`run_app()`](https://fberding.github.io/CodingManageR/reference/run_app.md)
-  : Launch the CodingManageR Shiny Application
+  : Launch the CodingManageR Shiny Application (Backward-Compatible
+  Wrapper)
 - [`coding_manager_ui()`](https://fberding.github.io/CodingManageR/reference/coding_manager_ui.md)
   : Build the Root Shiny UI for CodingManageR
 - [`coding_manager_server()`](https://fberding.github.io/CodingManageR/reference/coding_manager_server.md)

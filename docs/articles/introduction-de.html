@@ -234,7 +234,7 @@ Benutzernamen bei der Anmeldung eingegeben wird.</td>
 <p>Um ein neues, leeres lokales Projekt auf Ihrem Computer zu starten,
 öffnen Sie R oder RStudio und führen folgenden Befehl aus:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"mein_projekt.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"mein_projekt.sqlite"</span><span class="op">)</span></span></code></pre></div>
 <p>Wird CodingManageR an Ihrer Hochschule oder in Ihrem Team auf einem
 Server betrieben, öffnen Sie einfach den Weblink Ihrer Administration im
 Browser.</p>
@@ -242,15 +242,16 @@ Browser.</p>
 <p><strong>Schnell-Tipp — erst einmal ausprobieren?</strong> Testen Sie
 die Anwendung mit vorkonfigurierten Beispielskalen, Falltexten und
 Demokonten, bevor Sie Ihr eigenes Projekt aufbauen:
-<code>CodingManageR::run_app(sqlite_path = "demo_projekt.sqlite", empty = FALSE)</code></p>
+<code>CodingManageR::run_app_local(sqlite_path = "demo_projekt.sqlite", empty = FALSE)</code></p>
 </blockquote>
 <blockquote>
 <p><strong>Mehrere lokale Projekte parallel verwalten?</strong> Im
 lokalen Modus speichert die App jedes Projekt in einer eigenen
 <strong>SQLite</strong>-Datei auf Ihrem Computer. Verwenden Sie pro
 Studie einen eigenen Dateinamen, etwa
-<code>CodingManageR::run_app(sqlite_path = "studie_a.sqlite")</code> und
-<code>CodingManageR::run_app(sqlite_path = "studie_b.sqlite")</code>.
+<code>CodingManageR::run_app_local(sqlite_path = "studie_a.sqlite")</code>
+und
+<code>CodingManageR::run_app_local(sqlite_path = "studie_b.sqlite")</code>.
 Beenden Sie die App immer zuerst, bevor Sie eine
 <code>.sqlite</code>-Datei kopieren, umbenennen oder archivieren.
 Weitere Tipps zu Ordnern und Backups finden Sie in
@@ -348,8 +349,8 @@ Ihrer Falltexte) sowie eine <strong>Kodierungsquelle</strong>
 Sie die drei Pflichtfelder aus:
 <ul>
 <li>
-<strong>Kurzreferenz</strong> (z. B. <code>StudieA_2026</code> oder
-<code>Manual_v1</code>): kompakter Bezeichner für Auswahlmenüs und
+<strong>Kurzreferenz</strong> (z. B. <code>Example1</code> oder
+<code>Example2</code>): kompakter Bezeichner für Auswahlmenüs und
 Badges.</li>
 <li>
 <strong>Vollständige Referenz / Zitation</strong>: vollständige

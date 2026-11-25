@@ -207,7 +207,7 @@ separate database server.</p>
 <p>Paste this command into the R console and press
 <strong>Enter</strong>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Your browser or RStudio viewer opens automatically. You will see the
 <strong>CodingManageR</strong> sign-in screen (see Figure 1).</p>
 <div class="figure">
@@ -220,7 +220,12 @@ fields and the English/German language selector.
 Pass the path with <code>sqlite_path</code>, or set the
 <code>SQLITE_PATH</code> environment variable:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"my_coding_project.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"my_coding_project.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/run_app_local.html">run_app_local()</a></code> accepts only two parameters
+(<code>sqlite_path</code> and <code>empty</code>) and always stays
+isolated in local SQLite mode—even if <code>MYSQL_HOST</code> or
+<code>MYSQL_USER</code> environment variables are set on your computer
+for other projects.</p>
 </div>
 <div class="section level3">
 <h3 id="step-2-optional-try-the-app-with-built-in-sample-data">3.2 Step 2: Optional — Try the App with Built-In Sample Data<a class="anchor" aria-label="anchor" href="#step-2-optional-try-the-app-with-built-in-sample-data"></a>
@@ -229,7 +234,7 @@ Pass the path with <code>sqlite_path</code>, or set the
 can try a demo database before you build your own project. Demo mode
 adds sample scales, example texts, and test accounts:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"coding_demo.sqlite"</span>, empty <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"coding_demo.sqlite"</span>, empty <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>Clean project start (<code>empty = TRUE</code>, default): creates
 empty tables and only the first administrator account.</li>
@@ -274,22 +279,22 @@ progress chart.
 <p>In Local Mode, <strong>one <code>.sqlite</code> file is one separate
 project</strong>. Each file keeps its own scales, sources, case texts,
 user accounts, ratings, and training history.</p>
-<p>If you run <code><a href="../reference/run_app.html">CodingManageR::run_app()</a></code> without
+<p>If you run <code><a href="../reference/run_app_local.html">CodingManageR::run_app_local()</a></code> without
 <code>sqlite_path</code>, the app always opens the same default file in
 your R user folder. To keep different studies or courses separate, use a
 different <code>sqlite_path</code> for each project:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Project A: creates (or opens) "study_a.sqlite" in your working folder</span></span>
-<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"study_a.sqlite"</span><span class="op">)</span></span>
+<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"study_a.sqlite"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Project B: creates (or opens) a second, separate database</span></span>
-<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"study_b.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"study_b.sqlite"</span><span class="op">)</span></span></code></pre></div>
 <p>Want to store a project in its own subfolder? Create the folder
 first. SQLite only creates new database files inside folders that
 already exist:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="st">"projects/study_2026"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"projects/study_2026/study_2026.sqlite"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">CodingManageR</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app_local.html">run_app_local</a></span><span class="op">(</span>sqlite_path <span class="op">=</span> <span class="st">"projects/study_2026/study_2026.sqlite"</span><span class="op">)</span></span></code></pre></div>
 <p>To open the same project again later, run the command with the same
 <code>sqlite_path</code>. All saved scales, texts, and ratings will be
 there.</p>
@@ -314,7 +319,7 @@ example <code>study_a_backup_2026-11-22.sqlite</code>).</li>
 <strong>Rename or move a project:</strong> Rename or move the
 <code>.sqlite</code> file in your file explorer. Then open it with the
 new path:
-<code>CodingManageR::run_app(sqlite_path = "new_folder/renamed_project.sqlite")</code>.</li>
+<code>CodingManageR::run_app_local(sqlite_path = "new_folder/renamed_project.sqlite")</code>.</li>
 <li>
 <strong>Long-term research archiving:</strong> Also export your data
 as <strong>CSV</strong> files (simple table files for Excel, R, or
@@ -388,27 +393,45 @@ for a newer version number if needed:</p>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">sudo</span> gdebi shiny-server-1.5.22.1017-amd64.deb</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="step-5-deploy-the-application-entrypoint">4.5 Step 5: Deploy the Application Entrypoint<a class="anchor" aria-label="anchor" href="#step-5-deploy-the-application-entrypoint"></a>
+<h3 id="step-5-create-the-set-once-application-entrypoint">4.5 Step 5: Create the Set-Once Application Entrypoint<a class="anchor" aria-label="anchor" href="#step-5-create-the-set-once-application-entrypoint"></a>
 </h3>
-<p>Create a folder inside <code>/srv/shiny-server/</code>. Copy the
-ready-to-use <code>app.R</code> launcher from
-<strong>CodingManageR</strong> into that folder:</p>
+<p>Create a folder inside <code>/srv/shiny-server/</code> and place the
+minimal <code>app.R</code> launcher inside it once. You can copy the
+bundled entrypoint directly from <strong>CodingManageR</strong>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> /srv/shiny-server/codingmanager</span>
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">sudo</span> R <span class="at">-e</span> <span class="st">'file.copy(system.file("shiny", "app.R", package = "CodingManageR"), "/srv/shiny-server/codingmanager/app.R", overwrite = TRUE)'</span></span>
 <span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">sudo</span> chown <span class="at">-R</span> shiny:shiny /srv/shiny-server/codingmanager</span></code></pre></div>
+<p>Internally, this <code>app.R</code> contains nothing more than a
+package check and a zero-argument call to
+<code><a href="../reference/run_app_server.html">CodingManageR::run_app_server()</a></code>. You only need to create
+this file <strong>once</strong>—it stays valid across future
+<strong>CodingManageR</strong> package updates without manual edits.</p>
+<blockquote>
+<p><strong>Safe multi-user behavior:</strong>
+<code><a href="../reference/run_app_server.html">CodingManageR::run_app_server()</a></code> strictly enforces
+MySQL/MariaDB and disables SQLite fallback completely. If credentials
+are missing or MariaDB is unreachable, the app stops with a clear error
+message in the Shiny Server logs instead of silently creating a local
+SQLite file.</p>
+</blockquote>
 </div>
 <div class="section level3">
-<h3 id="step-6-configure-database-credentials-and-restart">4.6 Step 6: Configure Database Credentials and Restart<a class="anchor" aria-label="anchor" href="#step-6-configure-database-credentials-and-restart"></a>
+<h3 id="step-6-configure--renviron-and-restart">4.6 Step 6: Configure <code>.Renviron</code> and Restart<a class="anchor" aria-label="anchor" href="#step-6-configure--renviron-and-restart"></a>
 </h3>
-<p>Create an <code>.Renviron</code> file inside the app folder. This
-tells CodingManageR to connect to MariaDB instead of SQLite:</p>
+<p>Create an <code>.Renviron</code> file inside
+<code>/srv/shiny-server/codingmanager/</code> to store your database
+credentials and any optional runtime settings:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">sudo</span> nano /srv/shiny-server/codingmanager/.Renviron</span></code></pre></div>
 <p>Paste these lines and enter the password from Section 4.3:</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="dt">MYSQL_HOST</span><span class="ot">=</span><span class="st">127.0.0.1</span></span>
 <span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="dt">MYSQL_PORT</span><span class="ot">=</span><span class="dv">3306</span></span>
 <span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="dt">MYSQL_USER</span><span class="ot">=</span><span class="st">shiny_user</span></span>
 <span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="dt">MYSQL_PASSWORD</span><span class="ot">=</span><span class="st">ChooseAStrongPassword</span></span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="dt">MYSQL_DBNAME</span><span class="ot">=</span><span class="st">kodierer_portal</span></span></code></pre></div>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="dt">MYSQL_DBNAME</span><span class="ot">=</span><span class="st">kodierer_portal</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co"># Optional runtime settings (defaults shown; omit if not needed):</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co"># CODINGMANAGER_MAX_UPLOAD_GB=3</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># CODINGMANAGER_EMPTY=TRUE</span></span></code></pre></div>
 <p>Lock the file permissions so only the <code>shiny</code> user can
 read the password. Then restart Shiny Server:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">sudo</span> chown shiny:shiny /srv/shiny-server/codingmanager/.Renviron</span>
@@ -419,6 +442,24 @@ web browser. On the first visit, CodingManageR creates all 9 database
 tables in MariaDB automatically. It also creates the <code>admin</code>
 account with token <code>geheim123</code>. Sign in and change that
 password right away.</p>
+</div>
+<div class="section level3">
+<h3 id="upgrading-codingmanager-on-the-server-zero-entrypoint-edits">4.7 Upgrading CodingManageR on the Server (Zero Entrypoint
+Edits)<a class="anchor" aria-label="anchor" href="#upgrading-codingmanager-on-the-server-zero-entrypoint-edits"></a>
+</h3>
+<p>Because <code>/srv/shiny-server/codingmanager/app.R</code> only calls
+<code><a href="../reference/run_app_server.html">CodingManageR::run_app_server()</a></code> and all credentials live in
+<code>.Renviron</code>, updating the server to a newer release of
+<strong>CodingManageR</strong> never requires editing or re-copying
+<code>app.R</code>. Simply install the updated package and restart Shiny
+Server:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Update from CRAN:</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">sudo</span> R <span class="at">-e</span> <span class="st">'install.packages("CodingManageR", repos = "https://cloud.r-project.org")'</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="fu">sudo</span> systemctl restart shiny-server</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co"># Or update from GitHub:</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co"># sudo R -e 'remotes::install_github("FBerding/CodingManageR")'</span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co"># sudo systemctl restart shiny-server</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -428,7 +469,7 @@ password right away.</p>
 <p>Now that CodingManageR is running, open the step-by-step workflow
 guide. It shows how to set up scales, texts, sources, coders, training
 sessions, and exports:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"introduction"</span>, package <span class="op">=</span> <span class="st">"CodingManageR"</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -67,7 +67,8 @@ Dashboard, Coding Training, Live Coding, and Admin Console Shiny modules.</p>
 <span>  db_con <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sqlite_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  seed_empty <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  seed_empty <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fallback_to_sqlite <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,6 +109,12 @@ Defaults to <code>TRUE</code> (minimal admin account) unless overridden via opti
 When <code>FALSE</code>, demonstration data is only seeded into a brand-new, empty
 database; existing SQLite files or populated databases are protected and
 emit a warning instead.</p></dd>
+
+
+<dt id="arg-fallback-to-sqlite">fallback_to_sqlite<a class="anchor" aria-label="anchor" href="#arg-fallback-to-sqlite"></a></dt>
+<dd><p>Logical passed to <code><a href="get_db_pool.html">get_db_pool()</a></code>. Defaults to <code>TRUE</code>.
+Set to <code>FALSE</code> (used by <code><a href="run_app_server.html">run_app_server()</a></code>) to enforce strict MySQL/MariaDB
+connectivity without silently falling back to a local SQLite file.</p></dd>
 
 </dl></div>
     <div class="section level2">
