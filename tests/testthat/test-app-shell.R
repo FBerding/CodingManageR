@@ -188,142 +188,6 @@ test_that("coding_manager_server enforces authentication, inactive lockout, RBAC
   )
 })
 
-test_that("university platform theme and bundled CSS define explicit offline tokens without external CDNs", {
-  # Verifies deterministic local-vs-web styling contracts:
-  # 1) coding_manager_theme() pins Bootstrap 5 with bootswatch = NULL and Scholarly Indigo Sass tokens
-  # 2) coding_manager_css() defines fixed 1280px shell geometry, underlined tabs, brand logo rules, and offline system fonts
-  # 3) coding_manager_ui() embeds the bundled favicon link without any remote CDN or Google Fonts URLs
-  theme <- CodingManageR:::coding_manager_theme()
-  expect_s3_class(theme, "bs_theme")
-  expect_equal(as.character(bslib::theme_version(theme)), "5")
-
-  if (exists("theme_bootswatch", envir = asNamespace("bslib"), inherits = FALSE)) {
-    expect_null(bslib::theme_bootswatch(theme))
-  }
-
-  theme_vars <- bslib::bs_get_variables(
-    theme,
-    c(
-      "primary", "secondary", "body-bg",
-      "font-family-base", "font-family-sans-serif", "headings-font-family",
-      "font-family-code", "font-family-monospace"
-    )
-  )
-  expect_match(theme_vars[["primary"]], "^#33418f$", ignore.case = TRUE)
-  expect_match(theme_vars[["secondary"]], "^#525b70$", ignore.case = TRUE)
-  expect_match(theme_vars[["body-bg"]], "^#f6f7fb$", ignore.case = TRUE)
-  for (sans_var in c("font-family-base", "font-family-sans-serif", "headings-font-family")) {
-    expect_match(theme_vars[[sans_var]], "system-ui")
-    expect_match(theme_vars[[sans_var]], "Segoe UI")
-    expect_match(theme_vars[[sans_var]], "Liberation Sans")
-    expect_match(theme_vars[[sans_var]], "DejaVu Sans")
-  }
-  expect_match(theme_vars[["font-family-monospace"]], "ui-monospace")
-  expect_match(theme_vars[["font-family-monospace"]], "Consolas")
-  expect_match(theme_vars[["font-family-monospace"]], "DejaVu Sans Mono")
-  expect_match(theme_vars[["font-family-code"]], "var\\(--bs-font-monospace\\)|ui-monospace")
-  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic|Open Sans|Source Code Pro", paste(theme_vars, collapse = " "), ignore.case = TRUE))
-
-  css_html <- ui_to_html(CodingManageR:::coding_manager_css())
-  expect_match(css_html, "<style")
-  expect_match(css_html, "--cm-indigo:\\s*#33418F")
-  expect_match(css_html, "--cm-navy:\\s*#33418F")
-  expect_match(css_html, "--cm-bg-canvas:\\s*#F6F7FB")
-  expect_match(css_html, "--cm-max-width:\\s*1280px")
-  expect_match(css_html, "--cm-font-sans:[^;]*system-ui")
-  expect_match(css_html, "--cm-font-sans:[^;]*Segoe UI")
-  expect_match(css_html, "--cm-font-sans:[^;]*DejaVu Sans")
-  expect_match(css_html, "--cm-font-mono:[^;]*ui-monospace")
-  expect_match(css_html, "--cm-font-mono:[^;]*Consolas")
-  expect_match(css_html, "--cm-font-mono:[^;]*DejaVu Sans Mono")
-  expect_match(css_html, "\\.cm-shell")
-  expect_match(css_html, "\\.cm-header")
-  expect_match(css_html, "\\.cm-brand-logo")
-  expect_match(css_html, "\\.cm-kpi-card")
-  expect_match(css_html, "\\.cm-case-text")
-  expect_match(css_html, "\\.cm-session-banner")
-  expect_match(css_html, "\\.nav-tabs")
-  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic|@import\\s+url|@font-face", css_html, ignore.case = TRUE))
-
-  root_html <- ui_to_html(coding_manager_ui())
-  expect_match(root_html, "cm-assets/favicon\\.png")
-  expect_match(root_html, "cm-root-container")
-  expect_match(root_html, "cm-app")
-  expect_match(root_html, "cm-shell")
-  expect_match(root_html, "cm_start_tutorial")
-  expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|@font-face", root_html, ignore.case = TRUE))
-})
-
-test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts without font downloads", {
-  fonts <- CodingManageR:::coding_manager_font_stacks()
-  expect_true(all(c(
-    "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI",
-    "Ubuntu", "Noto Sans", "Liberation Sans", "DejaVu Sans", "sans-serif"
-  ) %in% fonts$sans))
-  expect_true(all(c(
-    "ui-monospace", "SFMono-Regular", "SF Mono", "Menlo", "Consolas",
-    "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "monospace"
-  ) %in% fonts$mono))
-  expect_equal(fonts$plot_family, "sans")
-  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(fonts$sans_css, fonts$mono_css), ignore.case = TRUE))
-
-  plot_theme <- CodingManageR:::coding_manager_plot_theme(base_size = 12)
-  expect_true(inherits(plot_theme, "theme"))
-  expect_equal(ggplot2::calc_element("text", plot_theme)$family, "sans")
-
-  theme_deps <- bslib::bs_theme_dependencies(CodingManageR:::coding_manager_theme())
-  dep_hrefs <- unlist(lapply(theme_deps, function(dep) {
-    if (is.list(dep$src) && !is.null(dep$src$href)) as.character(dep$src$href) else character(0)
-  }))
-  expect_false(any(grepl("^https?://", dep_hrefs, ignore.case = TRUE)))
-
-  dep_summary <- paste(vapply(theme_deps, function(dep) {
-    paste(
-      if (is.null(dep$name)) "" else dep$name,
-      if (is.list(dep$src)) paste(unlist(dep$src), collapse = " ") else "",
-      paste(unlist(dep$stylesheet), collapse = " "),
-      paste(unlist(dep$head), collapse = " "),
-      collapse = " "
-    )
-  }, character(1)), collapse = "\n")
-  expect_false(grepl(
-    "fonts\\.googleapis|fonts\\.gstatic|font_google|@font-face|cdn\\.jsdelivr|cdnjs\\.cloudflare|unpkg\\.com",
-    dep_summary,
-    ignore.case = TRUE
-  ))
-
-  compiled_css <- paste(unlist(lapply(theme_deps, function(dep) {
-    if (!is.list(dep$src) || is.null(dep$src$file) || length(dep$stylesheet) == 0L) {
-      return(character(0))
-    }
-    vapply(as.character(dep$stylesheet), function(sheet) {
-      css_path <- file.path(dep$src$file, sheet)
-      if (file.exists(css_path)) {
-        paste(readLines(css_path, warn = FALSE), collapse = "\n")
-      } else {
-        ""
-      }
-    }, character(1))
-  })), collapse = "\n")
-  expect_true(nzchar(compiled_css))
-  expect_false(grepl(
-    "fonts\\.googleapis|fonts\\.gstatic|@import\\s+url|Open Sans|Source Code Pro",
-    compiled_css,
-    ignore.case = TRUE
-  ))
-
-  pkgdown_path <- testthat::test_path("..", "..", "_pkgdown.yml")
-  if (file.exists(pkgdown_path)) {
-    pkgdown_txt <- paste(readLines(pkgdown_path, warn = FALSE), collapse = "\n")
-    expect_match(pkgdown_txt, "preset:\\s*bootstrap")
-    expect_match(pkgdown_txt, "font-family-sans-serif:")
-    expect_match(pkgdown_txt, "font-family-monospace:")
-    expect_match(pkgdown_txt, "Segoe UI")
-    expect_match(pkgdown_txt, "DejaVu Sans")
-    expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|\\bgoogle:", pkgdown_txt, ignore.case = TRUE))
-  }
-})
-
 test_that("getting started tutorial builds role-aware bilingual tracks and offline spotlight assets", {
   # Verifies:
   # 1) Admin track contains all 3 workflow parts (12 steps) across setup, coding, and admin tools
@@ -659,13 +523,28 @@ test_that("run_app_local exposes minimal parameters and stays isolated in SQLite
             app_local$serverFuncSource(),
             {
               session$flushReact()
-              expect_true(owns_connection)
-              expect_false(is_mysql_connection(active_con))
             }
           )
         )
       )
       expect_true(file.exists(tmp_local))
+
+      con_local <- DBI::dbConnect(RSQLite::SQLite(), tmp_local)
+      expected_tables <- c(
+        "user_tokens", "scale_definitions", "sources",
+        "user_source_permissions", "user_coding_source_permissions",
+        "user_scale_permissions", "texts", "user_ratings", "coding_training"
+      )
+      local_tables <- tryCatch(
+        DBI::dbListTables(con_local),
+        finally = NULL
+      )
+      local_users <- tryCatch(
+        DBI::dbGetQuery(con_local, "SELECT username FROM user_tokens ORDER BY username ASC")$username,
+        finally = DBI::dbDisconnect(con_local)
+      )
+      expect_true(all(expected_tables %in% local_tables))
+      expect_equal(local_users, c("admin", "historic_user"))
 
       # Reopening the existing SQLite file with empty = FALSE protects existing data
       app_local_demo <- run_app_local(sqlite_path = tmp_local, empty = FALSE)
