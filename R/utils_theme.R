@@ -136,6 +136,8 @@ coding_manager_theme <- function() {
     base_font = sans_collection,
     heading_font = sans_collection,
     code_font = mono_collection,
+    "font-family-sans-serif" = fonts$sans_css,
+    "font-family-monospace" = fonts$mono_css,
     "font-size-base" = "0.9375rem",
     "line-height-base" = "1.55",
     "border-radius" = "0.375rem",

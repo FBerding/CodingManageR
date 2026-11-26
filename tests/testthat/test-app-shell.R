@@ -203,18 +203,26 @@ test_that("university platform theme and bundled CSS define explicit offline tok
 
   theme_vars <- bslib::bs_get_variables(
     theme,
-    c("primary", "secondary", "body-bg", "font-family-sans-serif", "font-family-monospace")
+    c(
+      "primary", "secondary", "body-bg",
+      "font-family-base", "font-family-sans-serif",
+      "font-family-code", "font-family-monospace"
+    )
   )
   expect_match(theme_vars[["primary"]], "^#33418f$", ignore.case = TRUE)
   expect_match(theme_vars[["secondary"]], "^#525b70$", ignore.case = TRUE)
   expect_match(theme_vars[["body-bg"]], "^#f6f7fb$", ignore.case = TRUE)
-  expect_match(theme_vars[["font-family-sans-serif"]], "system-ui")
-  expect_match(theme_vars[["font-family-sans-serif"]], "Segoe UI")
-  expect_match(theme_vars[["font-family-sans-serif"]], "Liberation Sans")
-  expect_match(theme_vars[["font-family-sans-serif"]], "DejaVu Sans")
-  expect_match(theme_vars[["font-family-monospace"]], "ui-monospace")
-  expect_match(theme_vars[["font-family-monospace"]], "Consolas")
-  expect_match(theme_vars[["font-family-monospace"]], "DejaVu Sans Mono")
+  for (sans_var in c("font-family-base", "font-family-sans-serif")) {
+    expect_match(theme_vars[[sans_var]], "system-ui")
+    expect_match(theme_vars[[sans_var]], "Segoe UI")
+    expect_match(theme_vars[[sans_var]], "Liberation Sans")
+    expect_match(theme_vars[[sans_var]], "DejaVu Sans")
+  }
+  for (mono_var in c("font-family-code", "font-family-monospace")) {
+    expect_match(theme_vars[[mono_var]], "ui-monospace")
+    expect_match(theme_vars[[mono_var]], "Consolas")
+    expect_match(theme_vars[[mono_var]], "DejaVu Sans Mono")
+  }
   expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(theme_vars, collapse = " "), ignore.case = TRUE))
 
   css_html <- ui_to_html(CodingManageR:::coding_manager_css())
@@ -265,6 +273,11 @@ test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts w
   expect_equal(plot_theme$text$family, "sans")
 
   theme_deps <- bslib::bs_theme_dependencies(CodingManageR:::coding_manager_theme())
+  dep_hrefs <- unlist(lapply(theme_deps, function(dep) {
+    if (is.list(dep$src) && !is.null(dep$src$href)) as.character(dep$src$href) else character(0)
+  }))
+  expect_false(any(grepl("^https?://", dep_hrefs, ignore.case = TRUE)))
+
   dep_summary <- paste(vapply(theme_deps, function(dep) {
     paste(
       if (is.null(dep$name)) "" else dep$name,
@@ -274,7 +287,11 @@ test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts w
       collapse = " "
     )
   }, character(1)), collapse = "\n")
-  expect_false(grepl("fonts\\.googleapis|fonts\\.gstatic|font_google|https?://", dep_summary, ignore.case = TRUE))
+  expect_false(grepl(
+    "fonts\\.googleapis|fonts\\.gstatic|font_google|@font-face|cdn\\.jsdelivr|cdnjs\\.cloudflare|unpkg\\.com",
+    dep_summary,
+    ignore.case = TRUE
+  ))
 
   pkgdown_path <- testthat::test_path("..", "..", "_pkgdown.yml")
   if (file.exists(pkgdown_path)) {
@@ -778,7 +795,7 @@ test_that("login screen renders dynamic CodingManageR version under subtitle exc
       expect_match(en_login, paste0("CodingManageR Version ", gsub("\\.", "\\\\.", ver)))
 
       # After admin sign-in: version badge is NOT shown in authenticated workspace, and Admin tab uses FA icon
-      session$setInputs(login_username = "admin", login_token = "admin2026", btn_login = 1L)
+      session$setInputs(login_username = "admin", login_token = "geheim123", btn_login = 1L)
       session$flushReact()
       expect_true(logged_in())
       authed_html <- ui_to_html(output$page_content)
