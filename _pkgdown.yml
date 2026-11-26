@@ -2,6 +2,7 @@ url: https://fberding.github.io/CodingManageR/
 template:
   bootstrap: 5
   bslib:
+    preset: bootstrap
     bg: "#FFFFFF"
     fg: "#1F2937"
     primary: "#33418F"

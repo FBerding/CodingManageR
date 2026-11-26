@@ -205,25 +205,24 @@ test_that("university platform theme and bundled CSS define explicit offline tok
     theme,
     c(
       "primary", "secondary", "body-bg",
-      "font-family-base", "font-family-sans-serif",
+      "font-family-base", "font-family-sans-serif", "headings-font-family",
       "font-family-code", "font-family-monospace"
     )
   )
   expect_match(theme_vars[["primary"]], "^#33418f$", ignore.case = TRUE)
   expect_match(theme_vars[["secondary"]], "^#525b70$", ignore.case = TRUE)
   expect_match(theme_vars[["body-bg"]], "^#f6f7fb$", ignore.case = TRUE)
-  for (sans_var in c("font-family-base", "font-family-sans-serif")) {
+  for (sans_var in c("font-family-base", "font-family-sans-serif", "headings-font-family")) {
     expect_match(theme_vars[[sans_var]], "system-ui")
     expect_match(theme_vars[[sans_var]], "Segoe UI")
     expect_match(theme_vars[[sans_var]], "Liberation Sans")
     expect_match(theme_vars[[sans_var]], "DejaVu Sans")
   }
-  for (mono_var in c("font-family-code", "font-family-monospace")) {
-    expect_match(theme_vars[[mono_var]], "ui-monospace")
-    expect_match(theme_vars[[mono_var]], "Consolas")
-    expect_match(theme_vars[[mono_var]], "DejaVu Sans Mono")
-  }
-  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(theme_vars, collapse = " "), ignore.case = TRUE))
+  expect_match(theme_vars[["font-family-monospace"]], "ui-monospace")
+  expect_match(theme_vars[["font-family-monospace"]], "Consolas")
+  expect_match(theme_vars[["font-family-monospace"]], "DejaVu Sans Mono")
+  expect_match(theme_vars[["font-family-code"]], "var\\(--bs-font-monospace\\)|ui-monospace")
+  expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic|Open Sans|Source Code Pro", paste(theme_vars, collapse = " "), ignore.case = TRUE))
 
   css_html <- ui_to_html(CodingManageR:::coding_manager_css())
   expect_match(css_html, "<style")
@@ -269,8 +268,8 @@ test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts w
   expect_false(grepl("https?://|fonts\\.googleapis|fonts\\.gstatic", paste(fonts$sans_css, fonts$mono_css), ignore.case = TRUE))
 
   plot_theme <- CodingManageR:::coding_manager_plot_theme(base_size = 12)
-  expect_s3_class(plot_theme, "theme")
-  expect_equal(plot_theme$text$family, "sans")
+  expect_true(inherits(plot_theme, "theme"))
+  expect_equal(ggplot2::calc_element("text", plot_theme)$family, "sans")
 
   theme_deps <- bslib::bs_theme_dependencies(CodingManageR:::coding_manager_theme())
   dep_hrefs <- unlist(lapply(theme_deps, function(dep) {
@@ -293,9 +292,30 @@ test_that("app, ggplot2 theme, and pkgdown config strictly use native OS fonts w
     ignore.case = TRUE
   ))
 
+  compiled_css <- paste(unlist(lapply(theme_deps, function(dep) {
+    if (!is.list(dep$src) || is.null(dep$src$file) || length(dep$stylesheet) == 0L) {
+      return(character(0))
+    }
+    vapply(as.character(dep$stylesheet), function(sheet) {
+      css_path <- file.path(dep$src$file, sheet)
+      if (file.exists(css_path)) {
+        paste(readLines(css_path, warn = FALSE), collapse = "\n")
+      } else {
+        ""
+      }
+    }, character(1))
+  })), collapse = "\n")
+  expect_true(nzchar(compiled_css))
+  expect_false(grepl(
+    "fonts\\.googleapis|fonts\\.gstatic|@import\\s+url|Open Sans|Source Code Pro",
+    compiled_css,
+    ignore.case = TRUE
+  ))
+
   pkgdown_path <- testthat::test_path("..", "..", "_pkgdown.yml")
   if (file.exists(pkgdown_path)) {
     pkgdown_txt <- paste(readLines(pkgdown_path, warn = FALSE), collapse = "\n")
+    expect_match(pkgdown_txt, "preset:\\s*bootstrap")
     expect_match(pkgdown_txt, "font-family-sans-serif:")
     expect_match(pkgdown_txt, "font-family-monospace:")
     expect_match(pkgdown_txt, "Segoe UI")

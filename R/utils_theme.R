@@ -109,8 +109,10 @@ coding_manager_plot_theme <- function(base_size = 12) {
 #' Constructs a deterministic `bslib::bs_theme()` pinned to Scholarly Indigo
 #' (`#33418F`) and Cool Indigo Slate (`#F6F7FB` / `#FFFFFF`) tokens using pure
 #' cross-platform operating-system font collections (`bslib::font_collection()`,
-#' strictly without `font_google()` or remote font downloads) and
-#' `bootswatch = NULL` so local and server deployments render identically offline.
+#' strictly without `font_google()` or remote font downloads) and the bare
+#' Bootstrap 5 preset (`preset = "bootstrap"`, avoiding `bslib`'s default
+#' `"shiny"` preset web fonts) so local and server deployments render
+#' identically offline.
 #'
 #' @return A `bslib` theme object passed to `shiny::fluidPage(theme = ...)`.
 #' @keywords internal
@@ -120,9 +122,8 @@ coding_manager_theme <- function() {
   sans_collection <- do.call(bslib::font_collection, as.list(fonts$sans))
   mono_collection <- do.call(bslib::font_collection, as.list(fonts$mono))
 
-  bslib::bs_theme(
+  theme_args <- list(
     version = 5,
-    bootswatch = NULL,
     bg = "#F6F7FB",
     fg = "#1F2937",
     primary = "#33418F",
@@ -137,7 +138,6 @@ coding_manager_theme <- function() {
     heading_font = sans_collection,
     code_font = mono_collection,
     "font-family-sans-serif" = fonts$sans_css,
-    "font-family-monospace" = fonts$mono_css,
     "font-size-base" = "0.9375rem",
     "line-height-base" = "1.55",
     "border-radius" = "0.375rem",
@@ -154,6 +154,14 @@ coding_manager_theme <- function() {
     "headings-font-weight" = "600",
     "headings-color" = "#1C234A"
   )
+
+  if ("preset" %in% names(formals(bslib::bs_theme))) {
+    theme_args$preset <- "bootstrap"
+  } else {
+    theme_args$bootswatch <- NULL
+  }
+
+  do.call(bslib::bs_theme, theme_args)
 }
 
 #' Build Self-Contained University Platform CSS Stylesheet Tag
