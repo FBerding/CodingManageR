@@ -137,18 +137,28 @@ corresponding vignette directly in your browser:
 
 ## Citation & License
 
-**CodingManageR** is licensed under the **GNU General Public License
-v3.0 (GPL-3)**.
+**CodingManageR** is licensed under the **[GNU General Public License
+v3.0 (GPL-3)](https://fberding.github.io/CodingManageR/LICENSE.md)**.
+Copyright (C) Florian Berding.
 
 ``` r
 
 citation("CodingManageR")
 ```
 
-> **AI-Assisted Development Notice:** The source code, documentation,
-> vignettes, and built-in demonstration data (example scales, sources,
-> and case texts) of **CodingManageR** were created with the assistance
-> of AI.
+> **AI-Assisted Development Notice:** The architectural design, domain
+> specification, scientific curation, and final verification of
+> **CodingManageR** are conducted by the author; parts of the source
+> code, documentation, vignettes, and built-in demonstration data
+> (example scales, sources, and case texts) were drafted with the
+> assistance of AI.
+
+*Note on documentation assets:* The static documentation website
+published in `docs/` is generated with `pkgdown` and bundles third-party
+web assets (Bootstrap, Font Awesome, jQuery, Fuse.js, KaTeX) under their
+respective permissive licenses (MIT, Apache-2.0, CC-BY 4.0, SIL OFL
+1.1); these assets are excluded from the CRAN source package via
+`.Rbuildignore`.
 
 Found a bug or have an idea for a new feature? Open an issue on [GitHub
 Issues](https://github.com/FBerding/CodingManageR/issues).

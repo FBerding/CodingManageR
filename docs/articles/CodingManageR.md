@@ -279,8 +279,9 @@ EXIT;
 
 ### 4.4 Step 4: Install Shiny Server Open Source
 
-Download and install Shiny Server. You can check the Posit website for a
-newer version number if needed:
+Download and install Shiny Server (check the official [Posit Shiny
+Server download page](https://posit.co/download/shiny-server/) for the
+latest version number if needed):
 
 ``` bash
 wget https://download3.rstudio.org/ubuntu-20.04/x86_64/shiny-server-1.5.22.1017-amd64.deb

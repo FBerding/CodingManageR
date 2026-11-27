@@ -1,8 +1,8 @@
 # Build and Execute Consolidated Master Data Export Query
 
 Queries and consolidates ratings, case text contents, scale definitions,
-and scientific source references according to optional administrator
-filters.
+and scientific source references (including license metadata) according
+to optional administrator filters.
 
 ## Usage
 

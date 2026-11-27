@@ -35,8 +35,5 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Florian Berding <florianberding@gmail.com>
-
-Authors:
-
-- Florian Berding <florianberding@gmail.com>
+**Maintainer**: Florian Berding <florian.berding@uni-hamburg.de>
+([ORCID](https://orcid.org/0000-0002-3593-1695)) \[copyright holder\]
