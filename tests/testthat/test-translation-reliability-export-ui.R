@@ -284,7 +284,12 @@ test_that("fetch_consolidated_master_export consolidates ratings with optional s
 
   all_rows <- fetch_consolidated_master_export(con)
   expect_equal(nrow(all_rows), 34L)
-  expect_true(all(c("rating_id", "falltext", "skala_name", "text_quelle_zitat", "kodier_quelle_zitat") %in% colnames(all_rows)))
+  expect_true(all(c(
+    "rating_id", "falltext", "skala_name",
+    "text_quelle_zitat", "text_quelle_lizenz",
+    "kodier_quelle_zitat", "kodier_quelle_lizenz"
+  ) %in% colnames(all_rows)))
+  expect_true(any(nzchar(as.character(all_rows$text_quelle_lizenz))))
 
   user1_id <- get_user_info_db(con, "user1")$id
   filtered <- fetch_consolidated_master_export(con, scale_ids = c("1"), source_ids = c(1L), user_ids = c(user1_id))
@@ -292,7 +297,7 @@ test_that("fetch_consolidated_master_export consolidates ratings with optional s
   expect_true(all(filtered$username == "user1"))
   expect_true(all(filtered$skala_kuerzel == "CogAct"))
 
-  # Verify legacy Vollstaendiges_Zitat column detection branch
+  # Verify legacy Vollstaendiges_Zitat column detection branch (without Lizenz column)
   con_leg <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(con_leg))
   DBI::dbExecute(con_leg, "CREATE TABLE user_tokens (user_id INT, username TEXT, permissions TEXT);")
@@ -309,6 +314,8 @@ test_that("fetch_consolidated_master_export consolidates ratings with optional s
   leg_out <- fetch_consolidated_master_export(con_leg)
   expect_equal(nrow(leg_out), 1L)
   expect_equal(leg_out$text_quelle_zitat[1], "Full Legacy Citation 2020")
+  expect_equal(leg_out$text_quelle_lizenz[1], "")
+  expect_equal(leg_out$kodier_quelle_lizenz[1], "")
 })
 
 # ------------------------------------------------------------------------------

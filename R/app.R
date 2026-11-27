@@ -508,7 +508,12 @@ coding_manager_server <- function(input, output, session,
                 icon = icon("sign-in-alt"),
                 class = "btn btn-primary w-100 mt-2"
               ),
-              uiOutput("login_error_ui")
+              uiOutput("login_error_ui"),
+              tags$p(
+                class = "text-muted text-center small mt-3 mb-0",
+                style = "font-size: 0.78rem;",
+                tr("auth.license_footer", lang)
+              )
             )
           )
         )

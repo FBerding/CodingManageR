@@ -96,7 +96,8 @@
       "err_invalid_credentials_react": "Ungültige Anmeldedaten. Bitte prüfen Sie Benutzername und Zugangs-Token.",
       "err_inactive_react": "Dieses Benutzerkonto ist derzeit deaktiviert. Eine Anmeldung ist nicht möglich. Bitte wenden Sie sich an die Administration.",
       "welcome_back": "Willkommen zurück, %s!",
-      "lang_selector_title": "Sprache / Language"
+      "lang_selector_title": "Sprache / Language",
+      "license_footer": "Open Source · Lizenz: GNU GPL-3 · Copyright (C) Florian Berding"
     },
     "header": {
       "portal_title": "Shiny Kodierer-Portal",
@@ -421,6 +422,8 @@
       "summary_all_metrics_title": "Vollständige Reliabilitätsanalyse (Alle 16 Gütemaße)",
       "comparison_table_title": "Detailabgleich pro Trainingsfall",
       "col_text_id": "Text-ID",
+      "col_source_full": "Vollständige Referenz / Zitation",
+      "col_license": "Lizenz",
       "col_your_rating": "Ihre Eingabe",
       "col_gold": "Goldstandard",
       "col_result": "Ergebnis",
@@ -429,6 +432,7 @@
       "btn_download_csv": "Schulungsergebnisse als CSV herunterladen",
       "btn_new_training": "Neue Schulung starten",
       "csv_filename_prefix": "kodierschulung_ergebnisse",
+      "csv_text_not_permitted": "[Text im Export entfernt: Quelle für dieses Benutzerkonto nicht zum Download freigegeben]",
       "toast_saved": "Schulungsdurchlauf abgeschlossen und in 'coding_training' gespeichert!",
       "refresh_tooltip": "Schulungsansicht und Referenzdaten neu laden",
       "config_auto_hint": "Das System zieht automatisch garantierte Fälle aus texts, sodass alle Skalenwerte der gewählten Kategorie mindestens einmal abgedeckt sind.",
@@ -885,7 +889,8 @@
         "notif_deleted_kurz": "Quelle #%d ('%s') wurde gelöscht.",
         "tip_edit_source": "Quelle bearbeiten",
         "tip_delete_source": "Quelle löschen",
-        "col_license_plain": "Lizenz"
+        "col_license_plain": "Lizenz",
+        "copyright_notice": "Urheberrechts-Hinweis: Bitte stellen Sie sicher, dass Sie über die erforderlichen Nutzungsrechte für alle hinterlegten Quellen und Texte verfügen und die zutreffende Lizenz korrekt dokumentieren."
       },
       "scales": {
         "title": "Katalog der Kodierskalen (scale_definitions)",
@@ -1077,7 +1082,7 @@
       "export_master_title": "Konfigurierbarer Master-Datenexport",
       "export_master_heading": "Master-Datenexport (Konsolidierte Kodierungen & Quellen)",
       "export_master_desc": "Erstellen und exportieren Sie einen konsolidierten Datensatz mit Falltexten, Bewertungen und Quellen. Wählen Sie gezielt die gewünschten Skalen, Quellen und Benutzer aus.",
-      "export_master_hint": "Generiert eine konsolidierte Matrix aller Falltexte mit Textquelle (text_kurzreferenz, text_referenz) sowie den Kodierungswerten und Kodierungsquellen (coding_kurzreferenz, coding_referenz) je Kategorie.",
+      "export_master_hint": "Generiert eine konsolidierte Matrix aller Falltexte mit Textquelle (text_kurzreferenz, text_referenz, text_lizenz) sowie den Kodierungswerten, Kodierungsquellen und Lizenzen (coding_kurzreferenz, coding_referenz, coding_lizenz) je Kategorie.",
       "btn_preview_open": "Matrix-Vorschau",
       "btn_preview_close": "Vorschau schließen",
       "btn_download_master": "Gesamtdatensatz (.csv)",
@@ -1133,6 +1138,7 @@
       "raw_export_sources": "Tabelle 'sources' exportieren (.csv)",
       "upload_title": "Stammdaten / Tabellen erweitern (CSV-Upload)",
       "upload_desc": "Neue Datensätze aus einer CSV-Datei werden in die bestehenden Tabellen hinzugefügt. Bei bereits existierenden IDs wird vor dem Import ein Dialog mit Warnhinweis geöffnet.",
+      "upload_copyright_notice": "Hinweis zu Urheber- und Nutzungsrechten: Laden Sie ausschließlich Falltexte und Materialien hoch, für die eine gültige Rechtsgrundlage bzw. Nutzungserlaubnis vorliegt, und ordnen Sie jede Quelle mit korrekter Lizenzangabe zu.",
       "upload_target_label": "Zieltabelle für CSV-Upload wählen:",
       "upload_file_label": "CSV-Datei auswählen (Semikolon-getrennt, UTF-8):",
       "upload_btn_inspect": "CSV prüfen & Vorschau öffnen",
@@ -1521,7 +1527,8 @@
       "err_invalid_credentials_react": "Invalid credentials. Please check your username and access token.",
       "err_inactive_react": "This user account is currently deactivated. Login is disabled. Please contact an administrator.",
       "welcome_back": "Welcome back, %s!",
-      "lang_selector_title": "Language / Sprache"
+      "lang_selector_title": "Language / Sprache",
+      "license_footer": "Open Source · License: GNU GPL-3 · Copyright (C) Florian Berding"
     },
     "header": {
       "portal_title": "Shiny Coding Portal",
@@ -1846,6 +1853,8 @@
       "summary_all_metrics_title": "Complete Reliability Analysis (All 16 Quality Metrics)",
       "comparison_table_title": "Detailed Comparison per Training Case",
       "col_text_id": "Text ID",
+      "col_source_full": "Full Reference / Citation",
+      "col_license": "License",
       "col_your_rating": "Your Input",
       "col_gold": "Gold Standard",
       "col_result": "Result",
@@ -1854,6 +1863,7 @@
       "btn_download_csv": "Download Training Results (.csv)",
       "btn_new_training": "Start New Training",
       "csv_filename_prefix": "coding_training_results",
+      "csv_text_not_permitted": "[Text omitted from export: source not permitted for download for this account]",
       "toast_saved": "Training session completed and saved to 'coding_training'!",
       "refresh_tooltip": "Reload training view and reference data",
       "config_auto_hint": "The system automatically draws stratified cases from texts so every rating level of the selected category is covered at least once.",
@@ -2310,7 +2320,8 @@
         "notif_deleted_kurz": "Source #%d ('%s') has been deleted.",
         "tip_edit_source": "Edit source",
         "tip_delete_source": "Delete source",
-        "col_license_plain": "License"
+        "col_license_plain": "License",
+        "copyright_notice": "Copyright notice: Please ensure that you hold the necessary usage rights for all registered sources and texts and document the applicable license accurately."
       },
       "scales": {
         "title": "Catalog of Coding Scales (scale_definitions)",
@@ -2502,7 +2513,7 @@
       "export_master_title": "Configurable Master Data Export",
       "export_master_heading": "Master Data Export (Consolidated Codings & Sources)",
       "export_master_desc": "Generate and export a consolidated dataset with case texts, ratings, and sources. Select specific scales, sources, and users.",
-      "export_master_hint": "Generates a consolidated matrix of all case texts with text source (text_kurzreferenz, text_referenz) plus rating values and coding sources (coding_kurzreferenz, coding_referenz) per category.",
+      "export_master_hint": "Generates a consolidated matrix of all case texts with text source (text_kurzreferenz, text_referenz, text_lizenz) plus rating values, coding sources, and licenses (coding_kurzreferenz, coding_referenz, coding_lizenz) per category.",
       "btn_preview_open": "Matrix Preview",
       "btn_preview_close": "Close Preview",
       "btn_download_master": "Master Dataset (.csv)",
@@ -2558,6 +2569,7 @@
       "raw_export_sources": "Export table 'sources' (.csv)",
       "upload_title": "Extend Master Data / Tables (CSV Upload)",
       "upload_desc": "New records from a CSV file are appended to existing tables. If IDs already exist, a warning modal will prompt you to overwrite or skip.",
+      "upload_copyright_notice": "Copyright & usage rights notice: Only upload case texts and materials for which you hold valid usage rights or legal authorization, and assign every source with accurate license metadata.",
       "upload_target_label": "Select target table for CSV upload:",
       "upload_file_label": "Choose CSV file (semicolon-separated, UTF-8):",
       "upload_btn_inspect": "Validate CSV & Open Preview",

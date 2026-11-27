@@ -476,6 +476,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
             selectInput(ns("new_lizenz_select"), label = NULL, choices = get_lizenz_optionen(lang), selected = "CC-BY 4.0"),
             uiOutput(ns("new_custom_lizenz_ui"))
         ),
+        tags$p(class = "text-muted small mb-2", icon("copyright", class = "me-1"), tr("admin.sources.copyright_notice", lang)),
         uiOutput(ns("add_source_feedback"))
       )
     ))
@@ -588,6 +589,7 @@ admin_register_sources_server <- function(input, output, session, ctx) {
             selectInput(ns("edit_lizenz_select"), label = NULL, choices = liz_opts, selected = selected_liz),
             uiOutput(ns("edit_custom_lizenz_ui"))
         ),
+        tags$p(class = "text-muted small mb-2", icon("copyright", class = "me-1"), tr("admin.sources.copyright_notice", lang)),
         uiOutput(ns("edit_source_feedback"))
       )
     ))

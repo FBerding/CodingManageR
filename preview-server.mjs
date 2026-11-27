@@ -126,10 +126,6 @@ const FINAL_ASSETS = {
   favicon: {
     file: path.join(__dirname, 'inst', 'www', 'favicon.png'),
     mime: 'image/png'
-  },
-  reference: {
-    file: path.join(__dirname, 'public', 'assets', 'aistudio', 'favicon-96x96_423ef6e7.png'),
-    mime: 'image/png'
   }
 };
 
@@ -526,13 +522,6 @@ function buildHtml() {
             Motiv aus Entwurf 2 (Team-Konsens &amp; Reliabilität) in reinem <strong>Scholarly Indigo (<code>#33418F</code>)</strong> mit freigestelltem transparentem Außenbereich — eingebunden in Shiny-App, <code>README</code> und <code>pkgdown</code>.
           </p>
         </div>
-        <div class="ref-box">
-          <img src="/assets/reference" alt="Vorlage iotarelr" />
-          <div>
-            <div class="ref-label">Stil-Vorlage</div>
-            <div class="ref-title">iotarelr</div>
-          </div>
-        </div>
       </div>
 
       <div class="showcase-grid">
@@ -769,10 +758,6 @@ const server = http.createServer((req, res) => {
   }
   if (urlPath === '/assets/favicon') {
     serveFile(res, FINAL_ASSETS.favicon.file, FINAL_ASSETS.favicon.mime);
-    return;
-  }
-  if (urlPath === '/assets/reference') {
-    serveFile(res, FINAL_ASSETS.reference.file, FINAL_ASSETS.reference.mime);
     return;
   }
 

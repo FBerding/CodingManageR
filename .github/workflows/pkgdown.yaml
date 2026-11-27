@@ -1,4 +1,6 @@
 # Automated pkgdown GitHub Pages workflow for CodingManageR
+# R setup steps derived from https://github.com/r-lib/actions/tree/v2/examples
+# (MIT License, Copyright Posit Software, PBC)
 # Rebuilds the static documentation site into docs/ automatically on pushes to
 # main/master (ignoring docs/-only commits and bot doc commits to prevent loops)
 # and supports on-demand runs via workflow_dispatch.

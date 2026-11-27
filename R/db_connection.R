@@ -337,23 +337,8 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
           try(pool::dbExecute(p, "SET foreign_key_checks = 1;"), silent = TRUE)
           message("[DB-Manager] Connection pool established and ready.")
           p
-        } else if (requireNamespace("RMySQL", quietly = TRUE)) {
-          message("[DB-Manager] Initializing connection pool with 'RMySQL'...")
-          p <- pool::dbPool(
-            drv = RMySQL::MySQL(),
-            host = host,
-            port = port,
-            user = user,
-            password = password,
-            dbname = dbname,
-            minSize = min_size,
-            maxSize = max_size,
-            idleTimeout = idle_timeout
-          )
-          message("[DB-Manager] Connection pool established successfully.")
-          p
         } else {
-          warning("[DB-Manager] Neither 'RMariaDB' nor 'RMySQL' is installed.")
+          warning("[DB-Manager] Package 'RMariaDB' is not installed.")
           NULL
         }
       }, error = function(e) {
@@ -376,15 +361,6 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
           password = password,
           dbname = dbname,
           client.flag = RMariaDB::CLIENT_MULTI_STATEMENTS
-        )
-      } else if (requireNamespace("RMySQL", quietly = TRUE)) {
-        dbConnect(
-          RMySQL::MySQL(),
-          host = host,
-          port = port,
-          user = user,
-          password = password,
-          dbname = dbname
         )
       } else {
         NULL
@@ -473,11 +449,10 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
   }
 
   # nocov start
-  has_mysql_drv <- requireNamespace("RMariaDB", quietly = TRUE) ||
-    requireNamespace("RMySQL", quietly = TRUE)
+  has_mysql_drv <- requireNamespace("RMariaDB", quietly = TRUE)
   if (!has_mysql_drv) {
     stop(
-      "[DB-Manager] Neither 'RMariaDB' nor 'RMySQL' is installed and SQLite fallback is disabled. ",
+      "[DB-Manager] Package 'RMariaDB' is not installed and SQLite fallback is disabled. ",
       "Install 'RMariaDB' system-wide (install.packages(\"RMariaDB\")) to connect to MySQL/MariaDB.",
       call. = FALSE
     )

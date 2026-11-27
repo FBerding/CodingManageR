@@ -1,4 +1,6 @@
 # Cross-platform R CMD check workflow for CodingManageR
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# (MIT License, Copyright Posit Software, PBC)
 # Tests R release on macOS, Windows, and Ubuntu Linux, plus R devel and oldrel-1 on Ubuntu Linux.
 # Browser E2E tests (shinytest2) are skipped here via CODINGMANAGER_SKIP_E2E=true and executed
 # in the dedicated Chrome-provisioned shinytest2-e2e job inside test-coverage.yaml.

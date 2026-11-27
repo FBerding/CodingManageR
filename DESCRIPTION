@@ -2,7 +2,9 @@ Package: CodingManageR
 Title: Multi-User Qualitative Coding Portal and Training Manager
 Version: 1.0.0
 Authors@R:
-    person("Berding", "Florian", , "florian.berding@uni-hamburg.de", role = c("aut", "cre"),
+    person(given = "Florian", family = "Berding",
+           email = "florian.berding@uni-hamburg.de",
+           role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-3593-1695"))
 Description: A multi-user R Shiny web application and training portal for
     qualitative text coding across ordinal scales. Supports local SQLite
@@ -36,7 +38,6 @@ Suggests:
     knitr,
     RMariaDB,
     rmarkdown,
-    RMySQL,
     shinytest2,
     testthat (>= 3.0.0),
     withr

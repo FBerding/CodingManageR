@@ -450,7 +450,16 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
                   hr(),
                   div(
                     class = "d-flex flex-wrap justify-content-between align-items-center text-muted small gap-2",
-                    span(paste(tr("common.case_number", lang, as.integer(fall$text_id)), "\u00b7", tr("coding.source_info", lang), ifelse(is.null(fall$text_kurzreferenz) || is.na(fall$text_kurzreferenz), tr("common.none", lang), fall$text_kurzreferenz))),
+                    div(
+                      class = "d-flex flex-wrap align-items-center gap-2",
+                      span(paste(tr("common.case_number", lang, as.integer(fall$text_id)), "\u00b7", tr("coding.source_info", lang), ifelse(is.null(fall$text_kurzreferenz) || is.na(fall$text_kurzreferenz), tr("common.none", lang), fall$text_kurzreferenz))),
+                      if (!is.null(fall$text_lizenz) && !is.na(fall$text_lizenz[1]) && nzchar(trimws(as.character(fall$text_lizenz[1])))) {
+                        tags$span(
+                          class = "badge bg-light text-secondary border",
+                          tr("admin.permissions.license_inline", lang, as.character(fall$text_lizenz[1]))
+                        )
+                      }
+                    ),
                     span(tr("coding.title", lang))
                   )
                 )
@@ -752,7 +761,8 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
         bsp <- dbGetQuery(db_con, sprintf("
           SELECT DISTINCT t.text_id, t.text, t.source_id, r.typ AS bewertung_typ,
                  s.Kurzreferenz AS text_kurzreferenz,
-                 s.Referenz AS text_referenz
+                 s.Referenz AS text_referenz,
+                 s.Lizenz AS text_lizenz
           FROM texts t
           JOIN user_ratings r ON t.text_id = r.text_id
           LEFT JOIN sources s ON t.source_id = s.source_id
@@ -781,7 +791,18 @@ kodierungenServer <- function(id, db_con, user_id_reactive = NULL, username_reac
           div(class = "card bg-light p-2",
               tags$strong(tr("coding.source_info", lang)),
               if (!is.null(bsp$source_id) && !is.na(bsp$source_id[1])) {
-                tags$span(class = "text-primary", paste0("[#", bsp$source_id[1], "] ", bsp$text_kurzreferenz[1], " - ", bsp$text_referenz[1]))
+                tagList(
+                  tags$span(class = "text-primary", paste0("[#", bsp$source_id[1], "] ", bsp$text_kurzreferenz[1], " - ", bsp$text_referenz[1])),
+                  if (!is.null(bsp$text_lizenz) && !is.na(bsp$text_lizenz[1]) && nzchar(trimws(as.character(bsp$text_lizenz[1])))) {
+                    tags$div(
+                      class = "mt-1",
+                      tags$span(
+                        class = "badge bg-white text-secondary border",
+                        tr("admin.permissions.license_inline", lang, as.character(bsp$text_lizenz[1]))
+                      )
+                    )
+                  }
+                )
               } else {
                 tags$span(class = "text-muted", tr("admin.texts.no_source_assigned", lang))
               }

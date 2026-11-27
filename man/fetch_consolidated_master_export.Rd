@@ -25,7 +25,8 @@ A \code{data.frame} containing consolidated research export columns.
 }
 \description{
 Queries and consolidates ratings, case text contents, scale definitions, and
-scientific source references according to optional administrator filters.
+scientific source references (including license metadata) according to optional
+administrator filters.
 }
 \examples{
 \dontrun{

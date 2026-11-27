@@ -548,5 +548,34 @@ test_that("create_all_tables skips already-existing tables and creates only miss
   expect_true("user_scale_permissions" %in% DBI::dbListTables(con))
 })
 
+test_that("package metadata declares GPL-3 compatibility, copyright holder, and omits GPL-2-only RMySQL", {
+  desc_path <- system.file("DESCRIPTION", package = "CodingManageR")
+  if (!nzchar(desc_path) || !file.exists(desc_path)) {
+    desc_path <- file.path("..", "..", "DESCRIPTION")
+  }
+  testthat::skip_if_not(file.exists(desc_path))
+
+  dcf <- read.dcf(desc_path)
+  expect_identical(unname(dcf[1, "License"]), "GPL-3")
+
+  suggests_str <- if ("Suggests" %in% colnames(dcf)) as.character(dcf[1, "Suggests"]) else ""
+  expect_false(grepl("\\bRMySQL\\b", suggests_str))
+
+  if ("Authors@R" %in% colnames(dcf) && nzchar(dcf[1, "Authors@R"])) {
+    authors <- eval(parse(text = dcf[1, "Authors@R"]))
+    expect_equal(authors$given, "Florian")
+    expect_equal(authors$family, "Berding")
+    expect_true("cph" %in% authors$role)
+  }
+
+  root_license <- file.path("..", "..", "LICENSE.md")
+  if (file.exists(root_license)) {
+    lic_txt <- paste(readLines(root_license, warn = FALSE), collapse = "\n")
+    expect_match(lic_txt, "GNU GENERAL PUBLIC LICENSE")
+    expect_match(lic_txt, "Version 3")
+  }
+})
+
+
 
 

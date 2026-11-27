@@ -1,4 +1,6 @@
 # Test coverage and browser E2E workflow for CodingManageR
+# R setup steps derived from https://github.com/r-lib/actions/tree/v2/examples
+# (MIT License, Copyright Posit Software, PBC)
 # Runs two parallel jobs on Ubuntu Linux:
 #   1) test-coverage: instruments unit, SQLite/pool integration, and shiny::testServer()
 #      tests under covr (without Chrome overhead) and uploads Cobertura XML to Codecov.

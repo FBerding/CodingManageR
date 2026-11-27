@@ -126,9 +126,10 @@ test_that("schulungServer runs complete stratified training workflow, persists m
 
       csv_file <- output$download_session_csv
       expect_true(file.exists(csv_file))
-      dl_df <- utils::read.table(csv_file, sep = ";", dec = ",", header = TRUE, fileEncoding = "UTF-8")
+      dl_df <- utils::read.table(csv_file, sep = ";", dec = ",", header = TRUE, check.names = FALSE, fileEncoding = "UTF-8")
       expect_equal(nrow(dl_df), 4L)
-      expect_equal(ncol(dl_df), 7L)
+      expect_equal(ncol(dl_df), 9L)
+      expect_true(all(c(tr("training.col_source_full", "en"), tr("training.col_license", "en")) %in% colnames(dl_df)))
 
       # 6. Restart button resets back to config screen
       session$setInputs(restart_schulung_btn = 1L)
@@ -312,5 +313,123 @@ test_that("schulungServer handles rest-pool backfill, empty descriptions, scalar
     }
   )
 })
+
+test_that("schulungServer preserves all coded texts in training while omitting non-permitted texts in non-admin CSV downloads", {
+  # Verifies that:
+  # 1) Non-admin user1 (permitted only for sources 1 and 2, NOT source 3) still trains on
+  #    coded texts from source 3 during interactive training sessions.
+  # 2) In download_session_csv, non-admin user1 receives full texts for permitted sources
+  #    (1, 2) and the localized omission notice for non-permitted source 3, while citations,
+  #    licenses, ratings, and gold-standard values remain intact.
+  # 3) Admin users receive unredacted full texts for all sources in download_session_csv.
+  testthat::skip_if_not_installed("aifeducation")
+
+  db <- local_test_db(seeded = TRUE, empty = FALSE)
+  con <- db$con
+
+  # Create dedicated scale #6 with exactly 2 coded cases:
+  # - text 960 from source 1 (permitted for user1)
+  # - text 961 from source 3 (NOT permitted for user1)
+  DBI::dbExecute(
+    con,
+    "INSERT INTO scale_definitions (scale_id, short_label, name, max_value, def_desc, def_n_0, def_n_1)
+     VALUES (6, 'LicChk', 'K6_LicenseCheck', 1, 'Check download text permissions', 'Absent', 'Present')"
+  )
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (960, 'Permitted source 1 training case.', 1)")
+  DBI::dbExecute(con, "INSERT INTO texts (text_id, text, source_id) VALUES (961, 'Restricted source 3 training case.', 3)")
+  DBI::dbExecute(
+    con,
+    "INSERT INTO user_ratings (user_id, text_id, kategorie, bewertung, typ, source_id)
+     VALUES (1, 960, '6', 0, 'gold_standard', 1), (1, 961, '6', 1, 'gold_standard', 3)"
+  )
+
+  scales_rx <- make_scale_reactives(con)
+  user1_id <- get_user_info_db(con, "user1")$id
+  admin_id <- get_user_info_db(con, "admin")$id
+
+  # 1 & 2: Non-admin user1 trains on both source 1 & source 3, but source 3 text is omitted in CSV
+  shiny::testServer(
+    schulungServer,
+    args = list(
+      db_con = con,
+      user_id_reactive = shiny::reactiveVal(user1_id),
+      username_reactive = shiny::reactiveVal("user1"),
+      kategorie_spalten = scales_rx$kategorie_spalten,
+      kategorien_liste = scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en")
+    ),
+    {
+      session$setInputs(gewaehlte_kategorie = "6", kodiereinheiten = 2L)
+      session$setInputs(start_schulung_btn = 1L)
+      session$flushReact()
+
+      pool_df <- fall_pool()
+      expect_equal(nrow(pool_df), 2L)
+      expect_true(all(c(960L, 961L) %in% as.integer(pool_df$text_id)))
+      expect_true(3L %in% as.integer(pool_df$source_id))
+
+      for (step in 1:2) {
+        session$setInputs(bewertung_slider = step - 1L)
+        session$setInputs(naechster_fall_btn = step)
+        session$flushReact()
+      }
+      expect_true(schulung_abgeschlossen())
+
+      csv_u1 <- output$download_session_csv
+      df_u1 <- utils::read.table(csv_u1, sep = ";", dec = ",", header = TRUE, check.names = FALSE, fileEncoding = "UTF-8")
+      expect_equal(nrow(df_u1), 2L)
+      expect_equal(ncol(df_u1), 9L)
+
+      id_col  <- tr("training.col_text_id", "en")
+      txt_col <- tr("coding.text_content", "en")
+      lic_col <- tr("training.col_license", "en")
+
+      row_960 <- df_u1[as.integer(df_u1[[id_col]]) == 960L, , drop = FALSE]
+      row_961 <- df_u1[as.integer(df_u1[[id_col]]) == 961L, , drop = FALSE]
+
+      expect_equal(as.character(row_960[[txt_col]]), "Permitted source 1 training case.")
+      expect_equal(as.character(row_961[[txt_col]]), tr("training.csv_text_not_permitted", "en"))
+      expect_true(nzchar(as.character(row_961[[lic_col]])))
+    }
+  )
+
+  # 3: Admin receives full unredacted text for both source 1 and source 3 in CSV
+  shiny::testServer(
+    schulungServer,
+    args = list(
+      db_con = con,
+      user_id_reactive = shiny::reactiveVal(admin_id),
+      username_reactive = shiny::reactiveVal("admin"),
+      kategorie_spalten = scales_rx$kategorie_spalten,
+      kategorien_liste = scales_rx$kategorien_liste,
+      trigger_parent = shiny::reactiveVal(0L),
+      scales_trigger = shiny::reactiveVal(0L),
+      current_lang = shiny::reactiveVal("en")
+    ),
+    {
+      session$setInputs(gewaehlte_kategorie = "6", kodiereinheiten = 2L)
+      session$setInputs(start_schulung_btn = 1L)
+      session$flushReact()
+
+      for (step in 1:2) {
+        session$setInputs(bewertung_slider = step - 1L)
+        session$setInputs(naechster_fall_btn = step)
+        session$flushReact()
+      }
+      expect_true(schulung_abgeschlossen())
+
+      csv_adm <- output$download_session_csv
+      df_adm <- utils::read.table(csv_adm, sep = ";", dec = ",", header = TRUE, check.names = FALSE, fileEncoding = "UTF-8")
+      id_col  <- tr("training.col_text_id", "en")
+      txt_col <- tr("coding.text_content", "en")
+
+      row_961_adm <- df_adm[as.integer(df_adm[[id_col]]) == 961L, , drop = FALSE]
+      expect_equal(as.character(row_961_adm[[txt_col]]), "Restricted source 3 training case.")
+    }
+  )
+})
+
 
 

@@ -191,6 +191,9 @@ fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids =
 
   src_fields <- tryCatch(dbListFields(con, "sources"), error = function(e) character(0))
   cite_col <- if ("Vollstaendiges_Zitat" %in% src_fields) "Vollstaendiges_Zitat" else "Referenz"
+  has_lic <- "Lizenz" %in% src_fields
+  text_lic_sql <- if (has_lic) "ts.Lizenz AS text_quelle_lizenz" else "'' AS text_quelle_lizenz"
+  coding_lic_sql <- if (has_lic) "cs.Lizenz AS kodier_quelle_lizenz" else "'' AS kodier_quelle_lizenz"
   cast_type <- if (is_mysql_connection(con)) "CHAR" else "TEXT"
 
   base_query <- paste0("
@@ -208,8 +211,10 @@ fetch_consolidated_master_export <- function(con, scale_ids = NULL, source_ids =
       COALESCE(sd.max_value, 2) AS skala_max_wert,
       ts.Kurzreferenz AS text_quelle_kuerzel,
       ts.", cite_col, " AS text_quelle_zitat,
+      ", text_lic_sql, ",
       cs.Kurzreferenz AS kodier_quelle_kuerzel,
-      cs.", cite_col, " AS kodier_quelle_zitat
+      cs.", cite_col, " AS kodier_quelle_zitat,
+      ", coding_lic_sql, "
     FROM user_ratings ur
     LEFT JOIN user_tokens ut ON ur.user_id = ut.user_id
     LEFT JOIN texts t ON ur.text_id = t.text_id

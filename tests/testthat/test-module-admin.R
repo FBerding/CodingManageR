@@ -593,6 +593,9 @@ test_that("adminServer Subtabs 7 & 8 (Import/Export Modals, CSV Downloads/Upload
       master_csv <- output$download_master_dataset_btn
       expect_true(file.exists(master_csv))
       expect_gt(file.info(master_csv)$size, 50)
+      master_df <- utils::read.csv2(master_csv, stringsAsFactors = FALSE, fileEncoding = "UTF-8")
+      expect_true("text_lizenz" %in% colnames(master_df))
+      expect_true(any(grepl("_coding_lizenz$", colnames(master_df))))
 
       for (dl_out in c(
         "download_scales_btn", "download_texts_btn", "download_sources_btn",

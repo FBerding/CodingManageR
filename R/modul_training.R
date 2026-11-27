@@ -204,7 +204,13 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
                     if (!is.null(fall$source_id) && !is.na(fall$source_id[1])) {
                       tagList(
                         tags$span("\u00b7"),
-                        tags$span(paste0(tr("training.source_ref", lang), " [#", fall$source_id[1], "] ", fall$text_kurzreferenz[1]))
+                        tags$span(paste0(tr("training.source_ref", lang), " [#", fall$source_id[1], "] ", fall$text_kurzreferenz[1])),
+                        if (!is.null(fall$text_lizenz) && !is.na(fall$text_lizenz[1]) && nzchar(trimws(as.character(fall$text_lizenz[1])))) {
+                          tags$span(
+                            class = "badge bg-light text-secondary border",
+                            tr("admin.permissions.license_inline", lang, as.character(fall$text_lizenz[1]))
+                          )
+                        }
                       )
                     }
                   )
@@ -386,7 +392,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         query <- sprintf("
           SELECT t.text_id, t.text, t.source_id,
                  s.Kurzreferenz AS text_kurzreferenz,
-                 s.Referenz AS text_referenz
+                 s.Referenz AS text_referenz,
+                 s.Lizenz AS text_lizenz
           FROM texts t
           JOIN (
             SELECT r.text_id, r.bewertung,
@@ -418,7 +425,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         rest_query <- sprintf("
           SELECT t.text_id, t.text, t.source_id,
                  s.Kurzreferenz AS text_kurzreferenz,
-                 s.Referenz AS text_referenz
+                 s.Referenz AS text_referenz,
+                 s.Lizenz AS text_lizenz
           FROM texts t
           JOIN (
             SELECT r.text_id, r.bewertung,
@@ -549,7 +557,9 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       df
     })
 
-    # Download handler for the training results table (semicolon-delimited CSV with text)
+    # Download handler for the training results table (semicolon-delimited CSV).
+    # All coded texts remain available during interactive training, while non-admin
+    # CSV downloads omit case texts from sources not permitted for the user.
     output$download_session_csv <- downloadHandler(
       filename = function() {
         lang <- get_lang()
@@ -558,10 +568,16 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       content = function(file) {
         lang <- get_lang()
         u_info <- get_user_info()
+        src_fields <- tryCatch(dbListFields(db_con, "sources"), error = function(e) character(0))
+        lic_expr <- if ("Lizenz" %in% src_fields) "COALESCE(s.Lizenz, '-') AS c_lic" else "'-' AS c_lic"
+        ref_expr <- if ("Referenz" %in% src_fields) "COALESCE(s.Referenz, '-') AS c_src_full" else "'-' AS c_src_full"
 
-        sql_dl <- "
+        sql_dl <- paste0("
           SELECT u.text_id AS c_id,
+                 t.source_id AS c_source_id,
                  COALESCE(s.Kurzreferenz, '-') AS c_src,
+                 ", ref_expr, ",
+                 ", lic_expr, ",
                  t.text AS c_txt,
                  u.kategorie AS c_kat,
                  u.bewertung AS c_user,
@@ -581,13 +597,29 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
           ) ref ON u.text_id = ref.text_id AND ref.rn = 1
           WHERE u.user_id = ? AND u.kategorie = ? AND u.typ = 'schulung'
           ORDER BY u.rating_id DESC LIMIT ?
-        "
+        ")
         params_all <- list(input$gewaehlte_kategorie, u_info$id, input$gewaehlte_kategorie, ziel_einheiten())
         df <- dbGetQuery(db_con, sql_dl, params = params_all)
-        if (ncol(df) == 7) {
+
+        is_admin <- identical(u_info$permissions, "admin")
+        if (!is_admin && nrow(df) > 0 && "c_source_id" %in% colnames(df)) {
+          permitted_sids <- get_user_permitted_sources_db(db_con, u_info$id, is_admin = FALSE)
+          unpermitted <- is.na(df$c_source_id) | !(as.integer(df$c_source_id) %in% as.integer(permitted_sids))
+          if (any(unpermitted)) {
+            df$c_txt <- as.character(df$c_txt)
+            df$c_txt[unpermitted] <- tr("training.csv_text_not_permitted", lang)
+          }
+        }
+        if ("c_source_id" %in% colnames(df)) {
+          df$c_source_id <- NULL
+        }
+
+        if (ncol(df) == 9) {
           colnames(df) <- c(
             tr("training.col_text_id", lang),
             tr("coding.source_info", lang),
+            tr("training.col_source_full", lang),
+            tr("training.col_license", lang),
             tr("coding.text_content", lang),
             tr("dashboard.col_scale", lang),
             tr("training.col_your_rating", lang),
@@ -684,7 +716,8 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
         bsp_query <- sprintf("
           SELECT DISTINCT t.text_id, t.text, t.source_id, r.typ AS bewertung_typ,
                  s.Kurzreferenz AS text_kurzreferenz,
-                 s.Referenz AS text_referenz
+                 s.Referenz AS text_referenz,
+                 s.Lizenz AS text_lizenz
           FROM texts t
           JOIN user_ratings r ON t.text_id = r.text_id
           LEFT JOIN sources s ON t.source_id = s.source_id
@@ -714,7 +747,18 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
           div(class = "card bg-light p-2",
               tags$strong(tr("coding.source_info", lang)),
               if (!is.null(bsp$source_id) && !is.na(bsp$source_id[1])) {
-                tags$span(class = "text-primary", paste0("[#", bsp$source_id[1], "] ", bsp$text_kurzreferenz[1], " - ", bsp$text_referenz[1]))
+                tagList(
+                  tags$span(class = "text-primary", paste0("[#", bsp$source_id[1], "] ", bsp$text_kurzreferenz[1], " - ", bsp$text_referenz[1])),
+                  if (!is.null(bsp$text_lizenz) && !is.na(bsp$text_lizenz[1]) && nzchar(trimws(as.character(bsp$text_lizenz[1])))) {
+                    tags$div(
+                      class = "mt-1",
+                      tags$span(
+                        class = "badge bg-white text-secondary border",
+                        tr("admin.permissions.license_inline", lang, as.character(bsp$text_lizenz[1]))
+                      )
+                    )
+                  }
+                )
               } else {
                 tags$span(class = "text-muted", tr("admin.texts.no_source_assigned", lang))
               }

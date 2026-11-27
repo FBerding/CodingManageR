@@ -466,7 +466,8 @@ adminUI <- function(id, lang = "en", selected_subtab = "tab_users") {
         div(
           class = "cm-surface",
           h4(class = "mb-1", tr("admin.upload_title", lang)),
-          p(class = "text-muted small mb-3", tr("admin.upload_desc", lang)),
+          p(class = "text-muted small mb-2", tr("admin.upload_desc", lang)),
+          p(class = "text-muted small mb-3", icon("copyright", class = "me-1 text-primary"), tr("admin.upload_copyright_notice", lang)),
           hr(),
           fluidRow(
             column(

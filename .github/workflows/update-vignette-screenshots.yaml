@@ -1,4 +1,6 @@
 # Automated vignette screenshot generation and pkgdown site update workflow
+# R setup steps derived from https://github.com/r-lib/actions/tree/v2/examples
+# (MIT License, Copyright Posit Software, PBC)
 # Manually triggered via workflow_dispatch with selectable language scope (all / en / de):
 #   1) Launches CodingManageR in headless Chrome via shinytest2/chromote
 #   2) Captures 12 English PNGs (vignettes/figures/) and/or 12 German PNGs (vignettes/figures-de/)

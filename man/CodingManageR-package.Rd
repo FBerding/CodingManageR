@@ -31,12 +31,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Florian Berding \email{florianberding@gmail.com}
-
-Authors:
-\itemize{
-  \item Florian Berding \email{florianberding@gmail.com}
-}
+\strong{Maintainer}: Florian Berding \email{florian.berding@uni-hamburg.de} (\href{https://orcid.org/0000-0002-3593-1695}{ORCID}) [copyright holder]
 
 }
 \keyword{internal}

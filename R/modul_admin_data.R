@@ -1024,16 +1024,23 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
         return(invisible(NULL))
       }
 
-      # 1. Query case texts with their assigned text source
+      # 1. Query case texts with their assigned text source and license metadata
       has_source_id <- "source_id" %in% dbListFields(db_con, "texts")
+      src_fields <- tryCatch(dbListFields(db_con, "sources"), error = function(e) character(0))
+      has_lic_col <- "Lizenz" %in% src_fields
+      text_lic_expr <- if (has_lic_col) "s.Lizenz AS text_lizenz" else "'' AS text_lizenz"
+      coding_lic_expr <- if (has_lic_col) "s.Lizenz AS coding_lizenz" else "'' AS coding_lizenz"
 
       base_query <- if (has_source_id) {
-        "SELECT t.text_id, t.text, t.source_id, s.Kurzreferenz AS text_kurzreferenz, s.Referenz AS text_referenz
-         FROM texts t
-         LEFT JOIN sources s ON t.source_id = s.source_id
-         ORDER BY t.text_id ASC"
+        paste0(
+          "SELECT t.text_id, t.text, t.source_id, s.Kurzreferenz AS text_kurzreferenz, ",
+          "s.Referenz AS text_referenz, ", text_lic_expr, " ",
+          "FROM texts t ",
+          "LEFT JOIN sources s ON t.source_id = s.source_id ",
+          "ORDER BY t.text_id ASC"
+        )
       } else {
-        "SELECT t.text_id, t.text, 0 AS source_id, '' AS text_kurzreferenz, '' AS text_referenz
+        "SELECT t.text_id, t.text, 0 AS source_id, '' AS text_kurzreferenz, '' AS text_referenz, '' AS text_lizenz
          FROM texts t
          ORDER BY t.text_id ASC"
       }
@@ -1052,22 +1059,28 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
       # 2. Query relevant ratings with active filters
       has_uid_col <- "user_id" %in% dbListFields(db_con, "user_ratings")
       ratings_query <- if (has_uid_col) {
-        "SELECT r.text_id, r.kategorie, r.bewertung, r.typ, COALESCE(u.username, '') AS username, r.source_id,
-                s.Kurzreferenz AS coding_kurzreferenz,
-                s.Referenz AS coding_referenz
-         FROM user_ratings r
-         LEFT JOIN user_tokens u ON r.user_id = u.user_id
-         LEFT JOIN sources s ON r.source_id = s.source_id
-         WHERE r.typ IN ('gold_standard', 'kodierung')
-         ORDER BY CASE WHEN r.typ = 'gold_standard' THEN 1 ELSE 2 END, r.rating_id DESC"
+        paste0(
+          "SELECT r.text_id, r.kategorie, r.bewertung, r.typ, COALESCE(u.username, '') AS username, r.source_id, ",
+          "s.Kurzreferenz AS coding_kurzreferenz, ",
+          "s.Referenz AS coding_referenz, ",
+          coding_lic_expr, " ",
+          "FROM user_ratings r ",
+          "LEFT JOIN user_tokens u ON r.user_id = u.user_id ",
+          "LEFT JOIN sources s ON r.source_id = s.source_id ",
+          "WHERE r.typ IN ('gold_standard', 'kodierung') ",
+          "ORDER BY CASE WHEN r.typ = 'gold_standard' THEN 1 ELSE 2 END, r.rating_id DESC"
+        )
       } else {
-        "SELECT r.text_id, r.kategorie, r.bewertung, r.typ, r.username, r.source_id,
-                s.Kurzreferenz AS coding_kurzreferenz,
-                s.Referenz AS coding_referenz
-         FROM user_ratings r
-         LEFT JOIN sources s ON r.source_id = s.source_id
-         WHERE r.typ IN ('gold_standard', 'kodierung')
-         ORDER BY CASE WHEN r.typ = 'gold_standard' THEN 1 ELSE 2 END, r.rating_id DESC"
+        paste0(
+          "SELECT r.text_id, r.kategorie, r.bewertung, r.typ, r.username, r.source_id, ",
+          "s.Kurzreferenz AS coding_kurzreferenz, ",
+          "s.Referenz AS coding_referenz, ",
+          coding_lic_expr, " ",
+          "FROM user_ratings r ",
+          "LEFT JOIN sources s ON r.source_id = s.source_id ",
+          "WHERE r.typ IN ('gold_standard', 'kodierung') ",
+          "ORDER BY CASE WHEN r.typ = 'gold_standard' THEN 1 ELSE 2 END, r.rating_id DESC"
+        )
       }
       ratings_data <- tryCatch({
         dbGetQuery(db_con, ratings_query)
@@ -1112,15 +1125,17 @@ admin_register_master_export_server <- function(input, output, session, ctx) {
           kat_val_col   <- kat_col_name
           kat_short_col <- paste0(kat_col_name, "_coding_kurzreferenz")
           kat_long_col  <- paste0(kat_col_name, "_coding_referenz")
+          kat_lic_col   <- paste0(kat_col_name, "_coding_lizenz")
 
           m_part <- data.frame(
             text_id = sub_df$text_id,
             val = sub_df$bewertung,
             short = ifelse(is.na(sub_df$coding_kurzreferenz), "", sub_df$coding_kurzreferenz),
             long = ifelse(is.na(sub_df$coding_referenz), "", sub_df$coding_referenz),
+            lic = ifelse(is.na(sub_df$coding_lizenz), "", sub_df$coding_lizenz),
             stringsAsFactors = FALSE
           )
-          colnames(m_part) <- c("text_id", kat_val_col, kat_short_col, kat_long_col)
+          colnames(m_part) <- c("text_id", kat_val_col, kat_short_col, kat_long_col, kat_lic_col)
 
           master_dataset <- merge(master_dataset, m_part, by = "text_id", all.x = TRUE)
         }
