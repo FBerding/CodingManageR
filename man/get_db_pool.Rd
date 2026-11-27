@@ -9,7 +9,10 @@ get_db_pool(config = NULL, fallback_to_sqlite = TRUE, force_pool = TRUE)
 \arguments{
 \item{config}{Optional named list with connection settings: \code{host}, \code{port},
 \code{user}, \code{password}, \code{dbname}, \code{sqlite_path}, \code{minSize}, \code{maxSize}, and
-\code{idleTimeout}. Missing entries fall back to environment variables.}
+\code{idleTimeout}. Missing entries fall back to environment variables
+(\code{MYSQL_HOST}, \code{MYSQL_PORT}, \code{MYSQL_USER}, \code{MYSQL_PASSWORD},
+\code{MYSQL_DBNAME}), automatically loading an app-local \code{.Renviron} file if
+required variables are not yet set.}
 
 \item{fallback_to_sqlite}{Logical; if \code{TRUE} (default), falls back to a local
 SQLite database when no MySQL/MariaDB connection is configured or available.}

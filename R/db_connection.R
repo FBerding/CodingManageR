@@ -54,9 +54,24 @@ is_pool_connection <- function(con) {
 is_mysql_connection <- function(con) {
   if (is.null(con)) return(FALSE)
   if (is_pool_connection(con)) {
-    # Inspect the underlying driver class stored on the pool
-    drv_class <- tryCatch(class(con$state$driver)[1], error = function(e) "")
-    return(grepl("MariaDB|MySQL", drv_class, ignore.case = TRUE))
+    # Fast path: inspect driver stored on legacy pool state or mock stubs
+    drv_class <- tryCatch({
+      drv <- con$state$driver
+      if (!is.null(drv)) class(drv)[1] else ""
+    }, error = function(e) "")
+    if (nzchar(drv_class)) {
+      return(grepl("MariaDB|MySQL", drv_class, ignore.case = TRUE))
+    }
+
+    # Pool >= 1.0 fallback: safely inspect the underlying checked-out DBI connection
+    if (requireNamespace("pool", quietly = TRUE)) {
+      return(tryCatch({
+        raw_con <- pool::poolCheckout(con)
+        on.exit(try(pool::poolReturn(raw_con), silent = TRUE), add = TRUE)
+        inherits(raw_con, "MariaDBConnection") || inherits(raw_con, "MySQLConnection")
+      }, error = function(e) FALSE))
+    }
+    return(FALSE)
   }
   inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
 }
@@ -108,6 +123,144 @@ resolve_sqlite_path <- function(config = NULL,
   file.path(data_dir, "lokale_datenbank.sqlite")
 }
 
+#' Load Missing Environment Variables from an App-Local `.Renviron` File
+#'
+#' Reads a local `.Renviron` file (by default in the current working directory)
+#' so server deployments launched from outside the app directory still pick up
+#' missing database and runtime settings. Any environment variables that are
+#' already set to a non-empty value in the current process are preserved.
+#'
+#' @param path Path to the `.Renviron` file. Defaults to `".Renviron"`.
+#'
+#' @return Logical scalar (`TRUE` if the file existed and was read, `FALSE`
+#'   otherwise), invisibly.
+#' @keywords internal
+#' @noRd
+load_local_renviron <- function(path = ".Renviron") {
+  if (!is.character(path) || length(path) != 1L || !nzchar(path) || !file.exists(path)) {
+    return(invisible(FALSE))
+  }
+
+  prev <- Sys.getenv()
+  prev_nonempty <- prev[nzchar(prev)]
+
+  loaded <- tryCatch({
+    readRenviron(path)
+    TRUE
+  }, error = function(e) {
+    FALSE
+  })
+
+  if (length(prev_nonempty) > 0L) {
+    after <- Sys.getenv(names(prev_nonempty), unset = NA_character_)
+    changed <- is.na(after) | after != unname(prev_nonempty)
+    if (any(changed)) {
+      do.call(Sys.setenv, as.list(prev_nonempty[changed]))
+    }
+  }
+
+  invisible(loaded)
+}
+
+#' Resolve First Non-Empty Environment Variable from an Ordered Candidate List
+#'
+#' Iterates through `var_names` in priority order and returns the first
+#' non-empty value (skipping both unset and empty/whitespace-only entries).
+#'
+#' @param var_names Character vector of environment variable names in priority
+#'   order.
+#' @param default Character scalar fallback returned when none are set.
+#' @param trim Logical; if `TRUE`, trims leading/trailing whitespace and
+#'   carriage returns. Set to `FALSE` for passwords.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+resolve_env_setting <- function(var_names, default = "", trim = TRUE) {
+  for (nm in var_names) {
+    raw <- Sys.getenv(nm, unset = "")
+    val <- if (isTRUE(trim)) trimws(raw) else raw
+    if (nzchar(val)) {
+      return(val)
+    }
+  }
+  default
+}
+
+#' Resolve MySQL/MariaDB Connection Parameters from Config and Environment
+#'
+#' Resolves `host`, `port`, `user`, `password`, and `dbname` using explicit
+#' `config` entries first and environment variables second (`MYSQL_HOST`,
+#' `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `MYSQL_DBNAME`, with
+#' secondary alias fallbacks when the primary variable is unset or empty).
+#' When `auto_load_renviron = TRUE` and any required parameter is missing, an
+#' app-local `.Renviron` file is loaded automatically without overwriting
+#' already configured non-empty environment variables.
+#'
+#' @param config Optional named database configuration list.
+#' @param auto_load_renviron Logical; whether to attempt loading `renviron_path`
+#'   when required MySQL parameters are missing. Defaults to `TRUE`.
+#' @param renviron_path Path to the local `.Renviron` file. Defaults to
+#'   `".Renviron"`.
+#'
+#' @return Named list with elements `host`, `port`, `user`, `password`, and
+#'   `dbname`.
+#' @keywords internal
+#' @noRd
+resolve_mysql_config <- function(config = NULL,
+                                 auto_load_renviron = TRUE,
+                                 renviron_path = ".Renviron") {
+  read_cfg_chr <- function(val, trim = TRUE, allow_empty = FALSE) {
+    if (is.null(val) || length(val) == 0L || is.na(val[1])) {
+      return(NULL)
+    }
+    out <- as.character(val[1])
+    if (isTRUE(trim)) out <- trimws(out)
+    if (!isTRUE(allow_empty) && !nzchar(out)) {
+      return(NULL)
+    }
+    out
+  }
+
+  resolve_once <- function() {
+    cfg_host <- read_cfg_chr(config$host, trim = TRUE, allow_empty = FALSE)
+    cfg_port <- read_cfg_chr(config$port, trim = TRUE, allow_empty = FALSE)
+    cfg_user <- read_cfg_chr(config$user, trim = TRUE, allow_empty = FALSE)
+    cfg_pass <- read_cfg_chr(config$password, trim = FALSE, allow_empty = TRUE)
+    cfg_db   <- read_cfg_chr(config$dbname, trim = TRUE, allow_empty = FALSE)
+
+    host <- if (!is.null(cfg_host)) cfg_host else resolve_env_setting(c("MYSQL_HOST", "MYSQL_DB_HOST"), default = "", trim = TRUE)
+    raw_port <- if (!is.null(cfg_port)) cfg_port else resolve_env_setting(c("MYSQL_PORT", "MYSQL_DB_PORT"), default = "3306", trim = TRUE)
+    user <- if (!is.null(cfg_user)) cfg_user else resolve_env_setting(c("MYSQL_USER", "MYSQL_DB_USER"), default = "", trim = TRUE)
+    password <- if (!is.null(cfg_pass)) cfg_pass else resolve_env_setting(c("MYSQL_PASSWORD", "MYSQL_DB_PASSWORD"), default = "", trim = FALSE)
+    dbname <- if (!is.null(cfg_db)) cfg_db else resolve_env_setting(c("MYSQL_DBNAME", "MYSQL_DB_NAME", "MYSQL_NAME", "MYSQL_DATABASE"), default = "", trim = TRUE)
+
+    port <- suppressWarnings(as.integer(raw_port))
+    if (is.na(port) || port <= 0L) port <- 3306L
+
+    list(
+      host = host,
+      port = port,
+      user = user,
+      password = password,
+      dbname = dbname
+    )
+  }
+
+  res <- resolve_once()
+
+  if (isTRUE(auto_load_renviron) &&
+      !isTRUE(config$force_sqlite) &&
+      (!nzchar(res$host) || !nzchar(res$user) || !nzchar(res$dbname)) &&
+      file.exists(renviron_path)) {
+    if (isTRUE(load_local_renviron(renviron_path))) {
+      res <- resolve_once()
+    }
+  }
+
+  res
+}
+
 #' Create a Database Connection Pool or Direct DBI Connection
 #'
 #' Creates a thread-safe `pool::dbPool` (recommended for multi-user Shiny Server
@@ -116,7 +269,10 @@ resolve_sqlite_path <- function(config = NULL,
 #'
 #' @param config Optional named list with connection settings: `host`, `port`,
 #'   `user`, `password`, `dbname`, `sqlite_path`, `minSize`, `maxSize`, and
-#'   `idleTimeout`. Missing entries fall back to environment variables.
+#'   `idleTimeout`. Missing entries fall back to environment variables
+#'   (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`,
+#'   `MYSQL_DBNAME`), automatically loading an app-local `.Renviron` file if
+#'   required variables are not yet set.
 #' @param fallback_to_sqlite Logical; if `TRUE` (default), falls back to a local
 #'   SQLite database when no MySQL/MariaDB connection is configured or available.
 #' @param force_pool Logical; if `TRUE` (default), wraps the connection in a
@@ -130,22 +286,28 @@ resolve_sqlite_path <- function(config = NULL,
 #' }
 #' @export
 get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = TRUE) {
-  # 1. Resolve connection parameters from explicit config or environment variables
-  host     <- if (!is.null(config$host) && nzchar(as.character(config$host))) as.character(config$host) else Sys.getenv("MYSQL_HOST", unset = Sys.getenv("MYSQL_DB_HOST", unset = ""))
-  raw_port <- if (!is.null(config$port) && !is.na(config$port)) config$port else Sys.getenv("MYSQL_PORT", unset = Sys.getenv("MYSQL_DB_PORT", unset = "3306"))
-  port     <- suppressWarnings(as.integer(raw_port))
-  if (is.na(port) || port <= 0) port <- 3306
+  # 1. Resolve connection parameters from explicit config or environment/.Renviron
+  force_sqlite <- isTRUE(config$force_sqlite)
+  mysql_cfg <- resolve_mysql_config(config = config, auto_load_renviron = !force_sqlite)
 
-  user     <- if (!is.null(config$user) && nzchar(as.character(config$user))) as.character(config$user) else Sys.getenv("MYSQL_USER", unset = Sys.getenv("MYSQL_DB_USER", unset = ""))
-  password <- if (!is.null(config$password)) as.character(config$password) else Sys.getenv("MYSQL_PASSWORD", unset = Sys.getenv("MYSQL_DB_PASSWORD", unset = ""))
-  dbname   <- if (!is.null(config$dbname) && nzchar(as.character(config$dbname))) as.character(config$dbname) else Sys.getenv("MYSQL_DBNAME", unset = Sys.getenv("MYSQL_DB_NAME", unset = "kodierer_portal"))
+  host     <- mysql_cfg$host
+  port     <- mysql_cfg$port
+  user     <- mysql_cfg$user
+  password <- mysql_cfg$password
+  dbname   <- mysql_cfg$dbname
 
   min_size     <- if (!is.null(config$minSize)) as.integer(config$minSize) else 2L
   max_size     <- if (!is.null(config$maxSize)) as.integer(config$maxSize) else 15L
   idle_timeout <- if (!is.null(config$idleTimeout)) as.integer(config$idleTimeout) else 3600000L # 1 hour in ms
 
-  force_sqlite <- isTRUE(config$force_sqlite)
-  use_mysql <- !force_sqlite && nzchar(host) && nzchar(user)
+  use_mysql <- !force_sqlite && nzchar(host) && nzchar(user) && nzchar(dbname)
+
+  if (!force_sqlite && nzchar(host) && nzchar(user) && !nzchar(dbname) && isTRUE(fallback_to_sqlite)) {
+    warning(
+      "[DB-Manager] MYSQL_HOST and MYSQL_USER are configured, but MYSQL_DBNAME is missing; falling back to local SQLite.",
+      call. = FALSE
+    )
+  }
 
   # 2. Attempt 1: MySQL / MariaDB (central server database for multi-user deployments)
   # nocov start
@@ -295,7 +457,11 @@ get_db_pool <- function(config = NULL, fallback_to_sqlite = TRUE, force_pool = T
   }
 
   if (!use_mysql) {
-    missing_vars <- c(if (!nzchar(host)) "MYSQL_HOST", if (!nzchar(user)) "MYSQL_USER")
+    missing_vars <- c(
+      if (!nzchar(host)) "MYSQL_HOST",
+      if (!nzchar(user)) "MYSQL_USER",
+      if (!nzchar(dbname)) "MYSQL_DBNAME"
+    )
     stop(
       "[DB-Manager] MySQL/MariaDB server configuration is incomplete (missing ",
       paste(missing_vars, collapse = ", "),

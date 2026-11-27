@@ -55,8 +55,11 @@ call to \code{CodingManageR::run_app_server()} (or copy the bundled file via
 \code{system.file("shiny", "app.R", package = "CodingManageR")}) and store all
 database and runtime settings in \code{.Renviron}:
 \itemize{
-\item Required database variables: \code{MYSQL_HOST}, \code{MYSQL_USER} (plus \code{MYSQL_PORT},
-\code{MYSQL_PASSWORD}, and \code{MYSQL_DBNAME}).
+\item Required database variables: \code{MYSQL_HOST}, \code{MYSQL_USER}, and \code{MYSQL_DBNAME}
+(plus optional \code{MYSQL_PORT} and \code{MYSQL_PASSWORD}). If an \code{.Renviron} file
+exists in the application directory, missing variables are loaded
+automatically at startup without overwriting already set environment
+variables.
 \item Optional runtime variables: \code{CODINGMANAGER_EMPTY} (\code{TRUE}/\code{FALSE}, default
 \code{TRUE}) and \code{CODINGMANAGER_MAX_UPLOAD_GB} (positive number in GB or
 \code{"null"}, default \code{3}).

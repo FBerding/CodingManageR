@@ -350,3 +350,203 @@ test_that("seed_initial_data(empty = FALSE) protects partially populated databas
   expect_equal(rep_prot_2$coding_training$n_total, 0L)
 })
 
+test_that("resolve_mysql_config handles MYSQL_DBNAME, aliases, whitespace, and auto-loads app-local .Renviron", {
+  # Verifies:
+  # 1) MYSQL_DBNAME is primary; empty MYSQL_DBNAME falls through to MYSQL_DB_NAME / MYSQL_NAME / MYSQL_DATABASE
+  # 2) Leading/trailing whitespace is trimmed on host/user/dbname/port, while password spaces are preserved
+  # 3) Missing database name returns "" (never silently defaults to 'kodierer_portal')
+  # 4) An app-local .Renviron file is loaded automatically for missing vars without overwriting non-empty env vars
+  clear_mysql_env <- c(
+    MYSQL_HOST = "", MYSQL_DB_HOST = "",
+    MYSQL_PORT = "", MYSQL_DB_PORT = "",
+    MYSQL_USER = "", MYSQL_DB_USER = "",
+    MYSQL_PASSWORD = "", MYSQL_DB_PASSWORD = "",
+    MYSQL_DBNAME = "", MYSQL_DB_NAME = "",
+    MYSQL_NAME = "", MYSQL_DATABASE = "",
+    CODINGMANAGER_MAX_UPLOAD_GB = ""
+  )
+
+  merge_env <- function(base, ...) {
+    ovr <- c(...)
+    base[names(ovr)] <- ovr
+    base
+  }
+
+  # 1 & 2: Primary MYSQL_DBNAME + whitespace trimming + password space preservation
+  withr::with_envvar(
+    merge_env(
+      clear_mysql_env,
+      MYSQL_HOST = "  db.uni.example \r",
+      MYSQL_PORT = " 3307 ",
+      MYSQL_USER = " coder_srv ",
+      MYSQL_PASSWORD = " pass with spaces ",
+      MYSQL_DBNAME = " study_prod \r",
+      MYSQL_NAME = "ignored_alias"
+    ),
+    {
+      cfg <- CodingManageR:::resolve_mysql_config(auto_load_renviron = FALSE)
+      expect_equal(cfg$host, "db.uni.example")
+      expect_equal(cfg$port, 3307L)
+      expect_equal(cfg$user, "coder_srv")
+      expect_equal(cfg$password, " pass with spaces ")
+      expect_equal(cfg$dbname, "study_prod")
+    }
+  )
+
+  # Empty MYSQL_DBNAME falls through cleanly to secondary aliases (MYSQL_NAME / MYSQL_DATABASE)
+  withr::with_envvar(
+    merge_env(clear_mysql_env, MYSQL_HOST = "db.uni.example", MYSQL_USER = "srv", MYSQL_DBNAME = "", MYSQL_NAME = "alias_db"),
+    {
+      cfg_alias <- CodingManageR:::resolve_mysql_config(auto_load_renviron = FALSE)
+      expect_equal(cfg_alias$dbname, "alias_db")
+    }
+  )
+
+  # 3: Unset dbname returns "" rather than silently defaulting to 'kodierer_portal'
+  withr::with_envvar(
+    merge_env(clear_mysql_env, MYSQL_HOST = "db.uni.example", MYSQL_USER = "srv"),
+    {
+      cfg_empty <- CodingManageR:::resolve_mysql_config(auto_load_renviron = FALSE)
+      expect_identical(cfg_empty$dbname, "")
+    }
+  )
+
+  # 4: App-local .Renviron auto-loading fills missing vars without clobbering already set env vars
+  tmp_app_dir <- tempfile("cm_renviron_dir_")
+  dir.create(tmp_app_dir, recursive = TRUE)
+  withr::defer(unlink(tmp_app_dir, recursive = TRUE, force = TRUE))
+
+  writeLines(
+    c(
+      "MYSQL_HOST=renviron.uni.example",
+      "MYSQL_PORT=3308",
+      "MYSQL_USER=renviron_user",
+      "MYSQL_PASSWORD=renviron_secret",
+      "MYSQL_DBNAME=renviron_study_db",
+      "CODINGMANAGER_MAX_UPLOAD_GB=4.5"
+    ),
+    con = file.path(tmp_app_dir, ".Renviron")
+  )
+
+  withr::with_dir(tmp_app_dir, {
+    withr::with_envvar(
+      merge_env(clear_mysql_env, MYSQL_HOST = "override.uni.example"),
+      {
+        cfg_loaded <- CodingManageR:::resolve_mysql_config(auto_load_renviron = TRUE)
+        expect_equal(cfg_loaded$host, "override.uni.example")
+        expect_equal(cfg_loaded$port, 3308L)
+        expect_equal(cfg_loaded$user, "renviron_user")
+        expect_equal(cfg_loaded$password, "renviron_secret")
+        expect_equal(cfg_loaded$dbname, "renviron_study_db")
+      }
+    )
+
+    withr::local_options(list(shiny.maxRequestSize = NULL))
+    withr::with_envvar(clear_mysql_env, {
+      app_srv <- run_app_server()
+      dereg <- app_srv$onStart()
+      if (is.function(dereg)) withr::defer(dereg())
+      expect_equal(getOption("shiny.maxRequestSize"), 4.5 * 1024^3)
+    })
+  })
+})
+
+test_that("get_db_pool requires MYSQL_DBNAME in strict server mode and warns in fallback mode", {
+  clear_db_vars <- c(
+    MYSQL_HOST = "127.0.0.1",
+    MYSQL_DB_HOST = "",
+    MYSQL_USER = "shiny_user",
+    MYSQL_DB_USER = "",
+    MYSQL_DBNAME = "",
+    MYSQL_DB_NAME = "",
+    MYSQL_NAME = "",
+    MYSQL_DATABASE = ""
+  )
+
+  # Strict server mode (fallback_to_sqlite = FALSE) must stop cleanly citing missing MYSQL_DBNAME
+  withr::with_envvar(clear_db_vars, {
+    expect_error(
+      get_db_pool(config = NULL, fallback_to_sqlite = FALSE),
+      regexp = "MYSQL_DBNAME.*SQLite fallback is disabled"
+    )
+  })
+
+  # Fallback mode (fallback_to_sqlite = TRUE) warns about missing MYSQL_DBNAME instead of silently using kodierer_portal
+  p_fb <- tempfile(fileext = ".sqlite")
+  withr::defer(unlink(c(p_fb, paste0(p_fb, "-wal"), paste0(p_fb, "-shm")), force = TRUE))
+
+  withr::with_envvar(clear_db_vars, {
+    expect_warning(
+      con_fb <- suppressMessages(get_db_pool(config = list(sqlite_path = p_fb), fallback_to_sqlite = TRUE, force_pool = FALSE)),
+      regexp = "MYSQL_DBNAME is missing"
+    )
+    withr::defer(suppressMessages(close_db_connection(con_fb)))
+    expect_true(DBI::dbIsValid(con_fb))
+    expect_false(is_mysql_connection(con_fb))
+  })
+})
+
+test_that("MySQL/MariaDB pool dialect detection works for legacy and pool >= 1.0 objects across all helpers", {
+  # Legacy pool stub exposing state$driver
+  legacy_pool_mysql <- structure(
+    list(state = list(driver = structure(list(), class = "MariaDBDriver"))),
+    class = "Pool"
+  )
+  expect_true(is_mysql_connection(legacy_pool_mysql))
+  expect_true(is_mysql(legacy_pool_mysql))
+  expect_equal(get_db_random_function(legacy_pool_mysql), "RAND()")
+
+  # Modern pool >= 1.0 stub without state$driver: must resolve via poolCheckout() and return connection
+  modern_pool_mysql <- structure(list(state = list()), class = "Pool")
+  returned_count <- 0L
+  testthat::local_mocked_bindings(
+    poolCheckout = function(pool) structure(list(), class = "MariaDBConnection"),
+    poolReturn = function(object) {
+      returned_count <<- returned_count + 1L
+      invisible(NULL)
+    },
+    .package = "pool"
+  )
+  expect_true(is_mysql_connection(modern_pool_mysql))
+  expect_true(is_mysql(modern_pool_mysql))
+  expect_equal(get_db_random_function(modern_pool_mysql), "RAND()")
+  expect_equal(returned_count, 3L)
+
+  # Real SQLite pool must still classify as SQLite (FALSE / RANDOM())
+  db_pool <- local_test_db(seeded = FALSE, use_pool = TRUE)
+  expect_false(is_mysql_connection(db_pool$con))
+  expect_false(is_mysql(db_pool$con))
+  expect_equal(get_db_random_function(db_pool$con), "RANDOM()")
+})
+
+test_that("create_all_tables skips already-existing tables and creates only missing ones", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con))
+
+  # Fresh DB: creates all 9 tables
+  expect_message(
+    ok_init <- create_all_tables(con, verbose = TRUE),
+    regexp = "Tables initialized successfully \\(9 created\\)"
+  )
+  expect_true(ok_init)
+
+  # Existing complete DB: skips all DDL statements
+  expect_message(
+    ok_skip <- create_all_tables(con, verbose = TRUE),
+    regexp = "All required tables already exist \\(no DDL executed\\)"
+  )
+  expect_true(ok_skip)
+
+  # Partially provisioned DB (1 table missing): creates only the 1 missing table
+  DBI::dbExecute(con, "DROP TABLE user_scale_permissions;")
+  expect_false("user_scale_permissions" %in% DBI::dbListTables(con))
+  expect_message(
+    ok_partial <- create_all_tables(con, verbose = TRUE),
+    regexp = "Tables initialized successfully \\(1 created\\)"
+  )
+  expect_true(ok_partial)
+  expect_true("user_scale_permissions" %in% DBI::dbListTables(con))
+})
+
+
+

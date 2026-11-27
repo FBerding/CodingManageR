@@ -7,15 +7,15 @@
 is_mysql(con)
 }
 \arguments{
-\item{con}{A \code{DBIConnection} object or \code{NULL}.}
+\item{con}{A \code{DBIConnection}, \code{pool::dbPool}, or \code{NULL}.}
 }
 \value{
 A logical scalar: \code{TRUE} for MySQL/MariaDB connections, \code{FALSE}
 otherwise.
 }
 \description{
-Tests whether a direct \code{DBIConnection} inherits from \code{MariaDBConnection} or
-\code{MySQLConnection}.
+Tests whether a direct \code{DBIConnection} or \code{pool::dbPool} handle targets
+MySQL or MariaDB (\code{MariaDBConnection} or \code{MySQLConnection}).
 }
 \examples{
 is_mysql(NULL)

@@ -457,12 +457,12 @@ schulungServer <- function(id, db_con, user_id_reactive = NULL, username_reactiv
       u_info <- get_user_info()
 
       sql_ins <- "
-        INSERT INTO coding_training (user_id, kategorie, anzahl_einheiten, accuracy, balanced_accuracy, iota_index, avg_iota2, cohens_kappa, kappa_linear, kappa_squared, fleiss_kappa, kendall_w, alpha_nominal, alpha_ordinal, gwet_ac1, gwet_ac2_quadratic, macro_precision, macro_recall, macro_f1)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO coding_training (user_id, kategorie, datum, anzahl_einheiten, accuracy, balanced_accuracy, iota_index, avg_iota2, cohens_kappa, kappa_linear, kappa_squared, fleiss_kappa, kendall_w, alpha_nominal, alpha_ordinal, gwet_ac1, gwet_ac2_quadratic, macro_precision, macro_recall, macro_f1)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
       "
 
       dbExecute(db_con, sql_ins,
-                params = list(u_info$id, input$gewaehlte_kategorie, ziel_einheiten(), as.numeric(m$accuracy), as.numeric(m$balanced_accuracy), as.numeric(m$iota_index), as.numeric(m$avg_iota2), as.numeric(m$cohens_kappa), as.numeric(m$kappa_linear), as.numeric(m$kappa_squared), as.numeric(m$fleiss_kappa), as.numeric(m$kendall_w), as.numeric(m$alpha_nominal), as.numeric(m$alpha_ordinal), as.numeric(m$gwet_ac1), as.numeric(m$gwet_ac2_quadratic), as.numeric(m$macro_precision), as.numeric(m$macro_recall), as.numeric(m$macro_f1)))
+                params = list(u_info$id, input$gewaehlte_kategorie, format(Sys.Date(), "%Y-%m-%d"), ziel_einheiten(), as.numeric(m$accuracy), as.numeric(m$balanced_accuracy), as.numeric(m$iota_index), as.numeric(m$avg_iota2), as.numeric(m$cohens_kappa), as.numeric(m$kappa_linear), as.numeric(m$kappa_squared), as.numeric(m$fleiss_kappa), as.numeric(m$kendall_w), as.numeric(m$alpha_nominal), as.numeric(m$alpha_ordinal), as.numeric(m$gwet_ac1), as.numeric(m$gwet_ac2_quadratic), as.numeric(m$macro_precision), as.numeric(m$macro_recall), as.numeric(m$macro_f1)))
       trigger_parent(trigger_parent() + 1)
     }
 

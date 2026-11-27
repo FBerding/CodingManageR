@@ -800,8 +800,11 @@ run_app_local <- function(sqlite_path = NULL, empty = TRUE) {
 #' `system.file("shiny", "app.R", package = "CodingManageR")`) and store all
 #' database and runtime settings in `.Renviron`:
 #'
-#' - Required database variables: `MYSQL_HOST`, `MYSQL_USER` (plus `MYSQL_PORT`,
-#'   `MYSQL_PASSWORD`, and `MYSQL_DBNAME`).
+#' - Required database variables: `MYSQL_HOST`, `MYSQL_USER`, and `MYSQL_DBNAME`
+#'   (plus optional `MYSQL_PORT` and `MYSQL_PASSWORD`). If an `.Renviron` file
+#'   exists in the application directory, missing variables are loaded
+#'   automatically at startup without overwriting already set environment
+#'   variables.
 #' - Optional runtime variables: `CODINGMANAGER_EMPTY` (`TRUE`/`FALSE`, default
 #'   `TRUE`) and `CODINGMANAGER_MAX_UPLOAD_GB` (positive number in GB or
 #'   `"null"`, default `3`).
@@ -852,6 +855,8 @@ run_app_server <- function(config = NULL,
                            max_upload_size_gb = 3,
                            options = list(),
                            ...) {
+  load_local_renviron()
+
   eff_empty <- if (missing(empty)) {
     parse_env_logical("CODINGMANAGER_EMPTY", default = empty)
   } else {

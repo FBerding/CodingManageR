@@ -44,8 +44,7 @@ generate_security_token <- function(length = 12) {
 #' @export
 get_db_random_function <- function(con) {
   if (is.null(con)) return("RANDOM()")
-  is_mysql <- inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
-  if (is_mysql) "RAND()" else "RANDOM()"
+  if (is_mysql_connection(con)) "RAND()" else "RANDOM()"
 }
 
 #' Retrieve User Metadata and Identifier
@@ -332,7 +331,7 @@ draw_unrated_case_db <- function(con, scale_identifier, user_id, mode = "alle", 
 search_case_codings_db <- function(con, scale_filter = "all", type_filter = "all", search_query = "") {
   if (is.null(con)) return(data.frame())
 
-  is_mysql <- inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
+  is_mysql <- is_mysql_connection(con)
   cast_type <- if (is_mysql) "CHAR" else "TEXT"
 
   rating_fields <- tryCatch(dbListFields(con, "user_ratings"), error = function(e) character(0))
@@ -447,7 +446,7 @@ search_case_codings_db <- function(con, scale_filter = "all", type_filter = "all
 get_coding_detail_db <- function(con, rating_id) {
   if (is.null(con) || is.null(rating_id) || is.na(rating_id)) return(data.frame())
 
-  is_mysql <- inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
+  is_mysql <- is_mysql_connection(con)
   cast_type <- if (is_mysql) "CHAR" else "TEXT"
 
   rating_fields <- tryCatch(dbListFields(con, "user_ratings"), error = function(e) character(0))

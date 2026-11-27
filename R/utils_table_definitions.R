@@ -22,10 +22,10 @@
 
 #' Check Whether a Connection Uses MySQL or MariaDB
 #'
-#' Tests whether a direct `DBIConnection` inherits from `MariaDBConnection` or
-#' `MySQLConnection`.
+#' Tests whether a direct `DBIConnection` or `pool::dbPool` handle targets
+#' MySQL or MariaDB (`MariaDBConnection` or `MySQLConnection`).
 #'
-#' @param con A `DBIConnection` object or `NULL`.
+#' @param con A `DBIConnection`, `pool::dbPool`, or `NULL`.
 #'
 #' @return A logical scalar: `TRUE` for MySQL/MariaDB connections, `FALSE`
 #'   otherwise.
@@ -33,15 +33,16 @@
 #' is_mysql(NULL)
 #' @export
 is_mysql <- function(con) {
-  if (is.null(con)) return(FALSE)
-  inherits(con, "MariaDBConnection") || inherits(con, "MySQLConnection")
+  is_mysql_connection(con)
 }
 
 #' Create All CodingManageR Database Tables
 #'
 #' Initializes the complete 9-table relational schema (users, permissions,
 #' sources, texts, scales, ratings, and training logs) in the target SQLite or
-#' MySQL/MariaDB database using `CREATE TABLE IF NOT EXISTS`.
+#' MySQL/MariaDB database. Existing tables are detected via `DBI::dbListTables()`
+#' and skipped so already-provisioned production databases do not receive
+#' unnecessary DDL statements.
 #'
 #' @param con A `DBIConnection` or `pool::dbPool` object.
 #' @param verbose Logical; if `TRUE` (default), prints status messages during
@@ -58,17 +59,28 @@ is_mysql <- function(con) {
 create_all_tables <- function(con, verbose = TRUE) {
   if (is.null(con)) stop("Invalid database connection supplied (NULL).")
 
-  mysql_mode <- is_mysql(con)
+  mysql_mode <- is_mysql_connection(con)
+  existing_tables <- tryCatch(tolower(dbListTables(con)), error = function(e) character(0))
 
   # Backend-specific SQL data type aliases
   pk_auto  <- if (mysql_mode) "INT AUTO_INCREMENT PRIMARY KEY" else "INTEGER PRIMARY KEY AUTOINCREMENT"
   t_stamp  <- if (mysql_mode) "DATETIME DEFAULT CURRENT_TIMESTAMP" else "TEXT DEFAULT CURRENT_TIMESTAMP"
-  t_date   <- if (mysql_mode) "DATE DEFAULT (CURRENT_DATE)" else "TEXT DEFAULT CURRENT_DATE"
+  t_date   <- if (mysql_mode) "DATE" else "TEXT DEFAULT CURRENT_DATE"
   num_real <- if (mysql_mode) "DOUBLE" else "REAL"
   tbl_opts <- if (mysql_mode) " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" else ""
 
+  n_created <- 0L
+  exec_create_if_missing <- function(tbl_name, sql_stmt) {
+    if (tolower(tbl_name) %in% existing_tables) {
+      return(invisible(FALSE))
+    }
+    dbExecute(con, sql_stmt)
+    n_created <<- n_created + 1L
+    invisible(TRUE)
+  }
+
   if (verbose) {
-    message("Creating tables for backend: ", if (mysql_mode) "MySQL/MariaDB" else "SQLite", "...")
+    message("Checking tables for backend: ", if (mysql_mode) "MySQL/MariaDB" else "SQLite", "...")
   }
 
   # ----------------------------------------------------------------------------
@@ -84,7 +96,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       created_at ", t_stamp, "
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_user_tokens)
+  exec_create_if_missing("user_tokens", sql_user_tokens)
 
   # ----------------------------------------------------------------------------
   # 2. TABLE: sources (scientific sources and licenses)
@@ -98,7 +110,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       erfasst_am ", t_stamp, "
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_sources)
+  exec_create_if_missing("sources", sql_sources)
 
   # ----------------------------------------------------------------------------
   # 3. TABLE: texts (case texts with foreign key to sources)
@@ -111,7 +123,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       FOREIGN KEY (source_id) REFERENCES sources (source_id) ON DELETE RESTRICT
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_texts)
+  exec_create_if_missing("texts", sql_texts)
 
   # ----------------------------------------------------------------------------
   # 4. TABLE: user_ratings (recorded codings and gold standards)
@@ -130,7 +142,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       FOREIGN KEY (source_id) REFERENCES sources (source_id)
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_user_ratings)
+  exec_create_if_missing("user_ratings", sql_user_ratings)
 
   # ----------------------------------------------------------------------------
   # 5. TABLE: coding_training (training logs with reliability metrics)
@@ -161,7 +173,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       zeitstempel ", t_stamp, "
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_coding_training)
+  exec_create_if_missing("coding_training", sql_coding_training)
 
   # ----------------------------------------------------------------------------
   # 6. TABLE: scale_definitions (coding scale catalog)
@@ -181,7 +193,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       def_n_5 TEXT
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_scale_definitions)
+  exec_create_if_missing("scale_definitions", sql_scale_definitions)
 
   # ----------------------------------------------------------------------------
   # 7. TABLE: user_source_permissions (per-user text source authorization)
@@ -195,7 +207,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       FOREIGN KEY (source_id) REFERENCES sources (source_id) ON DELETE CASCADE
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_user_source_permissions)
+  exec_create_if_missing("user_source_permissions", sql_user_source_permissions)
 
   # ----------------------------------------------------------------------------
   # 8. TABLE: user_coding_source_permissions (per-user coding source access)
@@ -209,7 +221,7 @@ create_all_tables <- function(con, verbose = TRUE) {
       FOREIGN KEY (source_id) REFERENCES sources (source_id) ON DELETE CASCADE
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_user_coding_source_permissions)
+  exec_create_if_missing("user_coding_source_permissions", sql_user_coding_source_permissions)
 
   # ----------------------------------------------------------------------------
   # 9. TABLE: user_scale_permissions (per-user scale authorization)
@@ -223,10 +235,14 @@ create_all_tables <- function(con, verbose = TRUE) {
       FOREIGN KEY (scale_id) REFERENCES scale_definitions (scale_id) ON DELETE CASCADE
     )", tbl_opts, ";
   ")
-  dbExecute(con, sql_user_scale_permissions)
+  exec_create_if_missing("user_scale_permissions", sql_user_scale_permissions)
 
   if (verbose) {
-    message("Tables initialized successfully.")
+    if (n_created > 0L) {
+      message("Tables initialized successfully (", n_created, " created).")
+    } else {
+      message("All required tables already exist (no DDL executed).")
+    }
   }
 
   return(TRUE)
