@@ -18,7 +18,10 @@ get_db_pool(config = NULL, fallback_to_sqlite = TRUE, force_pool = TRUE)
 
   Optional named list with connection settings: `host`, `port`, `user`,
   `password`, `dbname`, `sqlite_path`, `minSize`, `maxSize`, and
-  `idleTimeout`. Missing entries fall back to environment variables.
+  `idleTimeout`. Missing entries fall back to environment variables
+  (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`,
+  `MYSQL_DBNAME`), automatically loading an app-local `.Renviron` file
+  if required variables are not yet set.
 
 - fallback_to_sqlite:
 

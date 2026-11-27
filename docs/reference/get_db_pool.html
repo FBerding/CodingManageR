@@ -64,7 +64,10 @@ optional fallback to a local SQLite database for single-user desktop sessions.</
 <dl><dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
 <dd><p>Optional named list with connection settings: <code>host</code>, <code>port</code>,
 <code>user</code>, <code>password</code>, <code>dbname</code>, <code>sqlite_path</code>, <code>minSize</code>, <code>maxSize</code>, and
-<code>idleTimeout</code>. Missing entries fall back to environment variables.</p></dd>
+<code>idleTimeout</code>. Missing entries fall back to environment variables
+(<code>MYSQL_HOST</code>, <code>MYSQL_PORT</code>, <code>MYSQL_USER</code>, <code>MYSQL_PASSWORD</code>,
+<code>MYSQL_DBNAME</code>), automatically loading an app-local <code>.Renviron</code> file if
+required variables are not yet set.</p></dd>
 
 
 <dt id="arg-fallback-to-sqlite">fallback_to_sqlite<a class="anchor" aria-label="anchor" href="#arg-fallback-to-sqlite"></a></dt>

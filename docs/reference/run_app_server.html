@@ -113,8 +113,11 @@ SQLite file on the server.</p>
 <p>On Shiny Server, create your <code>app.R</code> entrypoint <strong>once</strong> with a zero-argument
 call to <code>CodingManageR::run_app_server()</code> (or copy the bundled file via
 <code>system.file("shiny", "app.R", package = "CodingManageR")</code>) and store all
-database and runtime settings in <code>.Renviron</code>:</p><ul><li><p>Required database variables: <code>MYSQL_HOST</code>, <code>MYSQL_USER</code> (plus <code>MYSQL_PORT</code>,
-<code>MYSQL_PASSWORD</code>, and <code>MYSQL_DBNAME</code>).</p></li>
+database and runtime settings in <code>.Renviron</code>:</p><ul><li><p>Required database variables: <code>MYSQL_HOST</code>, <code>MYSQL_USER</code>, and <code>MYSQL_DBNAME</code>
+(plus optional <code>MYSQL_PORT</code> and <code>MYSQL_PASSWORD</code>). If an <code>.Renviron</code> file
+exists in the application directory, missing variables are loaded
+automatically at startup without overwriting already set environment
+variables.</p></li>
 <li><p>Optional runtime variables: <code>CODINGMANAGER_EMPTY</code> (<code>TRUE</code>/<code>FALSE</code>, default
 <code>TRUE</code>) and <code>CODINGMANAGER_MAX_UPLOAD_GB</code> (positive number in GB or
 <code>"null"</code>, default <code>3</code>).</p></li>

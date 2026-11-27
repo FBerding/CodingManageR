@@ -1,7 +1,9 @@
 # Check Whether a Connection Uses MySQL or MariaDB
 
-Tests whether a direct `DBIConnection` inherits from `MariaDBConnection`
-or `MySQLConnection`.
+Tests whether a direct `DBIConnection` or
+[`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md)
+handle targets MySQL or MariaDB (`MariaDBConnection` or
+`MySQLConnection`).
 
 ## Usage
 
@@ -13,7 +15,9 @@ is_mysql(con)
 
 - con:
 
-  A `DBIConnection` object or `NULL`.
+  A `DBIConnection`,
+  [`pool::dbPool`](http://rstudio.github.io/pool/reference/dbPool.md),
+  or `NULL`.
 
 ## Value
 
